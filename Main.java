@@ -1,4 +1,5 @@
 import java.util.*;
+import java.time.*;
 abstract class User{
     private static long cnt = 1;
     private String id;
@@ -8,14 +9,24 @@ abstract class User{
     private String email;
     private boolean status;
     private boolean active;
-    public User(String id, String username, String password, String role, String email){
-        this.id = id;
+    private String question1;
+    private String question2;
+    private String answer1;
+    private String answer2;
+    private Instant lastTimeChangePass;
+    public User(String username, String password, String role, String email, String question1, String question2, String answer1, String answer2){
+        this.id = String.valueOf(cnt ++);
         this.username = username;
         this.password = password;
         this.role = role;
         this.email = email;
         this.status = true;
         this.active = true;
+        this.question1 = question1;
+        this.question2 = question2;
+        this.answer1 = answer1;
+        this.answer2 = answer2;
+        this.lastTimeChangePass = Instant.now();
     }
     public String getID(){
         return id;
@@ -44,6 +55,7 @@ abstract class User{
     public boolean setPassWord(String oldPassWord, String password){
         if (oldPassWord.equals(this.password)){
             this.password = password;
+            lastTimeChangePass = Instant.now();
             return true;
         }
         else{
@@ -69,13 +81,30 @@ abstract class User{
             active = true;
         }
     }
-
-    public void incrID(){
-        cnt ++;
+    public Instant getLastTimeChangePass(){
+        return lastTimeChangePass;
     }
-
-    public static String getCNT(){
-        return String.valueOf(cnt);
+    public String getQuestion1(){
+        return question1;
+    }
+    public String getQuestion2(){
+        return question2;
+    }
+    public void setQuestion1(String question1){
+        this.question1 = question1;
+    }
+    public void setQuestion2(String question2){
+        this.question2 = question2;
+    }
+    public boolean verifyer(String answer1, String answer2){
+        if (this.answer1.equals(answer1) && this.answer2.equals(answer2)){
+            return true;
+        }
+        return false;
+    }
+    public void forgotPassWord(String password){
+        this.password = password;
+        lastTimeChangePass = Instant.now();
     }
 }
 
@@ -83,7 +112,6 @@ class UserService{
     private Map<String, User> userDB = new HashMap<>();
     public boolean register(String id, String username, String password, String role, String email) {
         if (userDB.containsKey(username)) {
-            System.out.println("Username not available");
             return false;
         }
         if (role.equals("BIDDER")) {
@@ -98,58 +126,96 @@ class UserService{
             User user = new Admin(id, username, password, role, email);
             userDB.put(username, user);
         }
-        System.out.println("Success");
         return true;
     }
     public User login(String username, String password){
         if (!userDB.containsKey(username)) {
-            System.out.println("Username incorrect");
             return null;
         }
         User user = userDB.get(username);
         if (!user.getPassWord().equals(password)) {
-            System.out.println("Password incorrect");
             return null;
         }
         if (user.getStatus() == false) {
-            System.out.println("Ban");
             return null;
         }
-        System.out.println("Success");
         return user;
     }
 }
 
 class Bidder extends User{
     public Bidder(String id, String username, String password, String role, String email){
-        super(id, username, password, role, email);
+        super(username, password, role, email, username, password, role, email);
     }
 }
 
 class Seller extends User{
+    private long totalTrade;
     public Seller(String id, String username, String password, String role, String email){
-        super(id, username, password, role, email);
+        super(username, password, role, email, username, password, role, email);
+        totalTrade = 0;
     }
 }
 
 class Admin extends User{
     public Admin(String id, String username, String password, String role, String email){
-        super(id, username, password, role, email);
+        super(username, password, role, email, username, password, role, email);
+    }
+    public void ban_unban(User u){
+        u.setStatus();
+    }
+}
+
+interface Sellable{
+    
+}
+
+interface Biddable{
+
+}
+
+class BidTransaction {
+    private Bidder bidder;
+    private double amount;
+    private Instant time;
+    public BidTransaction(Bidder bidder, double amount) {
+        this.bidder = bidder;
+        this.amount = amount;
+        this.time = Instant.now();
+    }
+    public Bidder getBidder() {
+        return bidder;
+    }
+    public double getAmount() {
+        return amount;
+    }
+    public Instant getTime() {
+        return time;
+    }
+}
+
+class Auction{
+
+}
+
+abstract class Item{
+    private String id;
+    private String name;
+    private String description;
+    private double basePrice;
+    private double currentPrice;
+    private String sellerName;
+    private static long cnt = 1;
+    public Item(String name, String description, double basePrice, double currentPrice, String sellerName){
+        this.id = String.valueOf(cnt++);
+        this.description = description;
+        this.basePrice = basePrice;
+        this.currentPrice = currentPrice;
+        this.sellerName = sellerName;
     }
 }
 
 public class Main{
     public static void main(String[] args) {
-        Scanner sc = new Scanner(System.in);
-        UserService service = new UserService();
-        System.out.print("Username: ");
-        String username = sc.nextLine();
-        System.out.print("Password: ");
-        String password = sc.nextLine();
-        System.out.print("Email: ");
-        String email = sc.nextLine();
-        System.out.print("Role (BIDDER/SELLER/ADMIN): ");
-        String role = sc.nextLine();
-        service.register(User.getCNT(), username, password, role, email);
     }
 }
