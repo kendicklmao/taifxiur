@@ -1,4 +1,4 @@
-public class Item{
+public class Item {
     private String id;
     private String name;
     private String description;
@@ -8,7 +8,8 @@ public class Item{
     private boolean legitCheck;
     private static long cnt = 1;
     private Category category;
-    public Item(String name, String description, double basePrice, double currentPrice, String sellerName, boolean legitCheck, Category category){
+
+    public Item(String name, String description, double basePrice, double currentPrice, String sellerName, boolean legitCheck, Category category) {
         this.id = String.valueOf(cnt++);
         this.description = description;
         this.basePrice = basePrice;
