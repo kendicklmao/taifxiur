@@ -1,26 +1,32 @@
 import java.util.*;
 import java.time.*;
+
 abstract class User{
-    private static long cnt = 1;
-    private String id;
+
+    private static int cnt = 0;
+
     private String username;
     private String password;
     private String role;
     private String email;
-    private boolean status;
+
+    private boolean banned;
     private boolean active;
+
     private String question1;
     private String question2;
     private String answer1;
     private String answer2;
+
     private Instant lastTimeChangePass;
+
     public User(String username, String password, String role, String email, String question1, String question2, String answer1, String answer2){
-        this.id = String.valueOf(cnt ++);
+        this.cnt++;
         this.username = username;
         this.password = password;
         this.role = role;
         this.email = email;
-        this.status = true;
+        this.banned = false;
         this.active = true;
         this.question1 = question1.toLowerCase();
         this.question2 = question2.toLowerCase();
@@ -28,13 +34,11 @@ abstract class User{
         this.answer2 = answer2.toLowerCase();
         this.lastTimeChangePass = Instant.now();
     }
-    public String getID(){
-        return id;
-    }
-    public String getUserName(){
+
+    public String getUsername(){
         return username;
     }
-    public String getPassWord(){
+    public String getPassword(){
         return password;
     }
     public String getRole(){
@@ -43,10 +47,10 @@ abstract class User{
     public String getEmail(){
         return email;
     }
-    public boolean getStatus(){
-        return status;
+    public boolean isBanned(){
+        return banned;
     }
-    public boolean getActive(){
+    public boolean isActive(){
         return active;
     }
     public boolean setUserName(String username){
@@ -71,9 +75,13 @@ abstract class User{
         }
         return false;
     }
-    public void setStatus(){
-        status = !status;
+
+    public void selfBan() {
+        if (!banned) {
+            banned = false;
+        }
     }
+
     public void setActive(){
         active = !active;
     }
@@ -114,19 +122,22 @@ abstract class User{
         }
         return false;
     }
-    public boolean verifyer(String answer1, String answer2){
+    public boolean verified(String answer1, String answer2){
         if (answer1 != null && !answer1.isEmpty() && answer2 != null && !answer2.isEmpty() && this.answer1.equals(answer1.toLowerCase()) && this.answer2.equals(answer2.toLowerCase())){
             return true;
         }
         return false;
     }
     public boolean forgotPassWord(String password, String answer1, String answer2){
-        if (verifyer(answer1, answer2) && password != null && !password.isEmpty()){
+        if (verified(answer1, answer2) && password != null && !password.isEmpty()){
             this.password = password;
             lastTimeChangePass = Instant.now();
             return true;
         }
         return false;
+    }
+    public static int getCnt() {
+        return User.cnt;
     }
 }
 
@@ -139,10 +150,10 @@ class UserService{
         username = username.trim();
         password = password.trim();
         email = email.trim();
-        if (!Validator.validUserName(username)) {
+        if (!Validator.validUsername(username)) {
             return false;
         }
-        if (!Validator.validPassWord(password)) {
+        if (!Validator.validPassword(password)) {
             return false;
         }
         if (!Validator.validEmail(email)) {
@@ -151,28 +162,27 @@ class UserService{
         if (userDB.containsKey(username)) {
             return false;
         }
-        if (role.equals("BIDDER")) {
-            User user = new Bidder(username, password, role, email);
-            userDB.put(username, user);
-        } 
-        else if (role.equals("SELLER")) {
-            User user = new Seller(username, password, role, email);
-            userDB.put(username, user);
-        } 
-        else if (role.equals("ADMIN")) {
-            User user = new Admin(username, password, role, email);
-            userDB.put(username, user);
+        User user = null;
+        if (role.equalsIgnoreCase("bidder")) {
+            user = new Bidder(username, password, role, email);
         }
+        else if (role.equalsIgnoreCase("seller")) {
+            user = new Seller(username, password, role, email);
+        }
+        else if (role.equalsIgnoreCase("admin")) {
+            user = new Admin(username, password, role, email);
+        }
+        userDB.put(username, user);
         return true;
     }
     public User login(String username, String password){
         if (username == null || password == null){
-            return false;
+            return null;
         }
         username = username.trim();
         password = password.trim();
         User user = userDB.get(username);
-        if (user == null || !user.getPassword().equals(password) || !user.isActive()){
+        if (user == null || !(user.getPassword().equals(password)) || !user.isActive()){
             return null;
         }
         return user;
@@ -180,22 +190,22 @@ class UserService{
 }
 
 class Validator{
-    public static boolean validUserName(String username) {
+    public static boolean validUsername(String username) {
         if (username == null){
             return false;
         }
         username = username.trim();
-        if (username.isEmpty() || username.matches(".*\\s.*") || !username.matches("[a-zA-Z0-9_]+") || username.length() < 3 || username.length() > 15){
+        if (username.matches(".*\\s.*") || !username.matches("[a-zA-Z0-9_]+") || username.length() < 3 || username.length() > 15){
             return false;
         }
         return true;
     }
-    public static boolean validPassWord(String password){
+    public static boolean validPassword(String password){
         if (password == null){
             return false;
         }
         password = password.trim();
-        if (password.isEmpty() || password.matches(".*\\s.*") || password.length() < 6){
+        if (password.matches(".*\\s.*") || password.length() < 6){
             return false;
         }
         boolean hasLower = password.matches(".*[a-z].*");
@@ -217,34 +227,26 @@ class Validator{
 }
 
 class Bidder extends User{
-    public Bidder(String id, String username, String password, String role, String email){
+    public Bidder(String username, String password, String role, String email){
         super(username, password, role, email, username, password, role, email);
     }
 }
 
 class Seller extends User{
-    private long totalTrade;
-    public Seller(String id, String username, String password, String role, String email){
+    private int totalTrade;
+    public Seller(String username, String password, String role, String email){
         super(username, password, role, email, username, password, role, email);
         totalTrade = 0;
     }
 }
 
 class Admin extends User{
-    public Admin(String id, String username, String password, String role, String email){
+    public Admin(String username, String password, String role, String email){
         super(username, password, role, email, username, password, role, email);
     }
-    public void ban_unban(User u){
-        u.setStatus();
+    public void toggleBanned(User user) {
+        user.selfBan();
     }
-}
-
-interface Sellable{
-    
-}
-
-interface Biddable{
-
 }
 
 class BidTransaction {
@@ -268,7 +270,8 @@ class BidTransaction {
 }
 
 class Auction{
-
+    public int state;
+    //0 = Open, 1 = Running, 2 = Finished, 3 = Paid, 4 = Canceled
 }
 
 abstract class Item{
@@ -290,5 +293,6 @@ abstract class Item{
 
 public class Main{
     public static void main(String[] args) {
+
     }
 }
