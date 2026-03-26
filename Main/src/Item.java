@@ -1,4 +1,4 @@
-abstract class Item{
+public class Item{
     private String id;
     private String name;
     private String description;
@@ -7,13 +7,15 @@ abstract class Item{
     private String sellerName;
     private boolean legitCheck;
     private static long cnt = 1;
-    public Item(String name, String description, double basePrice, double currentPrice, String sellerName, boolean legitCheck){
+    private Category category;
+    public Item(String name, String description, double basePrice, double currentPrice, String sellerName, boolean legitCheck, Category category){
         this.id = String.valueOf(cnt++);
         this.description = description;
         this.basePrice = basePrice;
         this.currentPrice = currentPrice;
         this.sellerName = sellerName;
         this.legitCheck = legitCheck;
+        this.category = category;
     }
 
     public String getId() {
@@ -71,4 +73,13 @@ abstract class Item{
     public void setLegitCheck(boolean legitCheck) {
         this.legitCheck = legitCheck;
     }
+
+    public Category getCategory() {
+        return category;
+    }
+
+    public void setCategory(Category category) {
+        this.category = category;
+    }
+
 }
