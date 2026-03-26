@@ -10,6 +10,7 @@ public class Item {
     private Category category;
 
     public Item(String name, String description, double basePrice, double currentPrice, String sellerName, boolean legitCheck, Category category) {
+        this.name = name;
         this.id = String.valueOf(cnt++);
         this.description = description;
         this.basePrice = basePrice;

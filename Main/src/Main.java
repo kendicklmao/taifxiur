@@ -8,7 +8,7 @@ import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.*;
 import javafx.stage.Stage;
 
-public class ItemManagerApp extends Application {
+public class Main extends Application {
 
     // Danh sách lưu trữ dữ liệu hiển thị trên bảng
     private ObservableList<Item> itemList = FXCollections.observableArrayList();
@@ -26,6 +26,10 @@ public class ItemManagerApp extends Application {
         TableColumn<Item, String> colName = new TableColumn<>("Tên");
         colName.setCellValueFactory(new PropertyValueFactory<>("name"));
 
+        // Thêm cột Mô tả
+        TableColumn<Item, String> colDesc = new TableColumn<>("Mô tả");
+        colDesc.setCellValueFactory(new PropertyValueFactory<>("description"));
+
         TableColumn<Item, Double> colBasePrice = new TableColumn<>("Giá gốc");
         colBasePrice.setCellValueFactory(new PropertyValueFactory<>("basePrice"));
 
@@ -38,7 +42,12 @@ public class ItemManagerApp extends Application {
         TableColumn<Item, Boolean> colLegit = new TableColumn<>("Legit");
         colLegit.setCellValueFactory(new PropertyValueFactory<>("legitCheck"));
 
-        table.getColumns().addAll(colId, colName, colBasePrice, colCurrentPrice, colSeller, colLegit);
+        // Thêm cột Danh mục
+        TableColumn<Item, Category> colCategory = new TableColumn<>("Danh mục");
+        colCategory.setCellValueFactory(new PropertyValueFactory<>("category"));
+
+        // Cập nhật lại danh sách các cột
+        table.getColumns().addAll(colId, colName, colDesc, colCategory, colBasePrice, colCurrentPrice, colSeller, colLegit);
         table.setItems(itemList);
 
         // --- 2. PHẦN FORM NHẬP LIỆU ---
@@ -53,13 +62,18 @@ public class ItemManagerApp extends Application {
         TextField sellerInput = new TextField(); sellerInput.setPromptText("Người bán");
         CheckBox legitInput = new CheckBox("Đã kiểm định (Legit)");
 
-        // ComboBox cho Category (Giả định Category là một Enum hoặc class)
+        // ComboBox cho Category
         ComboBox<Category> categoryInput = new ComboBox<>(FXCollections.observableArrayList(Category.values()));
         categoryInput.setPromptText("Chọn danh mục");
 
         Button addButton = new Button("Thêm sản phẩm");
         addButton.setOnAction(e -> {
             try {
+                // Kiểm tra sơ bộ xem có chọn category chưa
+                if (categoryInput.getValue() == null) {
+                    throw new IllegalArgumentException("Vui lòng chọn danh mục!");
+                }
+
                 Item newItem = new Item(
                         nameInput.getText(),
                         descInput.getText(),
@@ -71,23 +85,34 @@ public class ItemManagerApp extends Application {
                 );
                 itemList.add(newItem);
 
-                // Clear form sau khi thêm
+                // Clear form sau khi thêm thành công
                 nameInput.clear();
                 descInput.clear();
                 basePriceInput.clear();
                 sellerInput.clear();
+                legitInput.setSelected(false);
+                categoryInput.getSelectionModel().clearSelection();
+            } catch (NumberFormatException ex) {
+                Alert alert = new Alert(Alert.AlertType.ERROR, "Giá trị nhập vào ô 'Giá gốc' phải là số!");
+                alert.show();
+            } catch (IllegalArgumentException ex) {
+                Alert alert = new Alert(Alert.AlertType.ERROR, ex.getMessage());
+                alert.show();
             } catch (Exception ex) {
-                Alert alert = new Alert(Alert.AlertType.ERROR, "Vui lòng nhập đúng định dạng số!");
+                Alert alert = new Alert(Alert.AlertType.ERROR, "Đã xảy ra lỗi, vui lòng kiểm tra lại thông tin!");
                 alert.show();
             }
         });
 
-        // Sắp xếp các control vào Grid
-        grid.add(new Label("Tên:"), 0, 0); grid.add(nameInput, 1, 0);
-        grid.add(new Label("Giá:"), 0, 1); grid.add(basePriceInput, 1, 1);
-        grid.add(new Label("Người bán:"), 0, 2); grid.add(sellerInput, 1, 2);
-        grid.add(new Label("Danh mục:"), 2, 0); grid.add(categoryInput, 3, 0);
-        grid.add(legitInput, 2, 1);
+        // Sắp xếp các control vào Grid (Bổ sung descInput)
+        grid.add(new Label("Tên:"), 0, 0);       grid.add(nameInput, 1, 0);
+        grid.add(new Label("Mô tả:"), 0, 1);     grid.add(descInput, 1, 1);
+        grid.add(new Label("Giá gốc:"), 0, 2);   grid.add(basePriceInput, 1, 2);
+
+        grid.add(new Label("Danh mục:"), 2, 0);  grid.add(categoryInput, 3, 0);
+        grid.add(new Label("Người bán:"), 2, 1); grid.add(sellerInput, 3, 1);
+        grid.add(legitInput, 2, 2);
+
         grid.add(addButton, 3, 2);
 
         // --- 3. BỐ CỤC CHÍNH (Layout) ---
@@ -95,7 +120,7 @@ public class ItemManagerApp extends Application {
         mainLayout.setPadding(new Insets(10));
         mainLayout.getChildren().addAll(new Label("DANH SÁCH SẢN PHẨM"), table, grid);
 
-        Scene scene = new Scene(mainLayout, 800, 600);
+        Scene scene = new Scene(mainLayout, 900, 600); // Tăng width lên một chút để hiển thị đủ cột
         primaryStage.setScene(scene);
         primaryStage.show();
     }
