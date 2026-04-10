@@ -1,0 +1,7 @@
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ListView?>
+<VBox xmlns:fx="http://javafx.com/fxml" fx:controller="client.AuctionListController" spacing="10">
+<ListView fx:id="auctionList"/>
+<Button text="View Detail" onAction="#viewDetail"/>
+</VBox>
