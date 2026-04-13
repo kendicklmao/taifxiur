@@ -15,6 +15,7 @@ import java.util.concurrent.TimeUnit;
 public class Auction { //1 phiên giao dịch
     private static final long EXTEND_THRESHOLD = 10; //số giây còn lại để kéo dài giao dịch
     private static final long EXTEND_TIME = 20; //số giây cộng thêm khi kéo dài giao dịch
+    private static final ScheduledExecutorService globalScheduler = Executors.newScheduledThreadPool(4);
     private final String id;//mã phiên giao dịch
     private final Item item;// mặt hàng giao dịch
     private final BigDecimal startPrice;//giá khởi điểm
@@ -22,7 +23,6 @@ public class Auction { //1 phiên giao dịch
     private final Instant startTime;//thời gian bắt đầu
     private final List<BidTransaction> bidHistory = new ArrayList<>(); //lịch sử đặt giá
     private final Object bidLock = new Object(); //thread safe
-    private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(4); //thread safe
     private final PriorityQueue<AutoBid> autoBids = new PriorityQueue<>((a, b) -> {
         int cmp = b.getMaxBid().compareTo(a.getMaxBid()); // maxBid cao hơn sẽ thắng
         if (cmp != 0) {
@@ -38,15 +38,17 @@ public class Auction { //1 phiên giao dịch
 
     public Auction(String id, Item item, BigDecimal startPrice, Seller seller, Instant startTime, Instant endTime) {
         if (id == null || id.isBlank())
-            throw new IllegalArgumentException();
+            throw new IllegalArgumentException("Auction ID is null or blank");
         if (item == null)
-            throw new IllegalArgumentException();
+            throw new IllegalArgumentException("Auction item is null");
         if (startPrice == null || startPrice.compareTo(BigDecimal.ZERO) < 0)
-            throw new IllegalArgumentException();
+            throw new IllegalArgumentException("Invalid start price: " + startPrice);
         if (seller == null)
-            throw new IllegalArgumentException();
+            throw new IllegalArgumentException("Auction seller is null");
         if (startTime == null || endTime == null || endTime.isBefore(startTime))
-            throw new IllegalArgumentException();
+            throw new IllegalArgumentException("Invalid auction dates: start=" + startTime + ", end=" + endTime);
+        if (startTime.isBefore(Instant.now()))
+            throw new IllegalArgumentException("Start time must be in the future");
         this.id = id;
         this.item = item;
         this.startPrice = startPrice;
@@ -61,31 +63,48 @@ public class Auction { //1 phiên giao dịch
 
     public void AutoBidService() {//hệ thống đấu giá tự động
         synchronized (bidLock) {
-            if (autoBids.isEmpty()) {
+            if (autoBids.isEmpty() || status != AuctionStatus.RUNNING) {
                 return;
             }
             AutoBid highest = autoBids.poll();
             AutoBid second = autoBids.peek();
-            if (highest == null) {
-                throw new IllegalArgumentException();
-            }
+            
+            BigDecimal increment = item.getMinIncrement();
             BigDecimal newPrice;
-            if (second != null) {
-                newPrice = second.getMaxBid().add(item.getMinIncrement());
-                if (newPrice.compareTo(highest.getMaxBid()) > 0) {
-                    newPrice = highest.getMaxBid();
+
+            if (highest.getBidder().equals(highestBidder)) {
+                // Highest is already winning. Only outbid second auto-bid if it exists.
+                if (second != null) {
+                    newPrice = second.getMaxBid().add(increment);
+                    if (newPrice.compareTo(highest.getMaxBid()) > 0) {
+                        newPrice = highest.getMaxBid();
+                    }
+                    if (newPrice.compareTo(currentPrice) > 0) {
+                        currentPrice = newPrice;
+                        bidHistory.add(new BidTransaction(highest.getBidder(), newPrice, Instant.now()));
+                    }
                 }
             } else {
-                newPrice = currentPrice.add(item.getMinIncrement());
+                // Someone else is winning. Highest auto-bid needs to outbid them.
+                BigDecimal minToOutbid = currentPrice.add(increment);
+                if (second != null) {
+                    newPrice = second.getMaxBid().add(increment);
+                    if (newPrice.compareTo(minToOutbid) < 0) {
+                        newPrice = minToOutbid;
+                    }
+                } else {
+                    newPrice = minToOutbid;
+                }
+
                 if (newPrice.compareTo(highest.getMaxBid()) > 0) {
                     newPrice = highest.getMaxBid();
                 }
-            }
-            BigDecimal minNext = currentPrice.add(item.getMinIncrement());
-            if (newPrice.compareTo(minNext) >= 0) {
-                currentPrice = newPrice;
-                highestBidder = highest.getBidder();
-                bidHistory.add(new BidTransaction(highest.getBidder(), newPrice, Instant.now()));
+
+                if (newPrice.compareTo(currentPrice.add(increment)) >= 0) {
+                    currentPrice = newPrice;
+                    highestBidder = highest.getBidder();
+                    bidHistory.add(new BidTransaction(highest.getBidder(), newPrice, Instant.now()));
+                }
             }
             autoBids.add(highest);
         }
@@ -113,7 +132,7 @@ public class Auction { //1 phiên giao dịch
     private void scheduleStart() {//bắt đầu phiên giao dịch
         long delay = startTime.getEpochSecond() - Instant.now().getEpochSecond();
         if (delay < 0) delay = 0;
-        scheduler.schedule(() -> {
+        globalScheduler.schedule(() -> {
                     synchronized (bidLock) {
                         if (status == AuctionStatus.OPEN) {
                             status = AuctionStatus.RUNNING;
@@ -126,11 +145,10 @@ public class Auction { //1 phiên giao dịch
     private void scheduleFinish() {// kết thúc phiên giao dịch
         long delay = endTime.getEpochSecond() - Instant.now().getEpochSecond();
         if (delay < 0) delay = 0;
-        finishTask = scheduler.schedule(() -> {
+        finishTask = globalScheduler.schedule(() -> {
                     synchronized (bidLock) {
                         if (status == AuctionStatus.RUNNING && !Instant.now().isBefore(endTime)) {
                             status = AuctionStatus.FINISHED;
-                            scheduler.shutdown();
                         }
                     }
                 }

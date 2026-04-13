@@ -28,6 +28,6 @@ public class Electronic extends Item { //mặt hàng điện tử
     }
 
     public boolean isValid() {
-        return true;
+        return super.isValid();
     }
 }

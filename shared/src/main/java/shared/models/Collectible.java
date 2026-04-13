@@ -5,11 +5,17 @@ import shared.enums.Category;
 import java.math.BigDecimal;
 
 public class Collectible extends Item { //mặt hàng sưu tập
-    private final int yearCreated;
+    private int yearCreated;
 
     public Collectible(String name, String description, Seller seller, int yearCreated) {
         super(name, description, seller, Category.COLLECTIBLES);
         this.yearCreated = yearCreated;
+    }
+
+    public Collectible() {
+        // No-arg constructor for deserialization
+        super();
+        this.yearCreated = 0;
     }
 
     public int getYearCreated() {
@@ -21,6 +27,6 @@ public class Collectible extends Item { //mặt hàng sưu tập
     }
 
     public boolean isValid() { //kiểm tra thông số có logic không?
-        return yearCreated >= 0;
+        return super.isValid() && yearCreated >= 0;
     }
 }

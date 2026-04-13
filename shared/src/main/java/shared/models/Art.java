@@ -33,6 +33,6 @@ public class Art extends Item { //tác phẩm nghệ thuật
     }
 
     public boolean isValid() { //kiểm tra thông số có logic không?
-        return yearCreated >= 0;
+        return super.isValid() && yearCreated >= 0;
     }
 }

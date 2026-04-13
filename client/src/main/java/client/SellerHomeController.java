@@ -20,6 +20,7 @@ import java.util.Map;
 
 import com.google.gson.Gson;
 import shared.enums.Category;
+import shared.utils.GsonUtils;
 import shared.models.Auction;
 
 public class SellerHomeController {
@@ -34,6 +35,7 @@ public class SellerHomeController {
     @FXML private TextArea descField;
     private PrintWriter out;
     private BufferedReader in;
+    private final Gson gson = GsonUtils.createGson();
 
     private final AppContext ctx = AppContext.getInstance();
 
@@ -75,9 +77,11 @@ public class SellerHomeController {
         if (c == Category.ELECTRONICS) {
             TextField brand = new TextField();
             brand.setPromptText("Brand");
+            brand.setId("brandField");
 
             TextField status = new TextField();
-            status.setPromptText("Status");
+            status.setPromptText("Status (NEW, LIKENEW, USED)");
+            status.setId("statusField");
 
             dynamicForm.getChildren().addAll(brand, status);
         }
@@ -85,11 +89,14 @@ public class SellerHomeController {
         else if (c == Category.ARTS) {
             TextField artist = new TextField();
             artist.setPromptText("Artist");
+            artist.setId("artistField");
 
             TextField year = new TextField();
             year.setPromptText("Year");
+            year.setId("yearField");
 
             CheckBox original = new CheckBox("Original");
+            original.setId("originalBox");
 
             dynamicForm.getChildren().addAll(artist, year, original);
         }
@@ -97,12 +104,15 @@ public class SellerHomeController {
         else if (c == Category.VEHICLES) {
             TextField brand = new TextField();
             brand.setPromptText("Brand");
+            brand.setId("brandField");
 
             TextField model = new TextField();
             model.setPromptText("Model year");
+            model.setId("modelField");
 
             TextField km = new TextField();
             km.setPromptText("KM traveled");
+            km.setId("kmField");
 
             dynamicForm.getChildren().addAll(brand, model, km);
         }
@@ -110,9 +120,11 @@ public class SellerHomeController {
         else if (c == Category.FASHIONS) {
             TextField brand = new TextField();
             brand.setPromptText("Brand");
+            brand.setId("brandField");
 
             TextField status = new TextField();
-            status.setPromptText("Status");
+            status.setPromptText("Status (NEW, LIKENEW, USED)");
+            status.setId("statusField");
 
             dynamicForm.getChildren().addAll(brand, status);
         }
@@ -120,6 +132,7 @@ public class SellerHomeController {
         else if (c == Category.COLLECTIBLES) {
             TextField year = new TextField();
             year.setPromptText("Year");
+            year.setId("yearField");
 
             dynamicForm.getChildren().add(year);
         }
@@ -140,12 +153,20 @@ public class SellerHomeController {
                 return;
             }
 
+            if (name.length() < 3 || desc.length() < 3) {
+                showAlert("Lỗi", "Tên và mô tả phải có ít nhất 3 ký tự!");
+                return;
+            }
+
             if (startDate.isAfter(endDate)) {
                 showAlert("Lỗi", "Ngày bắt đầu phải trước ngày kết thúc!");
                 return;
             }
 
-            Gson gson = new Gson();
+            if (startDate.isBefore(LocalDate.now())) {
+                showAlert("Lỗi", "Ngày bắt đầu phải từ hôm nay trở đi!");
+                return;
+            }
 
             Map<String, String> data = new HashMap<>();
             data.put("name", name);
@@ -155,18 +176,20 @@ public class SellerHomeController {
             data.put("category", categoryBox.getValue().name());
             data.put("username", ctx.getCurrentUser().getUsername());
             data.put("description", desc);
-            data.put("year", "2020"); 
+
+            for (javafx.scene.Node node : dynamicForm.getChildren()) {
+                if (node instanceof TextField tf) {
+                    data.put(tf.getId(), tf.getText());
+                } else if (node instanceof CheckBox cb) {
+                    data.put(cb.getId(), String.valueOf(cb.isSelected()));
+                }
+            }
 
             Request req = new Request("CREATE_AUCTION", data);
 
-            out.println(gson.toJson(req));
-            System.out.println("SENDING = " + gson.toJson(req));
-            System.out.println("PARSED ACTION = " + req.getAction());
-
-            String res = in.readLine();
-            System.out.println("RAW = " + res); // 👈 THÊM DÒNG NÀY
-            Response response = gson.fromJson(res, Response.class);
-            System.out.println("MESSAGE = " + response.getMessage()); // 
+            Response response = ctx.sendRequestAndWait(req, 10);
+            
+            System.out.println("MESSAGE = " + response.getMessage()); 
             Auction auction = null;
             if ("SUCCESS".equals(response.getStatus())) {
                 auction = gson.fromJson(response.getMessage(), Auction.class);

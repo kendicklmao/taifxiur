@@ -37,11 +37,7 @@ public class LoginController {
             data.put("password", passwordField.getText());
 
             Request req = new Request("LOGIN", data);
-            Gson gson = new Gson();
-            out.println(gson.toJson(req));
-
-            String serverResponse = in.readLine();
-            Response res = gson.fromJson(serverResponse, Response.class);
+            Response res = ctx.sendRequestAndWait(req, 5);
 
             if ("SUCCESS".equals(res.getStatus())) {
                 String[] info = res.getMessage().split(",");

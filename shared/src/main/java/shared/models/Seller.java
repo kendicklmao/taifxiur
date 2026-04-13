@@ -8,8 +8,8 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class Seller extends User {//người bán hàng
-    private final ConcurrentHashMap<String, Item> items = new ConcurrentHashMap<>(); //danh sách sản phẩm
-    private final Wallet wallet = new Wallet();
+    private final transient ConcurrentHashMap<String, Item> items = new ConcurrentHashMap<>(); //danh sách sản phẩm
+    private final transient Wallet wallet = new Wallet();
 
     public Seller(String username, String password, String email, String q1, String a1, String q2, String a2) {
         super(username, password, email, Role.SELLER, q1, a1, q2, a2);

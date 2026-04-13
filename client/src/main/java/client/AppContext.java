@@ -9,6 +9,19 @@ import shared.models.Auction;
 import shared.models.User;
 
 
+import java.util.function.Consumer;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.List;
+
+import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
+import shared.network.Request;
+import shared.network.Response;
+import shared.utils.GsonUtils;
+import com.google.gson.Gson;
+
 public class AppContext {
     private Socket socket;
     private PrintWriter out;
@@ -16,6 +29,10 @@ public class AppContext {
     private static final AppContext instance = new AppContext();
     private User currentUser;
     private Auction selectedAuction;
+    private final List<Consumer<String>> messageListeners = new CopyOnWriteArrayList<>();
+    private final ConcurrentHashMap<String, CompletableFuture<Response>> pendingRequests = new ConcurrentHashMap<>();
+    private final Gson gson = GsonUtils.createGson();
+    private Thread listenerThread;
 
     public static AppContext getInstance() {
         return instance;
@@ -33,10 +50,70 @@ public class AppContext {
         selectedAuction = a;
     }
     public void connect() throws Exception {
+        if (socket != null && !socket.isClosed()) {
+            return;
+        }
         socket = new Socket("localhost", 54321);
         out = new PrintWriter(socket.getOutputStream(), true);
         in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+        
+        startListenerThread();
     }
+    
+    private void startListenerThread() {
+        if (listenerThread != null && listenerThread.isAlive()) return;
+        
+        listenerThread = new Thread(() -> {
+            try {
+                String line;
+                while ((line = in.readLine()) != null) {
+                    final String message = line;
+                    try {
+                        Response res = gson.fromJson(message, Response.class);
+                        if (res.getRequestId() != null && pendingRequests.containsKey(res.getRequestId())) {
+                            pendingRequests.get(res.getRequestId()).complete(res);
+                            pendingRequests.remove(res.getRequestId());
+                        }
+                    } catch (Exception e) {
+                        // Not a Response or no requestId, normal broadcast
+                    }
+                    
+                    for (Consumer<String> listener : messageListeners) {
+                        listener.accept(message);
+                    }
+                }
+            } catch (Exception e) {
+                System.out.println("Connection lost: " + e.getMessage());
+            }
+        });
+        listenerThread.setDaemon(true);
+        listenerThread.start();
+    }
+    
+    public Response sendRequestAndWait(Request req, long timeoutSeconds) throws Exception {
+        String requestId = UUID.randomUUID().toString();
+        req.setRequestId(requestId);
+        CompletableFuture<Response> future = new CompletableFuture<>();
+        pendingRequests.put(requestId, future);
+        
+        out.println(gson.toJson(req));
+        
+        try {
+            return future.get(timeoutSeconds, TimeUnit.SECONDS);
+        } catch (Exception e) {
+            pendingRequests.remove(requestId);
+            throw e;
+        }
+    }
+
+    public void addMessageListener(Consumer<String> listener) {
+        messageListeners.add(listener);
+    }
+    
+    public void removeMessageListener(Consumer<String> listener) {
+        messageListeners.remove(listener);
+    }
+
     public PrintWriter getOut() { return out; }
     public BufferedReader getIn() { return in; }
 }

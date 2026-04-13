@@ -4,10 +4,12 @@ import com.google.gson.Gson;
 
 import server.service.AuctionService;
 import server.service.UserService;
+import shared.utils.GsonUtils;
 import shared.enums.AuctionStatus;
 import shared.enums.ItemStatus;
 import shared.models.Art;
 import shared.models.Auction;
+import shared.models.Bidder;
 import shared.models.Collectible;
 import shared.models.Electronic;
 import shared.models.Fashion;
@@ -31,7 +33,7 @@ public class ClientHandler implements Runnable {
     private static final List<ClientHandler> activeClients = new CopyOnWriteArrayList<>();
 
     private final Socket socket;
-    private final Gson gson = new Gson();
+    private final Gson gson = GsonUtils.createGson();
     private static final AuctionService auctionService = new AuctionService();
     private PrintWriter out;
 
@@ -57,6 +59,9 @@ public class ClientHandler implements Runnable {
                 Response response = handleRequest(request);
 
                 if (response != null) {
+                    if (request.getRequestId() != null) {
+                        response.setRequestId(request.getRequestId());
+                    }
                     sendMessage(gson.toJson(response));
                 }
             }
@@ -123,13 +128,54 @@ public class ClientHandler implements Runnable {
                 return new Response("SUCCESS", json);
 
             case "PLACE_BID":
-                String auctionId = request.getData().get("auctionId");
-                String amount = request.getData().get("amount");
+                String pAuctionId = request.getData().get("auctionId");
+                String pAmount = request.getData().get("amount");
+                String pUsername = request.getData().get("username");
 
-                Response updateResponse = new Response("UPDATE_PRICE", "UPDATE: Auction " + auctionId + " just had a new price: " + amount);
-                broadcast(gson.toJson(updateResponse));
+                User pUser = userService.getUser(pUsername);
+                if (pUser instanceof Bidder bidder) {
+                    BigDecimal amount = new BigDecimal(pAmount);
+                    boolean success = auctionService.placeBid(pAuctionId, bidder, amount);
+                    if (success) {
+                        Response updateResponse = new Response("UPDATE_PRICE", "UPDATE: Auction " + pAuctionId + " just had a new price: " + pAmount);
+                        broadcast(gson.toJson(updateResponse));
+                        return new Response("SUCCESS", "Bid placed successfully");
+                    } else {
+                        return new Response("FAIL", "Bid too low or auction not running");
+                    }
+                } else {
+                    return new Response("FAIL", "Invalid user for bidding");
+                }
 
-                return null;
+            case "REGISTER_AUTOBID":
+                String raAuctionId = request.getData().get("auctionId");
+                String raAmount = request.getData().get("maxBid");
+                String raUsername = request.getData().get("username");
+
+                User raUser = userService.getUser(raUsername);
+                if (raUser instanceof Bidder bidder) {
+                    BigDecimal maxBid = new BigDecimal(raAmount);
+                    auctionService.registerAutoBid(raAuctionId, bidder, maxBid);
+                    return new Response("SUCCESS", "Auto-bid registered successfully");
+                } else {
+                    return new Response("FAIL", "Invalid user for auto-bidding");
+                }
+
+            case "ITEM_PAID":
+                String ipAuctionId = request.getData().get("auctionId");
+                String ipUsername = request.getData().get("username");
+
+                User ipUser = userService.getUser(ipUsername);
+                if (ipUser instanceof Bidder bidder) {
+                    auctionService.itemPaid(ipAuctionId, bidder);
+                    return new Response("SUCCESS", "Payment processed");
+                } else {
+                    return new Response("FAIL", "Invalid user for payment");
+                }
+
+            case "GET_FINISHED_AUCTIONS":
+                List<Auction> finishedList = auctionService.getAuctionsByStatus(AuctionStatus.FINISHED);
+                return new Response("SUCCESS", gson.toJson(finishedList));
             case "CREATE_AUCTION":
                 try {
                     var data = request.getData();
@@ -141,7 +187,8 @@ public class ClientHandler implements Runnable {
                     LocalDate endDate = LocalDate.parse(data.get("endDate"));
 
                     Instant start = startDate.atStartOfDay(ZoneId.systemDefault()).toInstant();
-                    Instant end = endDate.atStartOfDay(ZoneId.systemDefault()).toInstant();
+                    // Set end time to the end of the day to avoid immediate expiration if same day
+                    Instant end = endDate.atTime(LocalTime.MAX).atZone(ZoneId.systemDefault()).toInstant();
 
                     String category = data.get("category");
 
@@ -156,26 +203,39 @@ public class ClientHandler implements Runnable {
                     System.out.println("seller = " + seller);
 
                     Item item = null;
-
                     if (category.equals("COLLECTIBLES")) {
-                        int year = Integer.parseInt(data.get("year"));
+                        int year = Integer.parseInt(data.getOrDefault("yearField", "0"));
                         item = new Collectible(name, desc, seller, year);
                     }
 
                     else if (category.equals("ELECTRONICS")) {
-                        item = new Electronic(name, desc, seller, "Default", ItemStatus.NEW);
+                        String brand = data.getOrDefault("brandField", "Default");
+                        ItemStatus status = ItemStatus.valueOf(data.getOrDefault("statusField", "NEW").toUpperCase());
+                        item = new Electronic(name, desc, seller, brand, status);
                     }
 
                     else if (category.equals("ARTS")) {
-                        item = new Art(name, desc, seller, "Unknown", 2020, true);
+                        String artist = data.getOrDefault("artistField", "Unknown");
+                        int year = Integer.parseInt(data.getOrDefault("yearField", "0"));
+                        boolean original = Boolean.parseBoolean(data.getOrDefault("originalBox", "false"));
+                        item = new Art(name, desc, seller, artist, year, original);
                     }
 
                     else if (category.equals("VEHICLES")) {
-                        item = new Vehicle(name, desc, seller, "Unknown", 2020, 0);
+                        String brand = data.getOrDefault("brandField", "Unknown");
+                        int model = Integer.parseInt(data.getOrDefault("modelField", "0"));
+                        int km = Integer.parseInt(data.getOrDefault("kmField", "0"));
+                        item = new Vehicle(name, desc, seller, brand, model, km);
                     }
 
                     else if (category.equals("FASHIONS")) {
-                        item = new Fashion(name, desc, seller, "Brand", ItemStatus.NEW);
+                        String brand = data.getOrDefault("brandField", "Brand");
+                        ItemStatus status = ItemStatus.valueOf(data.getOrDefault("statusField", "NEW").toUpperCase());
+                        item = new Fashion(name, desc, seller, brand, status);
+                    }
+
+                    if (item != null) {
+                        seller.addItem(item);
                     }
 
                     Auction auction = auctionService.createAuction(seller, item, price, start, end);
@@ -183,9 +243,9 @@ public class ClientHandler implements Runnable {
                     return new Response("SUCCESS", gson.toJson(auction));
 
                 } catch (Exception e) {
-                    System.out.println("💥 ERROR CREATE AUCTION");
+                    System.out.println("💥 ERROR CREATE AUCTION: " + e.getMessage());
                     e.printStackTrace();
-                    return new Response("FAIL", "create auction failed");
+                    return new Response("FAIL", "create auction failed: " + e.getMessage());
                 }
 
             default:

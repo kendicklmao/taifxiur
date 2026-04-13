@@ -18,12 +18,16 @@ public class AuctionService {
     private final ConcurrentHashMap<String, Auction> auctions = new ConcurrentHashMap<>(); //lưu các cuộc giao dịch
 
     public Auction createAuction(Seller seller, Item item, BigDecimal startPrice, Instant startTime, Instant endTime) {//tạo giao dịch
-        if (seller == null || seller.isBanned()) 
-            throw new IllegalArgumentException();
+        if (seller == null) 
+            throw new IllegalArgumentException("Seller is null");
+        if (seller.isBanned())
+            throw new IllegalArgumentException("Seller is banned");
+        if (item == null)
+            throw new IllegalArgumentException("Item is null");
         if (!item.getSeller().equals(seller))
-            throw new IllegalArgumentException();
+            throw new IllegalArgumentException("Item seller mismatch");
         if (!item.isValid()) {
-            throw new IllegalArgumentException();
+            throw new IllegalArgumentException("Item is invalid");
         }
         String id = UUID.randomUUID().toString();
         Auction auction = new Auction(id, item, startPrice, seller, startTime, endTime);

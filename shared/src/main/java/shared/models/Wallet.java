@@ -28,8 +28,8 @@ public class Wallet {
             throw new IllegalArgumentException();
         }
         Wallet target = other.getWallet();
-        Wallet first = this;
-        Wallet second = target;
+        Wallet first = System.identityHashCode(this) < System.identityHashCode(target) ? this : target;
+        Wallet second = first == this ? target : this;
         synchronized (first) {
             synchronized (second) {
                 if (this.balance.compareTo(amount) < 0) {

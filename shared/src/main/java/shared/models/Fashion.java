@@ -28,6 +28,6 @@ public class Fashion extends Item {
     }
 
     public boolean isValid() {
-        return true;
+        return super.isValid();
     }
 }
