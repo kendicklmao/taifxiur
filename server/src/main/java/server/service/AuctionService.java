@@ -18,7 +18,7 @@ public class AuctionService {
     private final ConcurrentHashMap<String, Auction> auctions = new ConcurrentHashMap<>(); //lưu các cuộc giao dịch
 
     public Auction createAuction(Seller seller, Item item, BigDecimal startPrice, Instant startTime, Instant endTime) {//tạo giao dịch
-        if (seller == null) 
+        if (seller == null)
             throw new IllegalArgumentException("Seller is null");
         if (seller.isBanned())
             throw new IllegalArgumentException("Seller is banned");
@@ -34,28 +34,32 @@ public class AuctionService {
         auctions.put(id, auction);
         return auction;
     }
+
     public boolean placeBid(String auctionId, Bidder bidder, BigDecimal amount) {//đặt giá
         if (auctionId == null || bidder == null || amount == null) throw new IllegalArgumentException();
         Auction auction = auctions.get(auctionId);
-        if (auction == null){
+        if (auction == null) {
             throw new IllegalArgumentException();
         }
         return auction.placeBid(bidder, amount);
     }
+
     public Auction getAuction(String id) {
         if (id == null) return null;
         return auctions.get(id);
     }
-    public void registerAutoBid(String auctionId, Bidder bidder, BigDecimal maxBid){//đăng kí autobid
-        if (auctionId == null || bidder == null || maxBid == null){
+
+    public void registerAutoBid(String auctionId, Bidder bidder, BigDecimal maxBid) {//đăng kí autobid
+        if (auctionId == null || bidder == null || maxBid == null) {
             throw new IllegalArgumentException();
         }
         Auction auction = auctions.get(auctionId);
-        if (auction == null){
+        if (auction == null) {
             throw new IllegalArgumentException();
         }
         auction.registerAutoBid(bidder, maxBid);
     }
+
     public List<Auction> getAuctionsByStatus(AuctionStatus status) {//xem các phiên giao dịch theo trạng thái
         List<Auction> allAuctions = new ArrayList<>();
         for (Auction a : auctions.values()) {
@@ -65,12 +69,13 @@ public class AuctionService {
         }
         return allAuctions;
     }
+
     public void itemPaid(String auctionId, Bidder bidder) {// bidder thắng trả tiền seller
-        if (auctionId == null || bidder == null){
+        if (auctionId == null || bidder == null) {
             throw new IllegalArgumentException();
         }
         Auction auction = auctions.get(auctionId);
-        if (auction == null){
+        if (auction == null) {
             throw new IllegalArgumentException();
         }
         auction.itemPaid(bidder);
