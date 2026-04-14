@@ -20,26 +20,26 @@
     <center>
         <VBox spacing="10" style="-fx-padding: 15;">
 
-            <Label text="Tạo phiên đấu giá mới"/>
+            <Label text="Create New Auction"/>
 
-            <TextField fx:id="itemNameField" promptText="Tên sản phẩm"/>
-            <TextField fx:id="startPriceField" promptText="Giá khởi điểm"/>
+            <TextField fx:id="itemNameField" promptText="Product Name"/>
+            <TextField fx:id="startPriceField" promptText="Starting Price"/>
 
             <ChoiceBox fx:id="categoryBox"/>
 
-            <!-- FORM ĐỘNG -->
+            <!-- DYNAMIC FORM -->
             <VBox fx:id="dynamicForm"/>
 
-            <!-- CHỌN NGÀY -->
+            <!-- SELECT DATE -->
             <DatePicker fx:id="startDatePicker"/>
             <DatePicker fx:id="endDatePicker"/>
-            <TextArea fx:id="descField" promptText="Mô tả sản phẩm"/>
+            <TextArea fx:id="descField" promptText="Product Description"/>
 
-            <Button text="Tạo Auction" onAction="#handleCreateAuction"/>
+            <Button text="Create Auction" onAction="#handleCreateAuction"/>
 
             <Separator/>
 
-            <Label text="Danh sách auction của bạn"/>
+            <Label text="Your Auctions"/>
 
             <ListView fx:id="auctionList"/>
 

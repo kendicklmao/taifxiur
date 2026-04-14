@@ -8,20 +8,23 @@ import shared.models.User;
 import shared.utils.Validator;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class UserService {
     private final ConcurrentHashMap<String, User> users = new ConcurrentHashMap<>(); //lưu tài khoản
     private final ConcurrentHashMap<String, Integer> failedAttempts = new ConcurrentHashMap<>(); //lưu số lần đăng nhập thất bại của từng tài khoản
     private final ConcurrentHashMap<String, Instant> lockUntil = new ConcurrentHashMap<>(); //lưu số giây bị ban của từng tài khoản
+    private final ConcurrentHashMap<String, Boolean> loggedIn = new ConcurrentHashMap<>(); //lưu trạng thái đăng nhập
     private static final int MAX_ATTEMPTS = 5; //số lượt đăng nhập thất bại tối đa
     private static final long BASE_LOCK_SECONDS = 2; //số giây cơ sở để vô hiệu hóa nếu đăng nhập thất bại
 
     //nghịch chim
     public UserService() {
-        this.register("seller123", "Admin@123", "seller@gmail.com", "q", "a", "q", "a", Role.SELLER);
-        this.register("bidder123", "Admin@123", "bidder@gmail.com", "q", "a", "q", "a", Role.BIDDER);
-        this.register("admin123", "Admin@123", "admin@gmail.com", "q", "a", "q", "a", Role.ADMIN);
+        this.register("seller", "Admin@123", "seller@gmail.com", "q", "a", "q", "a", Role.SELLER);
+        this.register("bidder", "Admin@123", "bidder@gmail.com", "q", "a", "q", "a", Role.BIDDER);
+        this.register("admin", "Admin@123", "admin@gmail.com", "q", "a", "q", "a", Role.ADMIN);
+        this.register("bidder1", "Admin@123", "bidder@gmail.com", "q", "a", "q", "a", Role.BIDDER);
     }
 
     public boolean register(String username, String password, String email, String q1, String a1, String q2, String a2, Role role) {
@@ -91,6 +94,9 @@ public class UserService {
             return null;
         }
         if (user.checkPassword(password)) {
+            if (loggedIn.putIfAbsent(username, true) != null) {
+                return null; // Already logged in
+            }
             failedAttempts.remove(username);
             lockUntil.remove(username);
             return user;
@@ -116,5 +122,31 @@ public class UserService {
     }
     public User getUser(String username) {
         return users.get(username);
+    }
+
+    public void logout(String username) {
+        loggedIn.remove(username);
+    }
+
+    public List<User> getAllUsers() {
+        return new java.util.ArrayList<>(users.values());
+    }
+
+    public boolean banUser(String username) {
+        User user = users.get(username);
+        if (user != null) {
+            user.banUser();
+            return true;
+        }
+        return false;
+    }
+
+    public boolean unbanUser(String username) {
+        User user = users.get(username);
+        if (user != null) {
+            user.unbanUser();
+            return true;
+        }
+        return false;
     }
 }

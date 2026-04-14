@@ -27,7 +27,9 @@ public class LoginController {
     @FXML
     public void handleLogin() {
         try {
-            ctx.connect();
+            if (!ctx.isConnected()) {
+                ctx.connect();
+            }
 
             PrintWriter out = ctx.getOut();
             BufferedReader in = ctx.getIn();
@@ -54,18 +56,20 @@ public class LoginController {
                 }
                 ctx.setCurrentUser(currentUser);
 
-                showAlert("Thành công", "Đăng nhập thành công với vai trò: " + role);
+                showAlert("Success", "Login successful with role: " + role);
                 if (role.equals("BIDDER")) {
                     Navigator.switchScene("bidder_home.fxml");
                 } else if (role.equals("SELLER")) {
                     Navigator.switchScene("seller_home.fxml");
+                } else if (role.equals("ADMIN")) {
+                    Navigator.switchScene("admin_home.fxml");
                 }
             } else {
-                showAlert("Lỗi", "Sai tài khoản hoặc mật khẩu!");
+                showAlert("Error", "Invalid username or password!");
             }
 
         } catch (Exception e) {
-            showAlert("Lỗi", "Không thể kết nối tới Server!");
+            showAlert("Error", "Cannot connect to Server!");
             e.printStackTrace();
         }
     }

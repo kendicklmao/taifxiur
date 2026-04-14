@@ -15,11 +15,13 @@ import java.net.Socket;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
 import com.google.gson.Gson;
 import shared.enums.Category;
+import shared.enums.ItemStatus;
 import shared.utils.GsonUtils;
 import shared.models.Auction;
 
@@ -42,8 +44,8 @@ public class SellerHomeController {
     @FXML
     public void initialize() {
         try {
-            out = ctx.getOut();   // ✅ KHÔNG có kiểu dữ liệu phía trước
-            in = ctx.getIn(); 
+             out = ctx.getOut();   // ✅ NO data type before this
+            in = ctx.getIn();
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -60,33 +62,37 @@ public class SellerHomeController {
             } else {
                 setText(
                     "📦 " + a.getItem().getName() +
-                    "\n💰 Giá: " + a.getCurrentPrice() +
-                    "\n📊 Trạng thái: " + a.getStatus()
+                    "\n💰 Price: " + a.getCurrentPrice() +
+                    "\n📊 Status: " + a.getStatus()
                 );
             }
         }
     });
+
+        // Fetch seller's auctions on initialization
+        fetchSellerAuctions();
     }
 
-    // ================= FORM ĐỘNG =================
+    // ================= DYNAMIC FORM =================
     private void updateForm() {
         dynamicForm.getChildren().clear();
 
         Category c = categoryBox.getValue();
 
         if (c == Category.ELECTRONICS) {
-            TextField brand = new TextField();
-            brand.setPromptText("Brand");
-            brand.setId("brandField");
+             TextField brand = new TextField();
+             brand.setPromptText("Brand");
+             brand.setId("brandField");
 
-            TextField status = new TextField();
-            status.setPromptText("Status (NEW, LIKENEW, USED)");
-            status.setId("statusField");
+             ChoiceBox<ItemStatus> status = new ChoiceBox<>();
+             status.getItems().addAll(ItemStatus.values());
+             status.setValue(ItemStatus.NEW);
+             status.setId("statusField");
 
-            dynamicForm.getChildren().addAll(brand, status);
-        }
+             dynamicForm.getChildren().addAll(brand, status);
+         }
 
-        else if (c == Category.ARTS) {
+         else if (c == Category.ARTS) {
             TextField artist = new TextField();
             artist.setPromptText("Artist");
             artist.setId("artistField");
@@ -117,17 +123,18 @@ public class SellerHomeController {
             dynamicForm.getChildren().addAll(brand, model, km);
         }
 
-        else if (c == Category.FASHIONS) {
-            TextField brand = new TextField();
-            brand.setPromptText("Brand");
-            brand.setId("brandField");
+         else if (c == Category.FASHIONS) {
+             TextField brand = new TextField();
+             brand.setPromptText("Brand");
+             brand.setId("brandField");
 
-            TextField status = new TextField();
-            status.setPromptText("Status (NEW, LIKENEW, USED)");
-            status.setId("statusField");
+             ChoiceBox<ItemStatus> status = new ChoiceBox<>();
+             status.getItems().addAll(ItemStatus.values());
+             status.setValue(ItemStatus.NEW);
+             status.setId("statusField");
 
-            dynamicForm.getChildren().addAll(brand, status);
-        }
+             dynamicForm.getChildren().addAll(brand, status);
+         }
 
         else if (c == Category.COLLECTIBLES) {
             TextField year = new TextField();
@@ -149,22 +156,22 @@ public class SellerHomeController {
             LocalDate endDate = endDatePicker.getValue();
 
             if (name.isEmpty() || startDate == null || endDate == null) {
-                showAlert("Lỗi", "Nhập thiếu thông tin!");
+                 showAlert("Error", "Missing information!");
                 return;
             }
 
             if (name.length() < 3 || desc.length() < 3) {
-                showAlert("Lỗi", "Tên và mô tả phải có ít nhất 3 ký tự!");
+                 showAlert("Error", "Name and description must have at least 3 characters!");
                 return;
             }
 
             if (startDate.isAfter(endDate)) {
-                showAlert("Lỗi", "Ngày bắt đầu phải trước ngày kết thúc!");
+                 showAlert("Error", "Start date must be before end date!");
                 return;
             }
 
             if (startDate.isBefore(LocalDate.now())) {
-                showAlert("Lỗi", "Ngày bắt đầu phải từ hôm nay trở đi!");
+                 showAlert("Error", "Start date must be from today onwards!");
                 return;
             }
 
@@ -178,12 +185,17 @@ public class SellerHomeController {
             data.put("description", desc);
 
             for (javafx.scene.Node node : dynamicForm.getChildren()) {
-                if (node instanceof TextField tf) {
-                    data.put(tf.getId(), tf.getText());
-                } else if (node instanceof CheckBox cb) {
-                    data.put(cb.getId(), String.valueOf(cb.isSelected()));
-                }
-            }
+                 if (node instanceof TextField tf) {
+                     data.put(tf.getId(), tf.getText());
+                 } else if (node instanceof CheckBox cb) {
+                     data.put(cb.getId(), String.valueOf(cb.isSelected()));
+                 } else if (node instanceof ChoiceBox cb) {
+                     Object value = cb.getValue();
+                     if (value != null) {
+                         data.put(cb.getId(), value.toString());
+                     }
+                 }
+             }
 
             Request req = new Request("CREATE_AUCTION", data);
 
@@ -194,14 +206,22 @@ public class SellerHomeController {
             if ("SUCCESS".equals(response.getStatus())) {
                 auction = gson.fromJson(response.getMessage(), Auction.class);
                 auctionList.getItems().add(auction);
-                showAlert("OK", "Tạo auction thành công!");
+                 showAlert("OK", "Auction created successfully!");
+                // Clear all fields after successful creation
+                itemNameField.clear();
+                startPriceField.clear();
+                descField.clear();
+                startDatePicker.setValue(null);
+                endDatePicker.setValue(null);
+                categoryBox.setValue(null);
+                dynamicForm.getChildren().clear();
             }
             else{
                 showAlert("Lỗi", response.getMessage());
             }
 
         } catch (Exception e) {
-            showAlert("Lỗi", "Dữ liệu không hợp lệ!");
+            showAlert("Error", "Invalid data!");
             e.printStackTrace();
         }
     }
@@ -209,6 +229,15 @@ public class SellerHomeController {
     // ================= LOGOUT =================
     @FXML
     public void handleLogout() {
+        try {
+            Map<String, String> data = new HashMap<>();
+            data.put("username", ctx.getCurrentUser().getUsername());
+            Request req = new Request("LOGOUT", data);
+            ctx.sendRequestAndWait(req, 5);
+        } catch (Exception e) {
+            // Ignore, proceed with logout
+        }
+        ctx.setCurrentUser(null);
         Navigator.switchScene("login.fxml");
     }
 
@@ -218,5 +247,25 @@ public class SellerHomeController {
         alert.setTitle(title);
         alert.setContentText(msg);
         alert.showAndWait();
+    }
+
+    // ================= FETCH SELLER AUCTIONS =================
+    private void fetchSellerAuctions() {
+        try {
+            Map<String, String> data = new HashMap<>();
+            data.put("username", ctx.getCurrentUser().getUsername());
+            Request req = new Request("GET_SELLER_AUCTIONS", data);
+            Response response = ctx.sendRequestAndWait(req, 10);
+            if ("SUCCESS".equals(response.getStatus())) {
+                Auction[] auctions = gson.fromJson(response.getMessage(), Auction[].class);
+                auctionList.getItems().clear();
+                auctionList.getItems().addAll(auctions);
+            } else {
+                showAlert("Error", "Failed to load auctions: " + response.getMessage());
+            }
+        } catch (Exception e) {
+            showAlert("Error", "Failed to load auctions!");
+            e.printStackTrace();
+        }
     }
 }

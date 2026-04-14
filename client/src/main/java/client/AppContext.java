@@ -50,9 +50,9 @@ public class AppContext {
         selectedAuction = a;
     }
     public void connect() throws Exception {
-        if (socket != null && !socket.isClosed()) {
-            return;
-        }
+        // Always disconnect first to ensure clean state
+        disconnect();
+
         socket = new Socket("localhost", 54321);
         out = new PrintWriter(socket.getOutputStream(), true);
         in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
@@ -84,6 +84,11 @@ public class AppContext {
                 }
             } catch (Exception e) {
                 System.out.println("Connection lost: " + e.getMessage());
+                // Reset connection state on error
+                socket = null;
+                out = null;
+                in = null;
+                listenerThread = null;
             }
         });
         listenerThread.setDaemon(true);
@@ -116,4 +121,27 @@ public class AppContext {
 
     public PrintWriter getOut() { return out; }
     public BufferedReader getIn() { return in; }
+
+    public boolean isConnected() {
+        return socket != null && !socket.isClosed();
+    }
+
+    public void disconnect() {
+        try {
+            if (socket != null && !socket.isClosed()) {
+                socket.close();
+            }
+            if (listenerThread != null && listenerThread.isAlive()) {
+                listenerThread.interrupt();
+            }
+            socket = null;
+            out = null;
+            in = null;
+            listenerThread = null;
+            messageListeners.clear();
+            pendingRequests.clear();
+        } catch (Exception e) {
+            System.out.println("Error disconnecting: " + e.getMessage());
+        }
+    }
 }

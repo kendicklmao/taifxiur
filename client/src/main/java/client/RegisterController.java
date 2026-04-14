@@ -1,8 +1,5 @@
 package client;
 
-import java.io.BufferedReader;
-import java.io.PrintWriter;
-
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import shared.enums.Role;
@@ -52,7 +49,7 @@ public class RegisterController {
             if (!newVal) {
                 String username = usernameField.getText();
                 if (!Validator.isValidUsername(username)) {
-                    usernameError.setText("Tên đăng nhập chỉ chứa chữ cái, số và có ĐỘ dài lớn hơn 6 và nhỏ hơn 20");
+                    usernameError.setText("Username must contain letters and numbers, length between 6 and 20");
                 }
             /*if (ctx.getUserService().exists(username)) {
                 usernameError.setText("Username đã tồn tại");
@@ -67,7 +64,7 @@ public class RegisterController {
             if (!newVal) {
                 String password = passwordField.getText();
                 if (!Validator.isValidPassword(password)) {
-                    passwordError.setText("Mật khẩu phải chứa chữ thường, chữ hoa, kí tự đặc biệt, số và có ĐỘ dài lớn hơn 6");
+                    passwordError.setText("Password must contain lowercase, uppercase, special characters, and numbers with length > 6");
                 } else {
                     passwordError.setText("");
                 }
@@ -76,7 +73,7 @@ public class RegisterController {
         emailField.focusedProperty().addListener((obs, oldVal, newVal) -> {
             if (!newVal) {
                 if (!Validator.isValidEmail(emailField.getText())) {
-                    emailError.setText("Email không hợp lệ");
+                    emailError.setText("Invalid email format");
                 } else {
                     emailError.setText("");
                 }
@@ -85,28 +82,28 @@ public class RegisterController {
         q1Field.focusedProperty().addListener((obs, oldVal, newVal) -> {
             if (!newVal) {
                 if (q1Field.getText().isEmpty()) {
-                    q1Error.setText("Câu hỏi bảo mật không được để trống");
+                    q1Error.setText("Security question cannot be empty");
                 }
             }
         });
         q2Field.focusedProperty().addListener((obs, oldVal, newVal) -> {
             if (!newVal) {
                 if (q2Field.getText().isEmpty()) {
-                    q2Error.setText("Câu hỏi bảo mật không được để trống");
+                    q2Error.setText("Security question cannot be empty");
                 }
             }
         });
         a1Field.focusedProperty().addListener((obs, oldVal, newVal) -> {
             if (!newVal) {
                 if (a1Field.getText().isEmpty()) {
-                    a1Error.setText("Câu trả lời bảo mật không được để trống");
+                    a1Error.setText("Security answer cannot be empty");
                 }
             }
         });
         a2Field.focusedProperty().addListener((obs, oldVal, newVal) -> {
             if (!newVal) {
                 if (a2Field.getText().isEmpty()) {
-                    a2Error.setText("Câu trả lời bảo mật không được để trống");
+                    a2Error.setText("Security answer cannot be empty");
                 }
             }
         });
@@ -132,16 +129,16 @@ public class RegisterController {
         emailError.setText("");
 
         if (!Validator.isValidUsername(usernameField.getText())) {
-            usernameError.setText("Tên đăng nhập phải từ 6-20 ký tự, không có dấu cách nhé thằng NGU.");
+            usernameError.setText("Username must be 6-20 characters, no spaces");
             isValid = false;
         }
 
         if (!Validator.isValidPassword(passwordField.getText())) {
-            passwordError.setText("Pass phải >= 6 ký tự, có hoa, thường, số và ký tự đặc biệt nha đmm.");
+            passwordError.setText("Password must be >= 6 characters with uppercase, lowercase, numbers and special characters");
             isValid = false;
         }
         if (!Validator.isValidEmail(emailField.getText())) {
-            emailError.setText("Email sai định dạng (ví dụ đúng: ngulol@vnu.edu.vn)");
+            emailError.setText("Invalid email format (example: user@example.com)");
             isValid = false;
         }
 
@@ -198,12 +195,17 @@ public class RegisterController {
             formError.setText("Please enter ALL information");
             return;
         }
+        if (roleBox.getValue() == null) {
+            formError.setText("Please select a role");
+            return;
+        }
         if (!validateInput()) {
             return;
         }
         try {
-            PrintWriter out = ctx.getOut();
-            BufferedReader in = ctx.getIn();
+            if (!ctx.isConnected()) {
+                ctx.connect();
+            }
 
             java.util.Map<String, String> data = new java.util.HashMap<>();
             data.put("username", usernameField.getText());
@@ -216,11 +218,7 @@ public class RegisterController {
             data.put("role", roleBox.getValue().toString());
 
             shared.network.Request req = new shared.network.Request("REGISTER", data);
-            com.google.gson.Gson gson = new com.google.gson.Gson();
-            out.println(gson.toJson(req));
-
-            String serverResponse = in.readLine();
-            shared.network.Response res = gson.fromJson(serverResponse, shared.network.Response.class);
+            shared.network.Response res = ctx.sendRequestAndWait(req, 10);
 
             if ("SUCCESS".equals(res.getStatus())) {
                 showAlert("Success", "Registered successfully!");

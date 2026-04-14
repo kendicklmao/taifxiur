@@ -17,14 +17,9 @@
     <!-- CENTER -->
     <center>
         <VBox spacing="10" style="-fx-padding: 15;">
-            <Label text="Danh sách phiên đấu giá"/>
-            
-            <ListView fx:id="auctionList"/>
+            <Label text="Auction List (Double-click to bid)"/>
 
-            <HBox spacing="10">
-                <TextField fx:id="bidAmountField" promptText="Nhập số tiền bid"/>
-                <Button text="Đặt giá" onAction="#handleBid"/>
-            </HBox>
+            <ListView fx:id="auctionList"/>
         </VBox>
     </center>
 

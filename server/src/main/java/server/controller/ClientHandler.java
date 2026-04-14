@@ -38,6 +38,7 @@ public class ClientHandler implements Runnable {
     private PrintWriter out;
 
     private static final UserService userService = new UserService();
+    private String loggedInUsername;
 
     public ClientHandler(Socket socket) {
         this.socket = socket;
@@ -69,6 +70,9 @@ public class ClientHandler implements Runnable {
             System.out.println("Client disconnected: " + socket.getInetAddress());
         } finally {
             activeClients.remove(this);
+            if (loggedInUsername != null) {
+                userService.logout(loggedInUsername);
+            }
         }
     }
 
@@ -95,9 +99,10 @@ public class ClientHandler implements Runnable {
 
                 User loggedInUser = userService.login(user, pass);
                 if (loggedInUser != null) {
+                    this.loggedInUsername = loggedInUser.getUsername(); // Track logged in username
                     return new Response("SUCCESS", loggedInUser.getRole().toString() + "," + loggedInUser.getUsername());
                 } else {
-                    return new Response("FAIL", "Sai tài khoản hoặc mật khẩu1");
+                    return new Response("FAIL", "Invalid username or password");
                 }
 
             case "REGISTER":
@@ -120,8 +125,8 @@ public class ClientHandler implements Runnable {
                 }
 
             case "GET_AUCTIONS":
-
-                List<Auction> list = auctionService.getAuctionsByStatus(AuctionStatus.RUNNING);
+                // Return all auctions for bidders to see
+                List<Auction> list = auctionService.getAllAuctions();
 
                 String json = gson.toJson(list);
 
@@ -196,7 +201,7 @@ public class ClientHandler implements Runnable {
                     User u = userService.getUser(username);
 
                     if (u == null || !(u instanceof Seller)) {
-                        return new Response("FAIL", "User không hợp lệ");
+                        return new Response("FAIL", "Invalid user");
                     }
 
                     Seller seller = (Seller) u;
@@ -246,6 +251,40 @@ public class ClientHandler implements Runnable {
                     System.out.println("💥 ERROR CREATE AUCTION: " + e.getMessage());
                     e.printStackTrace();
                     return new Response("FAIL", "create auction failed: " + e.getMessage());
+                }
+
+            case "GET_SELLER_AUCTIONS":
+                String sellerUsername = request.getData().get("username");
+                List<Auction> sellerAuctions = auctionService.getAuctionsBySeller(sellerUsername);
+                return new Response("SUCCESS", gson.toJson(sellerAuctions));
+
+            case "LOGOUT":
+                if (loggedInUsername != null) {
+                    userService.logout(loggedInUsername);
+                    loggedInUsername = null;
+                }
+                return new Response("SUCCESS", "Logged out");
+
+            case "GET_ALL_USERS":
+                List<User> allUsers = userService.getAllUsers();
+                return new Response("SUCCESS", gson.toJson(allUsers));
+
+            case "BAN_USER":
+                String banUsername = request.getData().get("username");
+                boolean banSuccess = userService.banUser(banUsername);
+                if (banSuccess) {
+                    return new Response("SUCCESS", "User banned successfully");
+                } else {
+                    return new Response("FAIL", "Failed to ban user");
+                }
+
+            case "UNBAN_USER":
+                String unbanUsername = request.getData().get("username");
+                boolean unbanSuccess = userService.unbanUser(unbanUsername);
+                if (unbanSuccess) {
+                    return new Response("SUCCESS", "User unbanned successfully");
+                } else {
+                    return new Response("FAIL", "Failed to unban user");
                 }
 
             default:

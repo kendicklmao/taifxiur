@@ -47,8 +47,6 @@ public class Auction { //1 phiên giao dịch
             throw new IllegalArgumentException("Auction seller is null");
         if (startTime == null || endTime == null || endTime.isBefore(startTime))
             throw new IllegalArgumentException("Invalid auction dates: start=" + startTime + ", end=" + endTime);
-        if (startTime.isBefore(Instant.now()))
-            throw new IllegalArgumentException("Start time must be in the future");
         this.id = id;
         this.item = item;
         this.startPrice = startPrice;
@@ -56,7 +54,7 @@ public class Auction { //1 phiên giao dịch
         this.seller = seller;
         this.startTime = startTime;
         this.endTime = endTime;
-        this.status = AuctionStatus.OPEN;
+        this.status = startTime.isBefore(Instant.now()) ? AuctionStatus.RUNNING : AuctionStatus.OPEN;
         scheduleStart();
         scheduleFinish();
     }
@@ -248,5 +246,11 @@ public class Auction { //1 phiên giao dịch
 
     public BigDecimal getStartPrice() {
         return startPrice;
+    }
+    public Instant getStartTime(){
+        return startTime;
+    }
+    public Instant getEndTime(){
+        return endTime;
     }
 }

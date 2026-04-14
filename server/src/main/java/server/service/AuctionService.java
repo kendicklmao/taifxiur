@@ -57,14 +57,30 @@ public class AuctionService {
         auction.registerAutoBid(bidder, maxBid);
     }
     public List<Auction> getAuctionsByStatus(AuctionStatus status) {//xem các phiên giao dịch theo trạng thái
-        List<Auction> allAuctions = new ArrayList<>();
-        for (Auction a : auctions.values()) {
-            if (a.getStatus() == status) {
-                allAuctions.add(a);
+         List<Auction> allAuctions = new ArrayList<>();
+         for (Auction a : auctions.values()) {
+             if (a.getStatus() == status) {
+                 allAuctions.add(a);
+             }
+         }
+         return allAuctions;
+     }
+
+    public List<Auction> getAllAuctions() {
+        Instant now = Instant.now();
+        for (Auction auction : auctions.values()) {
+            if (auction.getStatus() == AuctionStatus.OPEN && !now.isBefore(auction.getStartTime()) && now.isBefore(auction.getEndTime())) {
+                // Use reflection or add a method to update status safely
+                try {
+                    java.lang.reflect.Field statusField = Auction.class.getDeclaredField("status");
+                    statusField.setAccessible(true);
+                    statusField.set(auction, AuctionStatus.RUNNING);
+                } catch (Exception ignored) {}
             }
         }
-        return allAuctions;
+        return new ArrayList<>(auctions.values());
     }
+
     public void itemPaid(String auctionId, Bidder bidder) {// bidder thắng trả tiền seller
         if (auctionId == null || bidder == null){
             throw new IllegalArgumentException();
@@ -74,5 +90,15 @@ public class AuctionService {
             throw new IllegalArgumentException();
         }
         auction.itemPaid(bidder);
+    }
+
+    public List<Auction> getAuctionsBySeller(String sellerUsername) {
+        List<Auction> sellerAuctions = new ArrayList<>();
+        for (Auction auction : auctions.values()) {
+            if (auction.getSeller() != null && auction.getSeller().getUsername().equals(sellerUsername)) {
+                sellerAuctions.add(auction);
+            }
+        }
+        return sellerAuctions;
     }
 }
