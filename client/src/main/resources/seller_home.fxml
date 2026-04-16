@@ -31,8 +31,34 @@
             <VBox fx:id="dynamicForm"/>
 
             <!-- SELECT DATE -->
-            <DatePicker fx:id="startDatePicker"/>
-            <DatePicker fx:id="endDatePicker"/>
+            <HBox spacing="10">
+                <VBox>
+                    <Label text="Start Date"/>
+                    <DatePicker fx:id="startDatePicker"/>
+                </VBox>
+                <VBox>
+                    <Label text="Start Time"/>
+                    <HBox spacing="5">
+                        <Spinner fx:id="startHourSpinner" prefWidth="60" editable="true"/>
+                        <Label text=":"/>
+                        <Spinner fx:id="startMinuteSpinner" prefWidth="60" editable="true"/>
+                    </HBox>
+                </VBox>
+            </HBox>
+            <HBox spacing="10">
+                <VBox>
+                    <Label text="End Date"/>
+                    <DatePicker fx:id="endDatePicker"/>
+                </VBox>
+                <VBox>
+                    <Label text="End Time"/>
+                    <HBox spacing="5">
+                        <Spinner fx:id="endHourSpinner" prefWidth="60" editable="true"/>
+                        <Label text=":"/>
+                        <Spinner fx:id="endMinuteSpinner" prefWidth="60" editable="true"/>
+                    </HBox>
+                </VBox>
+            </HBox>
             <TextArea fx:id="descField" promptText="Product Description"/>
 
             <Button text="Create Auction" onAction="#handleCreateAuction"/>
