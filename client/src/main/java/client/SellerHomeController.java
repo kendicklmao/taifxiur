@@ -2,6 +2,7 @@ package client;
 
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
+import javafx.scene.control.SpinnerValueFactory;
 import javafx.scene.layout.VBox;
 import shared.models.Auction;
 import shared.network.Request;
@@ -33,6 +34,10 @@ public class SellerHomeController {
     @FXML private VBox dynamicForm;
     @FXML private DatePicker startDatePicker;
     @FXML private DatePicker endDatePicker;
+    @FXML private Spinner<Integer> startHourSpinner;
+    @FXML private Spinner<Integer> startMinuteSpinner;
+    @FXML private Spinner<Integer> endHourSpinner;
+    @FXML private Spinner<Integer> endMinuteSpinner;
     @FXML private ListView<Auction> auctionList;
     @FXML private TextArea descField;
     private PrintWriter out;
@@ -52,6 +57,13 @@ public class SellerHomeController {
 
         categoryBox.getItems().addAll(Category.values());
         categoryBox.setOnAction(e -> updateForm());
+
+        // Initialize time spinners
+        startHourSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 23, 9));
+        startMinuteSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 59, 0));
+        endHourSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 23, 17));
+        endMinuteSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 59, 0));
+
         auctionList.setCellFactory(list -> new ListCell<>() {
         @Override
         protected void updateItem(Auction a, boolean empty) {
@@ -160,26 +172,34 @@ public class SellerHomeController {
                 return;
             }
 
+            int startHour = startHourSpinner.getValue();
+            int startMinute = startMinuteSpinner.getValue();
+            int endHour = endHourSpinner.getValue();
+            int endMinute = endMinuteSpinner.getValue();
+
             if (name.length() < 3 || desc.length() < 3) {
                  showAlert("Error", "Name and description must have at least 3 characters!");
                 return;
             }
 
-            if (startDate.isAfter(endDate)) {
-                 showAlert("Error", "Start date must be before end date!");
+            Instant startTime = startDate.atTime(startHour, startMinute).atZone(ZoneId.systemDefault()).toInstant();
+            Instant endTime = endDate.atTime(endHour, endMinute).atZone(ZoneId.systemDefault()).toInstant();
+
+            if (startTime.isAfter(endTime)) {
+                 showAlert("Error", "Start time must be before end time!");
                 return;
             }
 
-            if (startDate.isBefore(LocalDate.now())) {
-                 showAlert("Error", "Start date must be from today onwards!");
+            if (startTime.isBefore(Instant.now())) {
+                 showAlert("Error", "Start time must be in the future!");
                 return;
             }
 
             Map<String, String> data = new HashMap<>();
             data.put("name", name);
             data.put("price", price);
-            data.put("startDate", startDate.toString());
-            data.put("endDate", endDate.toString());
+            data.put("startTime", startTime.toString());
+            data.put("endTime", endTime.toString());
             data.put("category", categoryBox.getValue().name());
             data.put("username", ctx.getCurrentUser().getUsername());
             data.put("description", desc);
@@ -213,6 +233,10 @@ public class SellerHomeController {
                 descField.clear();
                 startDatePicker.setValue(null);
                 endDatePicker.setValue(null);
+                startHourSpinner.getValueFactory().setValue(9);
+                startMinuteSpinner.getValueFactory().setValue(0);
+                endHourSpinner.getValueFactory().setValue(17);
+                endMinuteSpinner.getValueFactory().setValue(0);
                 categoryBox.setValue(null);
                 dynamicForm.getChildren().clear();
             }

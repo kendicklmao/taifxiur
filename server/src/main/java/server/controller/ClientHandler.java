@@ -188,12 +188,8 @@ public class ClientHandler implements Runnable {
                     String desc = data.get("description");
                     BigDecimal price = new BigDecimal(data.get("price"));
 
-                    LocalDate startDate = LocalDate.parse(data.get("startDate"));
-                    LocalDate endDate = LocalDate.parse(data.get("endDate"));
-
-                    Instant start = startDate.atStartOfDay(ZoneId.systemDefault()).toInstant();
-                    // Set end time to the end of the day to avoid immediate expiration if same day
-                    Instant end = endDate.atTime(LocalTime.MAX).atZone(ZoneId.systemDefault()).toInstant();
+                    Instant start = Instant.parse(data.get("startTime"));
+                    Instant end = Instant.parse(data.get("endTime"));
 
                     String category = data.get("category");
 
