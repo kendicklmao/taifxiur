@@ -23,7 +23,7 @@ public class UserService {
     public UserService() {
         this.register("seller", "Admin@123", "seller@gmail.com", "q", "a", "q", "a", Role.SELLER);
         this.register("bidder", "Admin@123", "bidder@gmail.com", "q", "a", "q", "a", Role.BIDDER);
-        this.register("admin", "Admin@123", "admin@gmail.com", "q", "a", "q", "a", Role.ADMIN);
+        this.register("admin1", "Admin@123", "admin@gmail.com", "q", "a", "q", "a", Role.ADMIN);
         this.register("bidder1", "Admin@123", "bidder@gmail.com", "q", "a", "q", "a", Role.BIDDER);
     }
 
