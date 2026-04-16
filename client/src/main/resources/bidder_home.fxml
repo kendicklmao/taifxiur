@@ -7,19 +7,22 @@
 
     <!-- TOP -->
     <top>
-        <HBox spacing="10" alignment="CENTER_LEFT" style="-fx-padding: 10; -fx-background-color: #2c3e50;">
-            <Label text="Bidder Dashboard" style="-fx-text-fill: white; -fx-font-size: 18px;"/>
+        <HBox spacing="20" alignment="CENTER_LEFT" style="-fx-padding: 20; -fx-background-color: linear-gradient(to right, #1a1a1a, #2c2c2c); -fx-spacing: 15;">
+            <Label text="🔨 BIDDER DASHBOARD" style="-fx-text-fill: #d4af6a; -fx-font-size: 22px; -fx-font-weight: bold;"/>
             <Pane HBox.hgrow="ALWAYS"/>
-            <Button text="Logout" onAction="#handleLogout"/>
+            <Button text="LOGOUT" onAction="#handleLogout" styleClass="dashboard-btn-logout" prefWidth="100"/>
         </HBox>
     </top>
 
     <!-- CENTER -->
     <center>
-        <VBox spacing="10" style="-fx-padding: 15;">
-            <Label text="Auction List (Double-click to bid)"/>
+        <VBox spacing="20" style="-fx-padding: 25; -fx-background-color: #f8f7f5;">
+            <VBox spacing="8">
+                <Label text="Live Auctions" styleClass="dashboard-section-title"/>
+                <Label text="Double-click an auction to place your bid" styleClass="dashboard-section-subtitle"/>
+            </VBox>
 
-            <ListView fx:id="auctionList"/>
+            <ListView fx:id="auctionList" style="-fx-padding: 10; -fx-border-radius: 4; -fx-border-color: #d0ccc6; -fx-background-color: #ffffff;"/>
         </VBox>
     </center>
 
