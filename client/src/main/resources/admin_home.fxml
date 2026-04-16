@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.*?>
+
+<BorderPane xmlns:fx="http://javafx.com/fxml" fx:controller="client.AdminHomeController">
+
+    <!-- TOP -->
+    <top>
+        <HBox spacing="10" alignment="CENTER_LEFT"
+              style="-fx-padding: 10; -fx-background-color: #c0392b;">
+            <Label text="Admin Dashboard"
+                   style="-fx-text-fill: white; -fx-font-size: 18px;"/>
+            <Pane HBox.hgrow="ALWAYS"/>
+            <Button text="Logout" onAction="#handleLogout"/>
+        </HBox>
+    </top>
+
+    <!-- CENTER -->
+    <center>
+        <TabPane>
+            <!-- TAB 1: ALL AUCTIONS -->
+            <Tab text="All Auctions" closable="false">
+                <VBox spacing="10" style="-fx-padding: 15;">
+                    <Label text="All Auctions in System"/>
+                    <ListView fx:id="allAuctionsList"/>
+                </VBox>
+            </Tab>
+
+            <!-- TAB 2: ALL USERS -->
+            <Tab text="All Users" closable="false">
+                <VBox spacing="10" style="-fx-padding: 15;">
+                    <Label text="All Users in System"/>
+                    <ListView fx:id="allUsersList"/>
+                    <HBox spacing="10">
+                        <Button text="Refresh" onAction="#refreshUsers"/>
+                    </HBox>
+                </VBox>
+            </Tab>
+
+            <!-- TAB 3: MANAGE USERS -->
+            <Tab text="Manage Users" closable="false">
+                <VBox spacing="10" style="-fx-padding: 15;">
+                    <Label text="Manage User Accounts"/>
+
+                    <HBox spacing="10">
+                        <TextField fx:id="usernameField" promptText="Username"/>
+                        <Button text="Ban User" onAction="#handleBanUser"/>
+                        <Button text="Unban User" onAction="#handleUnbanUser"/>
+                    </HBox>
+
+                    <Label text="User Status"/>
+                    <TextArea fx:id="userStatusArea" editable="false" wrapText="true"/>
+                </VBox>
+            </Tab>
+
+        </TabPane>
+    </center>
+
+</BorderPane>
+

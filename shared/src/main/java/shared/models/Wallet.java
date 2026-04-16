@@ -1,0 +1,48 @@
+package shared.models;
+
+import java.math.BigDecimal;
+
+public class Wallet {
+    private BigDecimal balance = BigDecimal.ZERO;//số dư
+
+    public synchronized void deposit(BigDecimal amount) {//nạp tiền
+        if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException();
+        }
+        balance = balance.add(amount);
+    }
+
+    public synchronized boolean withdraw(BigDecimal amount) {//rút tiền
+        if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException();
+        }
+        if (balance.compareTo(amount) < 0) {
+            return false;
+        }
+        balance = balance.subtract(amount);
+        return true;
+    }
+
+    public boolean transfer(BigDecimal amount, Seller other) {//chuyển tiền
+        if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException();
+        }
+        Wallet target = other.getWallet();
+        Wallet first = System.identityHashCode(this) < System.identityHashCode(target) ? this : target;
+        Wallet second = first == this ? target : this;
+        synchronized (first) {
+            synchronized (second) {
+                if (this.balance.compareTo(amount) < 0) {
+                    return false;
+                }
+                this.balance = this.balance.subtract(amount);
+                target.balance = target.balance.add(amount);
+                return true;
+            }
+        }
+    }
+
+    public BigDecimal getBalance() {
+        return balance;
+    }
+}

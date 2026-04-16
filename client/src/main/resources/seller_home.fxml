@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.*?>
+
+<BorderPane xmlns:fx="http://javafx.com/fxml" fx:controller="client.SellerHomeController">
+
+    <!-- TOP -->
+    <top>
+        <HBox spacing="10" alignment="CENTER_LEFT"
+              style="-fx-padding: 10; -fx-background-color: #34495e;">
+            <Label text="Seller Dashboard"
+                   style="-fx-text-fill: white; -fx-font-size: 18px;"/>
+            <Pane HBox.hgrow="ALWAYS"/>
+            <Button text="Logout" onAction="#handleLogout"/>
+        </HBox>
+    </top>
+
+    <!-- CENTER -->
+    <center>
+        <VBox spacing="10" style="-fx-padding: 15;">
+
+            <Label text="Create New Auction"/>
+
+            <TextField fx:id="itemNameField" promptText="Product Name"/>
+            <TextField fx:id="startPriceField" promptText="Starting Price"/>
+
+            <ChoiceBox fx:id="categoryBox"/>
+
+            <!-- DYNAMIC FORM -->
+            <VBox fx:id="dynamicForm"/>
+
+            <!-- SELECT DATE -->
+            <DatePicker fx:id="startDatePicker"/>
+            <DatePicker fx:id="endDatePicker"/>
+            <TextArea fx:id="descField" promptText="Product Description"/>
+
+            <Button text="Create Auction" onAction="#handleCreateAuction"/>
+
+            <Separator/>
+
+            <Label text="Your Auctions"/>
+
+            <ListView fx:id="auctionList"/>
+
+        </VBox>
+    </center>
+
+</BorderPane>
