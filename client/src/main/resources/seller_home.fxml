@@ -7,79 +7,103 @@
 
     <!-- TOP -->
     <top>
-        <HBox spacing="10" alignment="CENTER_LEFT"
-              style="-fx-padding: 10; -fx-background-color: #34495e;">
-            <Label text="Seller Dashboard"
-                   style="-fx-text-fill: white; -fx-font-size: 18px;"/>
+        <HBox spacing="20" alignment="CENTER_LEFT"
+              style="-fx-padding: 20; -fx-background-color: linear-gradient(to right, #1a1a1a, #2c2c2c); -fx-spacing: 15;">
+            <Label text="🏪 SELLER DASHBOARD"
+                   style="-fx-text-fill: #d4af6a; -fx-font-size: 22px; -fx-font-weight: bold;"/>
             <Pane HBox.hgrow="ALWAYS"/>
-            <Button text="Logout" onAction="#handleLogout"/>
+            <Button text="LOGOUT" onAction="#handleLogout" styleClass="dashboard-btn-logout" prefWidth="100"/>
         </HBox>
     </top>
 
     <!-- CENTER -->
     <center>
-        <VBox spacing="10" style="-fx-padding: 15;">
+        <ScrollPane fitToWidth="true" style="-fx-background-color: #f8f7f5; -fx-padding: 0; -fx-border-style: none;">
+            <VBox spacing="20" style="-fx-padding: 25; -fx-background-color: #f8f7f5;">
 
-            <Label text="Create New Auction"/>
-
-            <TextField fx:id="itemNameField" promptText="Product Name"/>
-            <TextField fx:id="startPriceField" promptText="Starting Price"/>
-
-            <ChoiceBox fx:id="categoryBox"/>
-
-            <!-- DYNAMIC FORM -->
-            <VBox fx:id="dynamicForm"/>
-
-            <!-- TIMING CHOICE -->
-            <HBox spacing="20">
-                <RadioButton fx:id="defaultTimingRadio" text="Default (Start now, end in 1 hour)" 
-                             selected="true" onAction="#handleTimingTypeChange"/>
-                <RadioButton fx:id="customTimingRadio" text="Custom timing" 
-                             onAction="#handleTimingTypeChange"/>
-            </HBox>
-
-            <!-- CUSTOM TIMING FIELDS (hidden by default) -->
-            <VBox fx:id="customTimingPane" spacing="10" visible="false" managed="false">
-                <HBox spacing="10">
-                    <VBox>
-                        <Label text="Start Date"/>
-                        <DatePicker fx:id="startDatePicker"/>
+                <!-- CREATE AUCTION SECTION -->
+                <VBox spacing="12" style="-fx-border-color: #e8e6e1; -fx-border-width: 1; -fx-padding: 20; -fx-border-radius: 4; -fx-background-color: #ffffff;">
+                    <VBox spacing="6">
+                        <Label text="Create New Auction" styleClass="dashboard-section-title"/>
+                        <Label text="List a new item for auction" styleClass="dashboard-section-subtitle"/>
                     </VBox>
-                    <VBox>
-                        <Label text="Start Time"/>
-                        <HBox spacing="5">
-                            <Spinner fx:id="startHourSpinner" prefWidth="60" editable="true"/>
-                            <Label text=":"/>
-                            <Spinner fx:id="startMinuteSpinner" prefWidth="60" editable="true"/>
-                        </HBox>
+
+                    <VBox spacing="12">
+                        <!-- Item Details -->
+                        <VBox spacing="8">
+                            <Label text="Item Details" styleClass="form-section-title"/>
+                            <VBox spacing="6">
+                                <Label text="Product Name" styleClass="form-label-register"/>
+                                <TextField fx:id="itemNameField" promptText="Enter product name" styleClass="dashboard-input"/>
+                            </VBox>
+                            <VBox spacing="6">
+                                <Label text="Starting Price" styleClass="form-label-register"/>
+                                <TextField fx:id="startPriceField" promptText="Enter starting price" styleClass="dashboard-input"/>
+                            </VBox>
+                            <VBox spacing="6">
+                                <Label text="Category" styleClass="form-label-register"/>
+                                <ChoiceBox fx:id="categoryBox" style="-fx-padding: 10; -fx-font-size: 13; -fx-border-color: #e0e0e0; -fx-border-width: 1; -fx-background-color: #f9f9f9; -fx-border-radius: 4;"/>
+                            </VBox>
+                        </VBox>
+
+                        <!-- Dynamic Form -->
+                        <VBox fx:id="dynamicForm" spacing="10"/>
+
+                        <!-- Description -->
+                        <VBox spacing="6">
+                            <Label text="Product Description" styleClass="form-label-register"/>
+                            <TextArea fx:id="descField" promptText="Detailed description of your item" style="-fx-padding: 10; -fx-font-size: 12; -fx-border-color: #e0e0e0; -fx-border-width: 1; -fx-background-color: #f9f9f9; -fx-border-radius: 4; -fx-control-inner-background: #f9f9f9;" prefHeight="100" wrapText="true"/>
+                        </VBox>
+
+                        <!-- Date and Time Selection -->
+                        <VBox spacing="12">
+                            <Label text="Auction Schedule" styleClass="form-section-title"/>
+                            <HBox spacing="20">
+                                <VBox spacing="6" HBox.hgrow="ALWAYS">
+                                    <Label text="Start Date" styleClass="form-label-register"/>
+                                    <DatePicker fx:id="startDatePicker" style="-fx-padding: 8; -fx-font-size: 12; -fx-border-color: #e0e0e0; -fx-border-width: 1; -fx-background-color: #f9f9f9; -fx-border-radius: 4;"/>
+                                </VBox>
+                                <VBox spacing="6" HBox.hgrow="ALWAYS">
+                                    <Label text="Start Time" styleClass="form-label-register"/>
+                                    <HBox spacing="5">
+                                        <Spinner fx:id="startHourSpinner" prefWidth="100" editable="true" style="-fx-padding: 8; -fx-font-size: 12; -fx-border-color: #e0e0e0; -fx-border-width: 1; -fx-background-color: #f9f9f9; -fx-border-radius: 4;"/>
+                                        <Label text=":" style="-fx-font-size: 14; -fx-text-fill: #2c2c2c;"/>
+                                        <Spinner fx:id="startMinuteSpinner" prefWidth="100" editable="true" style="-fx-padding: 8; -fx-font-size: 12; -fx-border-color: #e0e0e0; -fx-border-width: 1; -fx-background-color: #f9f9f9; -fx-border-radius: 4;"/>
+                                    </HBox>
+                                </VBox>
+                            </HBox>
+                            <HBox spacing="20">
+                                <VBox spacing="6" HBox.hgrow="ALWAYS">
+                                    <Label text="End Date" styleClass="form-label-register"/>
+                                    <DatePicker fx:id="endDatePicker" style="-fx-padding: 8; -fx-font-size: 12; -fx-border-color: #e0e0e0; -fx-border-width: 1; -fx-background-color: #f9f9f9; -fx-border-radius: 4;"/>
+                                </VBox>
+                                <VBox spacing="6" HBox.hgrow="ALWAYS">
+                                    <Label text="End Time" styleClass="form-label-register"/>
+                                    <HBox spacing="5">
+                                        <Spinner fx:id="endHourSpinner" prefWidth="100" editable="true" style="-fx-padding: 8; -fx-font-size: 12; -fx-border-color: #e0e0e0; -fx-border-width: 1; -fx-background-color: #f9f9f9; -fx-border-radius: 4;"/>
+                                        <Label text=":" style="-fx-font-size: 14; -fx-text-fill: #2c2c2c;"/>
+                                        <Spinner fx:id="endMinuteSpinner" prefWidth="100" editable="true" style="-fx-padding: 8; -fx-font-size: 12; -fx-border-color: #e0e0e0; -fx-border-width: 1; -fx-background-color: #f9f9f9; -fx-border-radius: 4;"/>
+                                    </HBox>
+                                </VBox>
+                            </HBox>
+                        </VBox>
+
+                        <!-- Submit Button -->
+                        <Button text="CREATE AUCTION" onAction="#handleCreateAuction" styleClass="dashboard-btn-primary" prefWidth="Infinity" prefHeight="45" style="-fx-font-size: 14;"/>
                     </VBox>
-                </HBox>
-                <HBox spacing="10">
-                    <VBox>
-                        <Label text="End Date"/>
-                        <DatePicker fx:id="endDatePicker"/>
+                </VBox>
+
+                <!-- YOUR AUCTIONS SECTION -->
+                <VBox spacing="12" style="-fx-border-color: #e8e6e1; -fx-border-width: 1; -fx-padding: 20; -fx-border-radius: 4; -fx-background-color: #ffffff;">
+                    <VBox spacing="6">
+                        <Label text="Your Active Auctions" styleClass="dashboard-section-title"/>
+                        <Label text="Manage your ongoing auctions" styleClass="dashboard-section-subtitle"/>
                     </VBox>
-                    <VBox>
-                        <Label text="End Time"/>
-                        <HBox spacing="5">
-                            <Spinner fx:id="endHourSpinner" prefWidth="60" editable="true"/>
-                            <Label text=":"/>
-                            <Spinner fx:id="endMinuteSpinner" prefWidth="60" editable="true"/>
-                        </HBox>
-                    </VBox>
-                </HBox>
+                    <ListView fx:id="auctionList" style="-fx-padding: 10; -fx-border-radius: 4; -fx-border-color: #d0ccc6; -fx-background-color: #f9f9f9;"/>
+                </VBox>
+
             </VBox>
-            <TextArea fx:id="descField" promptText="Product Description"/>
-
-            <Button text="Create Auction" onAction="#handleCreateAuction"/>
-
-            <Separator/>
-
-            <Label text="Your Auctions"/>
-
-            <ListView fx:id="auctionList"/>
-
-        </VBox>
+        </ScrollPane>
     </center>
 
 </BorderPane>
