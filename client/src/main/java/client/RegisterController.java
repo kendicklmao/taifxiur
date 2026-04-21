@@ -44,38 +44,43 @@ public class RegisterController {
     public void initialize() {
         roleBox.getItems().addAll(Role.BIDDER, Role.SELLER);
         roleBox.setValue(Role.BIDDER);
-        roleBox.setValue(Role.SELLER);
+
         usernameField.focusedProperty().addListener((obs, oldVal, newVal) -> {
             if (!newVal) {
                 String username = usernameField.getText();
-                if (!Validator.isValidUsername(username)) {
+                if (!username.isEmpty() && !Validator.isValidUsername(username)) {
                     usernameError.setText("Username must contain letters and numbers, length between 6 and 20");
+                    usernameField.getStyleClass().add("error-field");
+                } else {
+                    usernameError.setText("");
+                    usernameField.getStyleClass().remove("error-field");
                 }
             /*if (ctx.getUserService().exists(username)) {
                 usernameError.setText("Username đã tồn tại");
                 usernameField.setStyle("-fx-border-color: red;");
             }*/
-            } else {
-                usernameError.setText("");
-                usernameField.setStyle("");
             }
         });
         passwordField.focusedProperty().addListener((obs, oldVal, newVal) -> {
             if (!newVal) {
                 String password = passwordField.getText();
-                if (!Validator.isValidPassword(password)) {
+                if (!password.isEmpty() && !Validator.isValidPassword(password)) {
                     passwordError.setText("Password must contain lowercase, uppercase, special characters, and numbers with length > 6");
+                    passwordField.getStyleClass().add("error-field");
                 } else {
                     passwordError.setText("");
+                    passwordField.getStyleClass().remove("error-field");
                 }
             }
         });
         emailField.focusedProperty().addListener((obs, oldVal, newVal) -> {
             if (!newVal) {
-                if (!Validator.isValidEmail(emailField.getText())) {
+                if (!emailField.getText().isEmpty() && !Validator.isValidEmail(emailField.getText())) {
                     emailError.setText("Invalid email format");
+                    emailField.getStyleClass().add("error-field");
                 } else {
                     emailError.setText("");
+                    emailField.getStyleClass().remove("error-field");
                 }
             }
         });
@@ -83,6 +88,10 @@ public class RegisterController {
             if (!newVal) {
                 if (q1Field.getText().isEmpty()) {
                     q1Error.setText("Security question cannot be empty");
+                    q1Field.getStyleClass().add("error-field");
+                } else {
+                    q1Error.setText("");
+                    q1Field.getStyleClass().remove("error-field");
                 }
             }
         });
@@ -90,6 +99,10 @@ public class RegisterController {
             if (!newVal) {
                 if (q2Field.getText().isEmpty()) {
                     q2Error.setText("Security question cannot be empty");
+                    q2Field.getStyleClass().add("error-field");
+                } else {
+                    q2Error.setText("");
+                    q2Field.getStyleClass().remove("error-field");
                 }
             }
         });
@@ -97,6 +110,10 @@ public class RegisterController {
             if (!newVal) {
                 if (a1Field.getText().isEmpty()) {
                     a1Error.setText("Security answer cannot be empty");
+                    a1Field.getStyleClass().add("error-field");
+                } else {
+                    a1Error.setText("");
+                    a1Field.getStyleClass().remove("error-field");
                 }
             }
         });
@@ -104,6 +121,10 @@ public class RegisterController {
             if (!newVal) {
                 if (a2Field.getText().isEmpty()) {
                     a2Error.setText("Security answer cannot be empty");
+                    a2Field.getStyleClass().add("error-field");
+                } else {
+                    a2Error.setText("");
+                    a2Field.getStyleClass().remove("error-field");
                 }
             }
         });
@@ -149,59 +170,59 @@ public class RegisterController {
     public void handleRegister() {
         formError.setText("");
         boolean valid = true;
+
+        // Clear all error styles
+        clearErrorStyle(usernameField);
+        clearErrorStyle(passwordField);
+        clearErrorStyle(emailField);
+        clearErrorStyle(q1Field);
+        clearErrorStyle(a1Field);
+        clearErrorStyle(q2Field);
+        clearErrorStyle(a2Field);
+
         if (usernameField.getText() == null || usernameField.getText().trim().isEmpty()) {
-            usernameField.setStyle("-fx-border-color: red;");
+            addErrorStyle(usernameField);
             valid = false;
-        } else {
-            usernameField.setStyle("");
         }
         if (passwordField.getText() == null || passwordField.getText().trim().isEmpty()) {
-            passwordField.setStyle("-fx-border-color: red;");
+            addErrorStyle(passwordField);
             valid = false;
-        } else {
-            passwordField.setStyle("");
         }
         if (emailField.getText() == null || emailField.getText().trim().isEmpty()) {
-            emailField.setStyle("-fx-border-color: red;");
+            addErrorStyle(emailField);
             valid = false;
-        } else {
-            emailField.setStyle("");
         }
         if (q1Field.getText() == null || q1Field.getText().trim().isEmpty()) {
-            q1Field.setStyle("-fx-border-color: red;");
+            addErrorStyle(q1Field);
             valid = false;
-        } else {
-            q1Field.setStyle("");
         }
         if (a1Field.getText() == null || a1Field.getText().trim().isEmpty()) {
-            a1Field.setStyle("-fx-border-color: red;");
+            addErrorStyle(a1Field);
             valid = false;
-        } else {
-            a1Field.setStyle("");
         }
         if (q2Field.getText() == null || q2Field.getText().trim().isEmpty()) {
-            q2Field.setStyle("-fx-border-color: red;");
+            addErrorStyle(q2Field);
             valid = false;
-        } else {
-            q2Field.setStyle("");
         }
         if (a2Field.getText() == null || a2Field.getText().trim().isEmpty()) {
-            a2Field.setStyle("-fx-border-color: red;");
+            addErrorStyle(a2Field);
             valid = false;
-        } else {
-            a2Field.setStyle("");
         }
+
         if (!valid) {
             formError.setText("Please enter ALL information");
             return;
         }
+
         if (roleBox.getValue() == null) {
             formError.setText("Please select a role");
             return;
         }
+
         if (!validateInput()) {
             return;
         }
+
         try {
             if (!ctx.isConnected()) {
                 ctx.connect();
@@ -230,5 +251,13 @@ public class RegisterController {
             showAlert("Error", "Error connecting to server");
             e.printStackTrace();
         }
+    }
+
+    private void addErrorStyle(javafx.scene.control.TextField field) {
+        field.getStyleClass().add("error-field");
+    }
+
+    private void clearErrorStyle(javafx.scene.control.TextField field) {
+        field.getStyleClass().remove("error-field");
     }
 }

@@ -7,50 +7,64 @@
 
     <!-- TOP -->
     <top>
-        <HBox spacing="10" alignment="CENTER_LEFT"
-              style="-fx-padding: 10; -fx-background-color: #c0392b;">
-            <Label text="Admin Dashboard"
-                   style="-fx-text-fill: white; -fx-font-size: 18px;"/>
+        <HBox spacing="20" alignment="CENTER_LEFT"
+              style="-fx-padding: 20; -fx-background-color: linear-gradient(to right, #1a1a1a, #2c2c2c); -fx-spacing: 15;">
+            <Label text="⚙ ADMIN DASHBOARD"
+                   style="-fx-text-fill: #d4af6a; -fx-font-size: 22px; -fx-font-weight: bold;"/>
             <Pane HBox.hgrow="ALWAYS"/>
-            <Button text="Logout" onAction="#handleLogout"/>
+            <Button text="LOGOUT" onAction="#handleLogout" styleClass="dashboard-btn-logout" prefWidth="100"/>
         </HBox>
     </top>
 
     <!-- CENTER -->
     <center>
-        <TabPane>
+        <TabPane style="-fx-padding: 0;" tabClosingPolicy="UNAVAILABLE">
             <!-- TAB 1: ALL AUCTIONS -->
             <Tab text="All Auctions" closable="false">
-                <VBox spacing="10" style="-fx-padding: 15;">
-                    <Label text="All Auctions in System"/>
-                    <ListView fx:id="allAuctionsList"/>
+                <VBox spacing="15" style="-fx-padding: 25; -fx-background-color: #f8f7f5;">
+                    <VBox spacing="8">
+                        <Label text="All Auctions in System" styleClass="dashboard-section-title"/>
+                        <Label text="Browse all active and completed auctions" styleClass="dashboard-section-subtitle"/>
+                    </VBox>
+                    <ListView fx:id="allAuctionsList" style="-fx-padding: 10; -fx-border-radius: 4; -fx-border-color: #d0ccc6; -fx-background-color: #ffffff;"/>
                 </VBox>
             </Tab>
 
             <!-- TAB 2: ALL USERS -->
             <Tab text="All Users" closable="false">
-                <VBox spacing="10" style="-fx-padding: 15;">
-                    <Label text="All Users in System"/>
-                    <ListView fx:id="allUsersList"/>
-                    <HBox spacing="10">
-                        <Button text="Refresh" onAction="#refreshUsers"/>
+                <VBox spacing="15" style="-fx-padding: 25; -fx-background-color: #f8f7f5;">
+                    <VBox spacing="8">
+                        <Label text="All Users in System" styleClass="dashboard-section-title"/>
+                        <Label text="View all registered users and their activity" styleClass="dashboard-section-subtitle"/>
+                    </VBox>
+                    <ListView fx:id="allUsersList" style="-fx-padding: 10; -fx-border-radius: 4; -fx-border-color: #d0ccc6; -fx-background-color: #ffffff;"/>
+                    <HBox spacing="10" style="-fx-padding: 10 0 0 0;">
+                        <Button text="REFRESH" onAction="#refreshUsers" styleClass="dashboard-btn-primary" prefWidth="120"/>
                     </HBox>
                 </VBox>
             </Tab>
 
             <!-- TAB 3: MANAGE USERS -->
             <Tab text="Manage Users" closable="false">
-                <VBox spacing="10" style="-fx-padding: 15;">
-                    <Label text="Manage User Accounts"/>
+                <VBox spacing="15" style="-fx-padding: 25; -fx-background-color: #f8f7f5;">
+                    <VBox spacing="8">
+                        <Label text="Manage User Accounts" styleClass="dashboard-section-title"/>
+                        <Label text="Control user access and manage bans" styleClass="dashboard-section-subtitle"/>
+                    </VBox>
 
-                    <HBox spacing="10">
-                        <TextField fx:id="usernameField" promptText="Username"/>
-                        <Button text="Ban User" onAction="#handleBanUser"/>
-                        <Button text="Unban User" onAction="#handleUnbanUser"/>
-                    </HBox>
+                    <VBox spacing="12" style="-fx-border-color: #e8e6e1; -fx-border-width: 1; -fx-padding: 20; -fx-border-radius: 4; -fx-background-color: #ffffff;">
+                        <Label text="User Management" styleClass="form-section-title"/>
+                        <HBox spacing="10" alignment="CENTER_LEFT">
+                            <TextField fx:id="usernameField" promptText="Enter username" styleClass="dashboard-input" HBox.hgrow="ALWAYS"/>
+                            <Button text="BAN USER" onAction="#handleBanUser" styleClass="dashboard-btn-danger" prefWidth="120"/>
+                            <Button text="UNBAN USER" onAction="#handleUnbanUser" styleClass="dashboard-btn-success" prefWidth="130"/>
+                        </HBox>
+                    </VBox>
 
-                    <Label text="User Status"/>
-                    <TextArea fx:id="userStatusArea" editable="false" wrapText="true"/>
+                    <VBox spacing="12" style="-fx-border-color: #e8e6e1; -fx-border-width: 1; -fx-padding: 20; -fx-border-radius: 4; -fx-background-color: #ffffff;">
+                        <Label text="Status & Activity" styleClass="form-section-title"/>
+                        <TextArea fx:id="userStatusArea" editable="false" wrapText="true" style="-fx-control-inner-background: #f9f9f9; -fx-text-fill: #2c2c2c;"/>
+                    </VBox>
                 </VBox>
             </Tab>
 
