@@ -4,6 +4,7 @@ import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.control.SpinnerValueFactory;
 import javafx.scene.layout.VBox;
+import javafx.scene.control.ToggleGroup;
 import shared.models.Auction;
 import shared.network.Request;
 import shared.network.Response;
@@ -15,10 +16,15 @@ import java.math.BigDecimal;
 import java.net.Socket;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Timer;
+import java.util.TimerTask;
+
+import javafx.application.Platform;
 
 import com.google.gson.Gson;
 import shared.enums.Category;
@@ -38,6 +44,9 @@ public class SellerHomeController {
     @FXML private Spinner<Integer> startMinuteSpinner;
     @FXML private Spinner<Integer> endHourSpinner;
     @FXML private Spinner<Integer> endMinuteSpinner;
+    @FXML private RadioButton defaultTimingRadio;
+    @FXML private RadioButton customTimingRadio;
+    @FXML private VBox customTimingPane;
     @FXML private ListView<Auction> auctionList;
     @FXML private TextArea descField;
     private PrintWriter out;
@@ -57,6 +66,11 @@ public class SellerHomeController {
 
         categoryBox.getItems().addAll(Category.values());
         categoryBox.setOnAction(e -> updateForm());
+
+        ToggleGroup timingGroup = new ToggleGroup();
+        defaultTimingRadio.setToggleGroup(timingGroup);
+        customTimingRadio.setToggleGroup(timingGroup);
+        defaultTimingRadio.setSelected(true);
 
         // Initialize time spinners
         startHourSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 23, 9));
@@ -83,6 +97,22 @@ public class SellerHomeController {
 
         // Fetch seller's auctions on initialization
         fetchSellerAuctions();
+
+        // Schedule periodic refresh
+        Timer timer = new Timer(true);
+        timer.scheduleAtFixedRate(new TimerTask() {
+            @Override
+            public void run() {
+                Platform.runLater(SellerHomeController.this::fetchSellerAuctions);
+            }
+        }, 0, 5000); // Refresh every 5 seconds
+    }
+
+    @FXML
+    private void handleTimingTypeChange() {
+        boolean isCustom = customTimingRadio.isSelected();
+        customTimingPane.setVisible(isCustom);
+        customTimingPane.setManaged(isCustom);
     }
 
     // ================= DYNAMIC FORM =================
@@ -164,35 +194,49 @@ public class SellerHomeController {
             String price = startPriceField.getText();
             String desc = descField.getText();
 
-            LocalDate startDate = startDatePicker.getValue();
-            LocalDate endDate = endDatePicker.getValue();
-
-            if (name.isEmpty() || startDate == null || endDate == null) {
-                 showAlert("Error", "Missing information!");
+            if (name.isEmpty()) {
+                showAlert("Error", "Missing information!");
                 return;
             }
-
-            int startHour = startHourSpinner.getValue();
-            int startMinute = startMinuteSpinner.getValue();
-            int endHour = endHourSpinner.getValue();
-            int endMinute = endMinuteSpinner.getValue();
 
             if (name.length() < 3 || desc.length() < 3) {
-                 showAlert("Error", "Name and description must have at least 3 characters!");
+                showAlert("Error", "Name and description must have at least 3 characters!");
                 return;
             }
 
-            Instant startTime = startDate.atTime(startHour, startMinute).atZone(ZoneId.systemDefault()).toInstant();
-            Instant endTime = endDate.atTime(endHour, endMinute).atZone(ZoneId.systemDefault()).toInstant();
+            Instant startTime;
+            Instant endTime;
 
-            if (startTime.isAfter(endTime)) {
-                 showAlert("Error", "Start time must be before end time!");
-                return;
-            }
+            if (defaultTimingRadio.isSelected()) {
+                startTime = Instant.now();
+                endTime = startTime.plusSeconds(3600);
+            } else {
+                LocalDate startDate = startDatePicker.getValue();
+                LocalDate endDate = endDatePicker.getValue();
 
-            if (startTime.isBefore(Instant.now())) {
-                 showAlert("Error", "Start time must be in the future!");
-                return;
+                if (startDate == null || endDate == null) {
+                    showAlert("Error", "Missing date information!");
+                    return;
+                }
+
+                int startHour = startHourSpinner.getValue();
+                int startMinute = startMinuteSpinner.getValue();
+                int endHour = endHourSpinner.getValue();
+                int endMinute = endMinuteSpinner.getValue();
+
+                startTime = startDate.atTime(startHour, startMinute).atZone(ZoneId.systemDefault()).toInstant();
+                endTime = endDate.atTime(endHour, endMinute).atZone(ZoneId.systemDefault()).toInstant();
+
+                if (startTime.isAfter(endTime)) {
+                    showAlert("Error", "Start time must be before end time!");
+                    return;
+                }
+
+                Instant minStartTime = Instant.now().plusSeconds(300);
+                if (startTime.isBefore(minStartTime)) {
+                    showAlert("Error", "Start time must be at least 5 minutes from now!");
+                    return;
+                }
             }
 
             Map<String, String> data = new HashMap<>();
@@ -227,7 +271,6 @@ public class SellerHomeController {
                 auction = gson.fromJson(response.getMessage(), Auction.class);
                 auctionList.getItems().add(auction);
                  showAlert("OK", "Auction created successfully!");
-                // Clear all fields after successful creation
                 itemNameField.clear();
                 startPriceField.clear();
                 descField.clear();
@@ -239,6 +282,8 @@ public class SellerHomeController {
                 endMinuteSpinner.getValueFactory().setValue(0);
                 categoryBox.setValue(null);
                 dynamicForm.getChildren().clear();
+                defaultTimingRadio.setSelected(true);
+                handleTimingTypeChange();
             }
             else{
                 showAlert("Lỗi", response.getMessage());
@@ -279,17 +324,14 @@ public class SellerHomeController {
             Map<String, String> data = new HashMap<>();
             data.put("username", ctx.getCurrentUser().getUsername());
             Request req = new Request("GET_SELLER_AUCTIONS", data);
-            Response response = ctx.sendRequestAndWait(req, 10);
+            Response response = ctx.sendRequestAndWait(req, 5);
             if ("SUCCESS".equals(response.getStatus())) {
                 Auction[] auctions = gson.fromJson(response.getMessage(), Auction[].class);
                 auctionList.getItems().clear();
                 auctionList.getItems().addAll(auctions);
-            } else {
-                showAlert("Error", "Failed to load auctions: " + response.getMessage());
             }
         } catch (Exception e) {
-            showAlert("Error", "Failed to load auctions!");
-            e.printStackTrace();
+            System.out.println("Failed to refresh auctions: " + e.getMessage());
         }
     }
 }

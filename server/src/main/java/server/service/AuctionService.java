@@ -153,11 +153,16 @@ public class AuctionService {
         Instant now = Instant.now();
         for (Auction auction : auctions.values()) {
             if (auction.getStatus() == AuctionStatus.OPEN && !now.isBefore(auction.getStartTime()) && now.isBefore(auction.getEndTime())) {
-                // Use reflection or add a method to update status safely
                 try {
                     java.lang.reflect.Field statusField = Auction.class.getDeclaredField("status");
                     statusField.setAccessible(true);
                     statusField.set(auction, AuctionStatus.RUNNING);
+                } catch (Exception ignored) {}
+            } else if (auction.getStatus() == AuctionStatus.RUNNING && !now.isBefore(auction.getEndTime())) {
+                try {
+                    java.lang.reflect.Field statusField = Auction.class.getDeclaredField("status");
+                    statusField.setAccessible(true);
+                    statusField.set(auction, AuctionStatus.FINISHED);
                 } catch (Exception ignored) {}
             }
         }
