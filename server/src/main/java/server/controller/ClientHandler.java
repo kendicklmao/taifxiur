@@ -17,6 +17,7 @@ import shared.models.Item;
 import shared.models.Seller;
 import shared.models.User;
 import shared.models.Vehicle;
+import shared.models.AdminActionLog;
 import shared.network.Request;
 import shared.network.Response;
 
@@ -271,7 +272,7 @@ public class ClientHandler implements Runnable {
 
             case "BAN_USER":
                 String banUsername = request.getData().get("username");
-                boolean banSuccess = userService.banUser(banUsername);
+                boolean banSuccess = userService.banUser(banUsername, loggedInUsername);
                 if (banSuccess) {
                     return new Response("SUCCESS", "User banned successfully");
                 } else {
@@ -280,12 +281,16 @@ public class ClientHandler implements Runnable {
 
             case "UNBAN_USER":
                 String unbanUsername = request.getData().get("username");
-                boolean unbanSuccess = userService.unbanUser(unbanUsername);
+                boolean unbanSuccess = userService.unbanUser(unbanUsername, loggedInUsername);
                 if (unbanSuccess) {
                     return new Response("SUCCESS", "User unbanned successfully");
                 } else {
                     return new Response("FAIL", "Failed to unban user");
                 }
+
+            case "GET_ADMIN_ACTION_LOGS":
+                List<AdminActionLog> logs = userService.getAdminActionLogs();
+                return new Response("SUCCESS", gson.toJson(logs));
 
             default:
                 return new Response("FAIL", "Unsupported function");

@@ -6,6 +6,7 @@ import shared.models.Admin;
 import shared.models.Bidder;
 import shared.models.Seller;
 import shared.models.User;
+import shared.models.AdminActionLog;
 import shared.utils.Validator;
 
 import java.sql.*;
@@ -138,6 +139,11 @@ public class UserService {
                 }
                 failedAttempts.remove(username);
                 lockUntil.remove(username);
+
+                if ("ADMIN".equals(roleStr)) {
+                    logAdminLogin(userId, "SUCCESS");
+                }
+
                 return getUserFromDatabase(username);
             } else {
                 int attempts = failedAttempts.getOrDefault(username, 0) + 1;
@@ -151,11 +157,28 @@ public class UserService {
                     }
                     lockUntil.put(username, now.plusSeconds(lockSeconds));
                 }
+
+                if ("ADMIN".equals(roleStr)) {
+                    logAdminLogin(userId, "FAILED");
+                }
+
                 return null;
             }
         } catch (SQLException e) {
             System.err.println("Error during login: " + e.getMessage());
             return null;
+        }
+    }
+
+    private void logAdminLogin(int userId, String status) {
+        String sql = "INSERT INTO admin_logs (user_id, status) VALUES (?, ?)";
+        try (Connection conn = DatabaseConfig.getDataSource().getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, userId);
+            pstmt.setString(2, status);
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            System.err.println("Error logging admin login: " + e.getMessage());
         }
     }
 
@@ -171,6 +194,7 @@ public class UserService {
             ResultSet rs = pstmt.executeQuery();
 
             if (rs.next()) {
+                int id = rs.getInt("id");
                 String role = rs.getString("role");
                 String email = rs.getString("email");
                 String password = rs.getString("password");
@@ -182,11 +206,11 @@ public class UserService {
 
                 User user = null;
                 if ("BIDDER".equals(role)) {
-                    user = new Bidder(username, password, email, q1, a1, q2, a2);
+                    user = new Bidder(id, username, password, email, q1, a1, q2, a2);
                 } else if ("SELLER".equals(role)) {
-                    user = new Seller(username, password, email, q1, a1, q2, a2);
+                    user = new Seller(id, username, password, email, q1, a1, q2, a2);
                 } else if ("ADMIN".equals(role)) {
-                    user = new Admin(username, password, email, q1, a1, q2, a2);
+                    user = new Admin(id, username, password, email, q1, a1, q2, a2);
                 }
 
                 if (user != null && isBanned) {
@@ -242,11 +266,33 @@ public class UserService {
 
         try (Connection conn = DatabaseConfig.getDataSource().getConnection();
              Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery("SELECT username FROM users")) {
+             ResultSet rs = stmt.executeQuery("SELECT id, username, password, email, role, is_banned, question_1, answer_1, question_2, answer_2 FROM users")) {
 
             while (rs.next()) {
-                User user = getUserFromDatabase(rs.getString("username"));
+                int id = rs.getInt("id");
+                String username = rs.getString("username");
+                String password = rs.getString("password");
+                String email = rs.getString("email");
+                String role = rs.getString("role");
+                boolean isBanned = rs.getBoolean("is_banned");
+                String q1 = rs.getString("question_1");
+                String a1 = rs.getString("answer_1");
+                String q2 = rs.getString("question_2");
+                String a2 = rs.getString("answer_2");
+
+                User user = null;
+                if ("BIDDER".equals(role)) {
+                    user = new Bidder(id, username, password, email, q1, a1, q2, a2);
+                } else if ("SELLER".equals(role)) {
+                    user = new Seller(id, username, password, email, q1, a1, q2, a2);
+                } else if ("ADMIN".equals(role)) {
+                    user = new Admin(id, username, password, email, q1, a1, q2, a2);
+                }
+
                 if (user != null) {
+                    if (isBanned) {
+                        user.banUser();
+                    }
                     userList.add(user);
                 }
             }
@@ -260,15 +306,25 @@ public class UserService {
     /**
      * Ban user
      */
-    public boolean banUser(String username) {
+    public boolean banUser(String username, String adminUsername) {
         username = Validator.normalizeUsername(username);
+        User admin = getUserFromDatabase(adminUsername);
+        User targetUser = getUserFromDatabase(username);
+
+        if (admin == null || targetUser == null) {
+            return false;
+        }
 
         try (Connection conn = DatabaseConfig.getDataSource().getConnection();
              PreparedStatement pstmt = conn.prepareStatement("UPDATE users SET is_banned = TRUE WHERE username = ?")) {
 
             pstmt.setString(1, username);
             int affectedRows = pstmt.executeUpdate();
-            return affectedRows > 0;
+            if (affectedRows > 0) {
+                logAdminAction(admin.getId(), targetUser.getId(), "BAN");
+                return true;
+            }
+            return false;
         } catch (SQLException e) {
             System.err.println("Error banning user: " + e.getMessage());
             return false;
@@ -278,18 +334,67 @@ public class UserService {
     /**
      * Unban user
      */
-    public boolean unbanUser(String username) {
+    public boolean unbanUser(String username, String adminUsername) {
         username = Validator.normalizeUsername(username);
+        User admin = getUserFromDatabase(adminUsername);
+        User targetUser = getUserFromDatabase(username);
+
+        if (admin == null || targetUser == null) {
+            return false;
+        }
 
         try (Connection conn = DatabaseConfig.getDataSource().getConnection();
              PreparedStatement pstmt = conn.prepareStatement("UPDATE users SET is_banned = FALSE WHERE username = ?")) {
 
             pstmt.setString(1, username);
             int affectedRows = pstmt.executeUpdate();
-            return affectedRows > 0;
+            if (affectedRows > 0) {
+                logAdminAction(admin.getId(), targetUser.getId(), "UNBAN");
+                return true;
+            }
+            return false;
         } catch (SQLException e) {
             System.err.println("Error unbanning user: " + e.getMessage());
             return false;
         }
+    }
+
+    private void logAdminAction(int adminId, int targetUserId, String action) {
+        String sql = "INSERT INTO admin_action_logs (admin_id, target_user_id, action) VALUES (?, ?, ?)";
+        try (Connection conn = DatabaseConfig.getDataSource().getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, adminId);
+            pstmt.setInt(2, targetUserId);
+            pstmt.setString(3, action);
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            System.err.println("Error logging admin action: " + e.getMessage());
+        }
+    }
+
+    public List<AdminActionLog> getAdminActionLogs() {
+        List<AdminActionLog> logs = new ArrayList<>();
+        String sql = "SELECT aal.id, u_admin.username AS admin_username, u_target.username AS target_username, aal.action, aal.action_time " +
+                     "FROM admin_action_logs aal " +
+                     "JOIN users u_admin ON aal.admin_id = u_admin.id " +
+                     "JOIN users u_target ON aal.target_user_id = u_target.id " +
+                     "ORDER BY aal.action_time DESC";
+
+        try (Connection conn = DatabaseConfig.getDataSource().getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql);
+             ResultSet rs = pstmt.executeQuery()) {
+
+            while (rs.next()) {
+                int id = rs.getInt("id");
+                String adminUsername = rs.getString("admin_username");
+                String targetUsername = rs.getString("target_username");
+                String action = rs.getString("action");
+                Instant actionTime = rs.getTimestamp("action_time").toInstant();
+                logs.add(new AdminActionLog(id, adminUsername, targetUsername, action, actionTime));
+            }
+        } catch (SQLException e) {
+            System.err.println("Error fetching admin action logs: " + e.getMessage());
+        }
+        return logs;
     }
 }
