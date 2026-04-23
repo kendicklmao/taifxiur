@@ -252,6 +252,197 @@ public class UserService {
     }
 
     /**
+     * Get stored security questions for a username/email pair.
+     */
+    public String[] getSecurityQuestions(String username, String email) {
+        if (!Validator.isValidUsername(username) || !Validator.isValidEmail(email)) {
+            return null;
+        }
+
+        username = Validator.normalizeUsername(username);
+        email = Validator.normalizeEmail(email);
+
+        try (Connection conn = DatabaseConfig.getDataSource().getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(
+                     "SELECT question_1, question_2 FROM users WHERE username = ? AND email = ?")) {
+
+            pstmt.setString(1, username);
+            pstmt.setString(2, email);
+            ResultSet rs = pstmt.executeQuery();
+
+            if (rs.next()) {
+                return new String[] {
+                        rs.getString("question_1"),
+                        rs.getString("question_2")
+                };
+            }
+        } catch (SQLException e) {
+            System.err.println("Error fetching security questions: " + e.getMessage());
+        }
+
+        return null;
+    }
+
+    /**
+     * Reset password after verifying username, email and security answers.
+     */
+    public boolean resetPassword(String username, String email, String answer1, String answer2, String newPassword) {
+        if (!Validator.isValidUsername(username) ||
+                !Validator.isValidEmail(email) ||
+                !hasAnswer(answer1) ||
+                !hasAnswer(answer2) ||
+                !Validator.isValidPassword(newPassword)) {
+            return false;
+        }
+
+        username = Validator.normalizeUsername(username);
+        email = Validator.normalizeEmail(email);
+        answer1 = Validator.normalizeAnswer(answer1);
+        answer2 = Validator.normalizeAnswer(answer2);
+        newPassword = Validator.normalizePassword(newPassword);
+
+        try (Connection conn = DatabaseConfig.getDataSource().getConnection();
+             PreparedStatement selectStmt = conn.prepareStatement(
+                     """
+                     SELECT id, username, password, email, role, is_banned, question_1, answer_1, question_2, answer_2
+                     FROM users
+                     WHERE username = ? AND email = ?
+                     """)) {
+
+            selectStmt.setString(1, username);
+            selectStmt.setString(2, email);
+            ResultSet rs = selectStmt.executeQuery();
+
+            if (!rs.next()) {
+                return false;
+            }
+
+            User user = mapUser(rs);
+            if (user == null || !user.resetPassword(answer1, answer2, newPassword)) {
+                return false;
+            }
+
+            try (PreparedStatement updateStmt = conn.prepareStatement(
+                    "UPDATE users SET password = ?, updated_at = CURRENT_TIMESTAMP WHERE username = ? AND email = ?")) {
+
+                updateStmt.setString(1, newPassword);
+                updateStmt.setString(2, username);
+                updateStmt.setString(3, email);
+
+                int updatedRows = updateStmt.executeUpdate();
+                if (updatedRows > 0) {
+                    failedAttempts.remove(username);
+                    lockUntil.remove(username);
+                    loggedIn.remove(username);
+                    return true;
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("Error resetting password: " + e.getMessage());
+        }
+
+        return false;
+    }
+
+    /**
+     * Change password for a logged-in user using the current password.
+     */
+    public String changePassword(String username, String oldPassword, String newPassword) {
+        if (!Validator.isValidUsername(username)) {
+            return "Invalid username";
+        }
+        if (oldPassword == null || oldPassword.trim().isEmpty()) {
+            return "Current password cannot be empty";
+        }
+        if (!Validator.isValidPassword(newPassword)) {
+            return "New password must be at least 6 characters and include uppercase, lowercase, number, and special character";
+        }
+
+        username = Validator.normalizeUsername(username);
+        oldPassword = Validator.normalizePassword(oldPassword);
+        newPassword = Validator.normalizePassword(newPassword);
+
+        if (oldPassword.equals(newPassword)) {
+            return "New password must be different from the current password";
+        }
+
+        try (Connection conn = DatabaseConfig.getDataSource().getConnection();
+             PreparedStatement selectStmt = conn.prepareStatement(
+                     """
+                     SELECT id, username, password, email, role, is_banned, question_1, answer_1, question_2, answer_2
+                     FROM users
+                     WHERE username = ?
+                     """)) {
+
+            selectStmt.setString(1, username);
+            ResultSet rs = selectStmt.executeQuery();
+
+            if (!rs.next()) {
+                return "User not found";
+            }
+
+            User user = mapUser(rs);
+            if (user == null) {
+                return "User not found";
+            }
+            if (!user.changePassword(oldPassword, newPassword)) {
+                return "Current password is incorrect or the new password is invalid";
+            }
+
+            try (PreparedStatement updateStmt = conn.prepareStatement(
+                    "UPDATE users SET password = ?, updated_at = CURRENT_TIMESTAMP WHERE username = ?")) {
+
+                updateStmt.setString(1, newPassword);
+                updateStmt.setString(2, username);
+
+                int updatedRows = updateStmt.executeUpdate();
+                if (updatedRows > 0) {
+                    failedAttempts.remove(username);
+                    lockUntil.remove(username);
+                    return null;
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("Error changing password: " + e.getMessage());
+            return "Database error while changing password";
+        }
+
+        return "Failed to update password";
+    }
+
+    private boolean hasAnswer(String answer) {
+        return answer != null && !answer.trim().isEmpty();
+    }
+
+    private User mapUser(ResultSet rs) throws SQLException {
+        int id = rs.getInt("id");
+        String username = rs.getString("username");
+        String role = rs.getString("role");
+        String email = rs.getString("email");
+        String password = rs.getString("password");
+        String q1 = rs.getString("question_1");
+        String a1 = rs.getString("answer_1");
+        String q2 = rs.getString("question_2");
+        String a2 = rs.getString("answer_2");
+        boolean isBanned = rs.getBoolean("is_banned");
+
+        User user = null;
+        if ("BIDDER".equals(role)) {
+            user = new Bidder(id, username, password, email, q1, a1, q2, a2);
+        } else if ("SELLER".equals(role)) {
+            user = new Seller(id, username, password, email, q1, a1, q2, a2);
+        } else if ("ADMIN".equals(role)) {
+            user = new Admin(id, username, password, email, q1, a1, q2, a2);
+        }
+
+        if (user != null && isBanned) {
+            user.banUser();
+        }
+
+        return user;
+    }
+
+    /**
      * Logout user
      */
     public void logout(String username) {
