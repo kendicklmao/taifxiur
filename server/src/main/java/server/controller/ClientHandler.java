@@ -97,12 +97,16 @@ public class ClientHandler implements Runnable {
                 String user = request.getData().get("username");
                 String pass = request.getData().get("password");
 
-                User loggedInUser = userService.login(user, pass);
-                if (loggedInUser != null) {
-                    this.loggedInUsername = loggedInUser.getUsername(); // Track logged in username
-                    return new Response("SUCCESS", loggedInUser.getRole().toString() + "," + loggedInUser.getUsername());
-                } else {
-                    return new Response("FAIL", "Invalid username or password");
+                try {
+                    User loggedInUser = userService.login(user, pass);
+                    if (loggedInUser != null) {
+                        this.loggedInUsername = loggedInUser.getUsername(); // Track logged in username
+                        return new Response("SUCCESS", loggedInUser.getRole().toString() + "," + loggedInUser.getUsername());
+                    } else {
+                        return new Response("FAIL", "Invalid username or password");
+                    }
+                } catch (server.service.UserAlreadyLoggedInException e) {
+                    return new Response("FAIL", e.getMessage());
                 }
 
             case "REGISTER":

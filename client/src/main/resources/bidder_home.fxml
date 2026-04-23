@@ -10,6 +10,7 @@
         <HBox spacing="20" alignment="CENTER_LEFT" style="-fx-padding: 20; -fx-background-color: linear-gradient(to right, #1a1a1a, #2c2c2c); -fx-spacing: 15;">
             <Label text="🔨 BIDDER DASHBOARD" style="-fx-text-fill: #d4af6a; -fx-font-size: 22px; -fx-font-weight: bold;"/>
             <Pane HBox.hgrow="ALWAYS"/>
+            <Label fx:id="welcomeLabel" style="-fx-text-fill: #ffffff; -fx-font-size: 14px;"/>
             <Button text="LOGOUT" onAction="#handleLogout" styleClass="dashboard-btn-logout" prefWidth="100"/>
         </HBox>
     </top>

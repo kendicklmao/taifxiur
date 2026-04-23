@@ -18,12 +18,14 @@ public class AdminHomeController {
     @FXML private ListView<User> allUsersList;
     @FXML private TextField usernameField;
     @FXML private TextArea userStatusArea;
+    @FXML private Label welcomeLabel;
 
     private final AppContext ctx = AppContext.getInstance();
     private final Gson gson = GsonUtils.createGson();
 
     @FXML
     public void initialize() {
+        welcomeLabel.setText("Welcome " + ctx.getCurrentUser().getUsername());
         setupAuctionListCell();
         setupUserListCell();
         refreshAuctions();

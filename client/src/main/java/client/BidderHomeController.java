@@ -22,12 +22,14 @@ import java.util.function.Consumer;
 
 public class BidderHomeController {
     @FXML private ListView<Auction> auctionList;
+    @FXML private Label welcomeLabel;
     private final AppContext ctx = AppContext.getInstance();
     private final Gson gson = GsonUtils.createGson();
     private Consumer<String> messageListener;
 
     @FXML
     public void initialize() {
+        welcomeLabel.setText("Welcome " + ctx.getCurrentUser().getUsername());
         auctionList.setCellFactory(lv -> new ListCell<>() {
             @Override
             protected void updateItem(Auction item, boolean empty) {

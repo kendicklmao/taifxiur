@@ -65,7 +65,7 @@ public class LoginController {
                     Navigator.switchScene("admin_home.fxml");
                 }
             } else {
-                showAlert("Error", "Invalid username or password!");
+                showAlert("Error", res.getMessage());
             }
 
         } catch (Exception e) {

@@ -134,7 +134,7 @@ public class UserService {
 
             if (storedPassword.equals(password)) {
                 if (loggedIn.putIfAbsent(username, true) != null) {
-                    return null; // Already logged in
+                    throw new UserAlreadyLoggedInException("User " + username + " is already logged in from another device");
                 }
                 failedAttempts.remove(username);
                 lockUntil.remove(username);

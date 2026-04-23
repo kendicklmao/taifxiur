@@ -49,6 +49,7 @@ public class SellerHomeController {
     @FXML private VBox customTimingPane;
     @FXML private ListView<Auction> auctionList;
     @FXML private TextArea descField;
+    @FXML private Label welcomeLabel;
     private PrintWriter out;
     private BufferedReader in;
     private final Gson gson = GsonUtils.createGson();
@@ -64,6 +65,7 @@ public class SellerHomeController {
             e.printStackTrace();
         }
 
+        welcomeLabel.setText("Welcome " + ctx.getCurrentUser().getUsername());
         categoryBox.getItems().addAll(Category.values());
         categoryBox.setOnAction(e -> updateForm());
 
