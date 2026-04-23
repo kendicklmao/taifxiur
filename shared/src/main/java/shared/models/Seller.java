@@ -3,6 +3,7 @@ package shared.models;
 import shared.enums.ItemStatus;
 import shared.enums.Role;
 
+import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -19,40 +20,40 @@ public class Seller extends User {//người bán hàng
         super(0, username, password, email, Role.SELLER, q1, a1, q2, a2);
     }
 
-    public void createArt(String name, String description, String artist, int yearCreated, boolean isOriginal) {//tạo sản phẩm nghệ thuật
-        Art a = new Art(name, description, this, artist, yearCreated, isOriginal);
+    public void createArt(String name, String description, String artist, int yearCreated, boolean isOriginal, LocalDateTime startTime, LocalDateTime endTime) {//tạo sản phẩm nghệ thuật
+        Art a = new Art(name, description, this, artist, yearCreated, isOriginal, startTime, endTime);
         if (!a.isValid()) {
             throw new IllegalArgumentException();
         }
         addItem(a);
     }
 
-    public void createElectronic(String name, String description, String brand, ItemStatus status) { //tạo sản phẩm điện tử
-        Electronic e = new Electronic(name, description, this, brand, status);
+    public void createElectronic(String name, String description, String brand, ItemStatus status, LocalDateTime startTime, LocalDateTime endTime) { //tạo sản phẩm điện tử
+        Electronic e = new Electronic(name, description, this, brand, status, startTime, endTime);
         if (!e.isValid()) {
             throw new IllegalArgumentException();
         }
         addItem(e);
     }
 
-    public void createFashion(String name, String description, String brand, ItemStatus status) {//tạo sản phẩm thời trang
-        Fashion f = new Fashion(name, description, this, brand, status);
+    public void createFashion(String name, String description, String brand, ItemStatus status, LocalDateTime startTime, LocalDateTime endTime) {//tạo sản phẩm thời trang
+        Fashion f = new Fashion(name, description, this, brand, status, startTime, endTime);
         if (!f.isValid()) {
             throw new IllegalArgumentException();
         }
         addItem(f);
     }
 
-    public void createCollectible(String name, String description, int yearCreated) {//tảo sản phẩm sưu tầm
-        Collectible c = new Collectible(name, description, this, yearCreated);
+    public void createCollectible(String name, String description, int yearCreated, LocalDateTime startTime, LocalDateTime endTime) {//tảo sản phẩm sưu tầm
+        Collectible c = new Collectible(name, description, this, yearCreated, startTime, endTime);
         if (!c.isValid()) {
             throw new IllegalArgumentException();
         }
         addItem(c);
     }
 
-    public void createVehicle(String name, String description, String brand, int model, int kmTravel) {//tạo sản phẩm phương tiện
-        Vehicle v = new Vehicle(name, description, this, brand, model, kmTravel);
+    public void createVehicle(String name, String description, String brand, int model, int kmTravel, LocalDateTime startTime, LocalDateTime endTime) {//tạo sản phẩm phương tiện
+        Vehicle v = new Vehicle(name, description, this, brand, model, kmTravel, startTime, endTime);
         if (!v.isValid()) {
             throw new IllegalArgumentException();
         }

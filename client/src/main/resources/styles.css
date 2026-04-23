@@ -754,3 +754,33 @@
     -fx-padding: 4;
 }
 
+/* Auction Item Card Styles */
+.auction-card {
+    -fx-background-color: #2a2a2a;
+    -fx-padding: 15;
+    -fx-border-radius: 10;
+    -fx-background-radius: 10;
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.3), 10, 0, 0, 5);
+}
+
+.item-name {
+    -fx-font-size: 18px;
+    -fx-font-weight: bold;
+    -fx-text-fill: white;
+}
+
+.item-price {
+    -fx-font-size: 14px;
+    -fx-text-fill: #a0a0a0;
+}
+
+.item-status {
+    -fx-font-size: 14px;
+    -fx-text-fill: #a0a0a0;
+}
+
+.item-ends-in {
+    -fx-font-size: 14px;
+    -fx-text-fill: #a0a0a0;
+}
+

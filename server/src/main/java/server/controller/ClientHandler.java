@@ -3,8 +3,8 @@ package server.controller;
 import com.google.gson.Gson;
 
 import server.service.AuctionService;
+import server.service.StorageService;
 import server.service.UserService;
-import server.service.WalletService;
 import shared.utils.GsonUtils;
 import shared.enums.AuctionStatus;
 import shared.enums.ItemStatus;
@@ -17,8 +17,8 @@ import shared.models.Fashion;
 import shared.models.Item;
 import shared.models.Seller;
 import shared.models.User;
-import shared.models.Vehicle;
 import shared.models.AdminActionLog;
+import shared.models.Vehicle;
 import shared.network.Request;
 import shared.network.Response;
 
@@ -27,10 +27,14 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.math.BigDecimal;
 import java.net.Socket;
-import java.time.*;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 public class ClientHandler implements Runnable {
@@ -38,34 +42,22 @@ public class ClientHandler implements Runnable {
 
     private final Socket socket;
     private final Gson gson = GsonUtils.createGson();
-    private final AuctionService auctionService;
-
-    private final UserService userService;
-    private String loggedInUsername;
-    private BufferedReader in;
-    private static final WalletService walletService = new WalletService();
+    private static final AuctionService auctionService = new AuctionService();
+    private static final StorageService storageService = new StorageService();
     private PrintWriter out;
 
-    public ClientHandler(Socket socket) throws java.io.IOException {
-        this.socket = socket;
-        this.userService = new UserService();
-        this.auctionService = new AuctionService();
-        this.in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-        this.out = new PrintWriter(socket.getOutputStream(), true);
-    }
+    private static final UserService userService = new UserService();
+    private String loggedInUsername;
 
-    // Constructor for testing with mock services and streams
-    public ClientHandler(Socket socket, UserService userService, AuctionService auctionService, BufferedReader in, PrintWriter out) {
+    public ClientHandler(Socket socket) {
         this.socket = socket;
-        this.userService = userService;
-        this.auctionService = auctionService;
-        this.in = in;
-        this.out = out;
     }
 
     @Override
     public void run() {
         try {
+            BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+            out = new PrintWriter(socket.getOutputStream(), true);
 
             activeClients.add(this);
 
@@ -185,87 +177,6 @@ public class ClientHandler implements Runnable {
                     return new Response("FAIL", changePasswordError);
                 }
 
-            case "GET_WALLET_BALANCE":
-                String wbUser = request.getData().get("username");
-                BigDecimal walletBalance = walletService.getWalletBalance(wbUser);
-                if (walletBalance != null) {
-                    return new Response("SUCCESS", walletBalance.toPlainString());
-                } else {
-                    return new Response("FAIL", "Cannot load wallet balance");
-                }
-
-            case "CREATE_DEPOSIT_REQUEST":
-                try {
-                    String drUser = request.getData().get("username");
-                    BigDecimal drAmount = new BigDecimal(request.getData().get("amount"));
-                    String depositError = walletService.createDepositRequest(drUser, drAmount);
-                    if (depositError == null) {
-                        return new Response("SUCCESS", "Deposit request sent to admin");
-                    }
-                    return new Response("FAIL", depositError);
-                } catch (Exception e) {
-                    return new Response("FAIL", "Invalid deposit amount");
-                }
-
-            case "CREATE_WITHDRAW_REQUEST":
-                try {
-                    String wrUser = request.getData().get("username");
-                    BigDecimal wrAmount = new BigDecimal(request.getData().get("amount"));
-                    String bankName = request.getData().get("bankName");
-                    String accountNumber = request.getData().get("accountNumber");
-                    String withdrawError = walletService.createWithdrawRequest(wrUser, wrAmount, bankName, accountNumber);
-                    if (withdrawError == null) {
-                        return new Response("SUCCESS", "Withdraw request sent to admin");
-                    }
-                    return new Response("FAIL", withdrawError);
-                } catch (Exception e) {
-                    return new Response("FAIL", "Invalid withdraw information");
-                }
-
-            case "GET_PENDING_DEPOSIT_REQUESTS":
-                if (!isAdminLoggedIn()) {
-                    return new Response("FAIL", "Only admin can view deposit requests");
-                }
-                return new Response("SUCCESS", gson.toJson(walletService.getPendingDepositRequests()));
-
-            case "GET_PENDING_WITHDRAW_REQUESTS":
-                if (!isAdminLoggedIn()) {
-                    return new Response("FAIL", "Only admin can view withdraw requests");
-                }
-                return new Response("SUCCESS", gson.toJson(walletService.getPendingWithdrawRequests()));
-
-            case "APPROVE_DEPOSIT_REQUEST":
-                String adrId = request.getData().get("requestId");
-                String approveDepositError = walletService.approveDeposit(adrId, loggedInUsername);
-                if (approveDepositError == null) {
-                    return new Response("SUCCESS", "Deposit request approved");
-                }
-                return new Response("FAIL", approveDepositError);
-
-            case "REJECT_DEPOSIT_REQUEST":
-                String rdrId = request.getData().get("requestId");
-                String rejectDepositError = walletService.rejectDeposit(rdrId, loggedInUsername);
-                if (rejectDepositError == null) {
-                    return new Response("SUCCESS", "Deposit request rejected");
-                }
-                return new Response("FAIL", rejectDepositError);
-
-            case "APPROVE_WITHDRAW_REQUEST":
-                String awrId = request.getData().get("requestId");
-                String approveWithdrawError = walletService.approveWithdraw(awrId, loggedInUsername);
-                if (approveWithdrawError == null) {
-                    return new Response("SUCCESS", "Withdraw request approved");
-                }
-                return new Response("FAIL", approveWithdrawError);
-
-            case "REJECT_WITHDRAW_REQUEST":
-                String rwrId = request.getData().get("requestId");
-                String rejectWithdrawError = walletService.rejectWithdraw(rwrId, loggedInUsername);
-                if (rejectWithdrawError == null) {
-                    return new Response("SUCCESS", "Withdraw request rejected");
-                }
-                return new Response("FAIL", rejectWithdrawError);
-
             case "GET_AUCTIONS":
                 // Return all auctions for bidders to see
                 List<Auction> list = auctionService.getAllAuctions();
@@ -333,7 +244,11 @@ public class ClientHandler implements Runnable {
                     Instant start = Instant.parse(data.get("startTime"));
                     Instant end = Instant.parse(data.get("endTime"));
 
+                    LocalDateTime startTime = LocalDateTime.ofInstant(start, ZoneOffset.UTC);
+                    LocalDateTime endTime = LocalDateTime.ofInstant(end, ZoneOffset.UTC);
+
                     String category = data.get("category");
+                    String imageBase64 = data.get("image");
 
                     String username = data.get("username");
                     User u = userService.getUser(username);
@@ -345,39 +260,48 @@ public class ClientHandler implements Runnable {
                     Seller seller = (Seller) u;
                     System.out.println("seller = " + seller);
 
+                    String imageUrl = null;
+                    if (imageBase64 != null && !imageBase64.isEmpty()) {
+                        byte[] imageBytes = Base64.getDecoder().decode(imageBase64);
+                        String imageId = UUID.randomUUID().toString();
+                        String contentType = data.get("imageContentType");
+                        imageUrl = storageService.uploadFile(imageId, imageBytes, contentType);
+                    }
+
                     Item item = null;
                     if (category.equals("COLLECTIBLES")) {
                         int year = Integer.parseInt(data.getOrDefault("yearField", "0"));
-                        item = new Collectible(name, desc, seller, year);
+                        item = new Collectible(name, desc, seller, year, startTime, endTime);
                     }
 
                     else if (category.equals("ELECTRONICS")) {
                         String brand = data.getOrDefault("brandField", "Default");
                         ItemStatus status = ItemStatus.valueOf(data.getOrDefault("statusField", "NEW").toUpperCase());
-                        item = new Electronic(name, desc, seller, brand, status);
+                        item = new Electronic(name, desc, seller, brand, status, startTime, endTime);
                     }
 
                     else if (category.equals("ARTS")) {
                         String artist = data.getOrDefault("artistField", "Unknown");
                         int year = Integer.parseInt(data.getOrDefault("yearField", "0"));
                         boolean original = Boolean.parseBoolean(data.getOrDefault("originalBox", "false"));
-                        item = new Art(name, desc, seller, artist, year, original);
+                        item = new Art(name, desc, seller, artist, year, original, startTime, endTime);
                     }
 
                     else if (category.equals("VEHICLES")) {
                         String brand = data.getOrDefault("brandField", "Unknown");
                         int model = Integer.parseInt(data.getOrDefault("modelField", "0"));
                         int km = Integer.parseInt(data.getOrDefault("kmField", "0"));
-                        item = new Vehicle(name, desc, seller, brand, model, km);
+                        item = new Vehicle(name, desc, seller, brand, model, km, startTime, endTime);
                     }
 
                     else if (category.equals("FASHIONS")) {
                         String brand = data.getOrDefault("brandField", "Brand");
                         ItemStatus status = ItemStatus.valueOf(data.getOrDefault("statusField", "NEW").toUpperCase());
-                        item = new Fashion(name, desc, seller, brand, status);
+                        item = new Fashion(name, desc, seller, brand, status, startTime, endTime);
                     }
 
                     if (item != null) {
+                        item.setImageUrl(imageUrl);
                         seller.addItem(item);
                     }
 
@@ -432,13 +356,5 @@ public class ClientHandler implements Runnable {
             default:
                 return new Response("FAIL", "Unsupported function");
         }
-    }
-
-    private boolean isAdminLoggedIn() {
-        if (loggedInUsername == null) {
-            return false;
-        }
-        User user = userService.getUser(loggedInUsername);
-        return user != null && "ADMIN".equals(user.getRole().name());
     }
 }

@@ -36,7 +36,9 @@
                 <Label text="Double-click an auction to place your bid" styleClass="dashboard-section-subtitle"/>
             </VBox>
 
-            <ListView fx:id="auctionList" style="-fx-padding: 10; -fx-border-radius: 4; -fx-border-color: #d0ccc6; -fx-background-color: #ffffff;"/>
+            <ScrollPane fitToWidth="true" style="-fx-background-color: transparent;">
+                <TilePane fx:id="auctionGrid" hgap="15" vgap="15" style="-fx-padding: 10;"/>
+            </ScrollPane>
         </VBox>
     </center>
 

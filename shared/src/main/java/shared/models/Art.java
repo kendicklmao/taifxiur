@@ -3,14 +3,15 @@ package shared.models;
 import shared.enums.Category;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 public class Art extends Item { //tác phẩm nghệ thuật
     private final String artist; //tên tác giả
     private final int yearCreated; //năm sản xuất
     private final boolean isOriginal; //có là bản gốc hay không?
 
-    public Art(String name, String description, Seller seller, String artist, int yearCreated, boolean isOriginal) {
-        super(name, description, seller, Category.ARTS);
+    public Art(String name, String description, Seller seller, String artist, int yearCreated, boolean isOriginal, LocalDateTime startTime, LocalDateTime endTime) {
+        super(null, name, description, null, null, null, seller, Category.ARTS, startTime, endTime);
         this.artist = artist;
         this.yearCreated = yearCreated;
         this.isOriginal = isOriginal;

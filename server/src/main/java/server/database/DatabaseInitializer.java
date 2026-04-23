@@ -119,6 +119,8 @@ public class DatabaseInitializer {
                     description TEXT,
                     category VARCHAR(100),
                     status VARCHAR(50) DEFAULT 'AVAILABLE',
+                    start_time TIMESTAMP,
+                    end_time TIMESTAMP,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )

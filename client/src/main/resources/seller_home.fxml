@@ -2,6 +2,7 @@
 
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.control.*?>
+<?import javafx.scene.image.ImageView?>
 
 <BorderPane xmlns:fx="http://javafx.com/fxml" fx:controller="client.SellerHomeController">
 
@@ -57,9 +58,6 @@
                             <ChoiceBox fx:id="categoryBox" style="-fx-padding: 10; -fx-font-size: 13; -fx-border-color: #e0e0e0; -fx-border-width: 1; -fx-background-color: #f9f9f9; -fx-border-radius: 4;"/>
                         </VBox>
 
-                        <!-- Dynamic Form for additional attributes -->
-                        <VBox fx:id="dynamicForm" spacing="10" style="-fx-padding: 5 0 5 0;"/>
-
                         <!-- Auction Timing -->
                         <VBox spacing="8">
                             <Label text="Auction Timing" styleClass="form-section-title"/>
@@ -102,10 +100,20 @@
                         </VBox>
 
                         <!-- Description -->
-                        <VBox spacing="6">
-                            <Label text="Product Description" styleClass="form-label-register"/>
-                            <TextArea fx:id="descField" promptText="Detailed description of your item" style="-fx-padding: 10; -fx-font-size: 12; -fx-border-color: #e0e0e0; -fx-border-width: 1; -fx-background-color: #f9f9f9; -fx-border-radius: 4; -fx-control-inner-background: #f9f9f9;" prefHeight="100" wrapText="true"/>
+                        <VBox styleClass="form-group">
+                            <Label styleClass="form-label-register" text="Description" />
+                            <TextArea fx:id="descField" promptText="Enter description" styleClass="dashboard-input" />
                         </VBox>
+
+                        <!-- Image Upload -->
+                        <VBox styleClass="form-group">
+                            <Label styleClass="form-label-register" text="Image" />
+                            <Button onAction="#handleUploadImage" text="Upload Image" styleClass="dashboard-button" />
+                            <ImageView fx:id="itemImageView" fitHeight="100" fitWidth="100" preserveRatio="true" />
+                        </VBox>
+
+                        <!-- Dynamic Form for additional attributes -->
+                        <VBox fx:id="dynamicForm" spacing="10" style="-fx-padding: 5 0 5 0;"/>
 
                         <!-- Submit Button -->
                         <Button text="CREATE AUCTION" onAction="#handleCreateAuction" styleClass="dashboard-btn-primary" prefWidth="Infinity" prefHeight="45" style="-fx-font-size: 14;"/>
@@ -118,7 +126,9 @@
                         <Label text="Your Active Auctions" styleClass="dashboard-section-title"/>
                         <Label text="Manage your ongoing auctions" styleClass="dashboard-section-subtitle"/>
                     </VBox>
-                    <ListView fx:id="auctionList" style="-fx-padding: 10; -fx-border-radius: 4; -fx-border-color: #d0ccc6; -fx-background-color: #f9f9f9;"/>
+                    <ScrollPane fitToWidth="true" style="-fx-background-color: transparent;">
+                        <TilePane fx:id="auctionGrid" hgap="15" vgap="15" style="-fx-padding: 10;"/>
+                    </ScrollPane>
                 </VBox>
 
             </VBox>

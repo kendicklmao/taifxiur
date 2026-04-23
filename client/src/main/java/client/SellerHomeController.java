@@ -5,29 +5,42 @@ import javafx.scene.control.*;
 import javafx.scene.control.SpinnerValueFactory;
 import javafx.scene.layout.VBox;
 import javafx.scene.control.ToggleGroup;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
+import javafx.scene.layout.TilePane;
+import javafx.stage.FileChooser;
+import org.imgscalr.Scalr;
 import shared.models.Auction;
 import shared.network.Request;
 import shared.network.Response;
 
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.math.BigDecimal;
 import java.net.Socket;
+import java.nio.file.Files;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import javafx.application.Platform;
 
 import com.google.gson.Gson;
-import shared.enums.BankList;
+import com.google.gson.reflect.TypeToken;
 import shared.enums.Category;
 import shared.enums.ItemStatus;
 import shared.utils.GsonUtils;
@@ -48,10 +61,12 @@ public class SellerHomeController {
     @FXML private RadioButton defaultTimingRadio;
     @FXML private RadioButton customTimingRadio;
     @FXML private VBox customTimingPane;
-    @FXML private ListView<Auction> auctionList;
+    @FXML private TilePane auctionGrid;
     @FXML private TextArea descField;
     @FXML private Label welcomeLabel;
-    @FXML private Label walletBalanceLabel;
+    @FXML private ImageView itemImageView;
+    private File selectedImageFile;
+    private byte[] croppedImageBytes;
     private PrintWriter out;
     private BufferedReader in;
     private final Gson gson = GsonUtils.createGson();
@@ -82,25 +97,7 @@ public class SellerHomeController {
         endHourSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 23, 17));
         endMinuteSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 59, 0));
 
-        auctionList.setCellFactory(list -> new ListCell<>() {
-        @Override
-        protected void updateItem(Auction a, boolean empty) {
-            super.updateItem(a, empty);
-
-            if (empty || a == null) {
-                setText(null);
-            } else {
-                setText(
-                    "📦 " + a.getItem().getName() +
-                    "\n💰 Price: " + a.getCurrentPrice() +
-                    "\n📊 Status: " + a.getStatus()
-                );
-            }
-        }
-    });
-
         // Fetch seller's auctions on initialization
-        refreshWalletBalance();
         fetchSellerAuctions();
 
         // Schedule periodic refresh
@@ -108,24 +105,84 @@ public class SellerHomeController {
         timer.scheduleAtFixedRate(new TimerTask() {
             @Override
             public void run() {
-                Platform.runLater(() -> {
-                    refreshWalletBalance();
-                    fetchSellerAuctions();
-                });
+                Platform.runLater(SellerHomeController.this::fetchSellerAuctions);
             }
         }, 0, 5000); // Refresh every 5 seconds
     }
 
-    private void refreshWalletBalance() {
-        try {
-            Map<String, String> data = new HashMap<>();
-            data.put("username", ctx.getCurrentUser().getUsername());
-            Response response = ctx.sendRequestAndWait(new Request("GET_WALLET_BALANCE", data), 5);
-            if ("SUCCESS".equals(response.getStatus())) {
-                walletBalanceLabel.setText("Balance: $" + response.getMessage());
+    private void updateAuctionGrid(List<Auction> auctions) {
+        Map<String, VBox> existingAuctionCards = auctionGrid.getChildren().stream()
+                .map(node -> (VBox) node)
+                .collect(Collectors.toMap(node -> (String) node.getUserData(), node -> node));
+
+        for (Auction auction : auctions) {
+            if (existingAuctionCards.containsKey(auction.getId())) {
+                // Update existing card
+                VBox card = existingAuctionCards.get(auction.getId());
+                // You can update specific labels here if needed, e.g., price
+                existingAuctionCards.remove(auction.getId());
+            } else {
+                // Add new card
+                VBox card = createAuctionCard(auction);
+                card.setUserData(auction.getId());
+                auctionGrid.getChildren().add(card);
             }
-        } catch (Exception e) {
-            walletBalanceLabel.setText("Balance: unavailable");
+        }
+
+        // Remove old cards
+        auctionGrid.getChildren().removeAll(existingAuctionCards.values());
+    }
+
+    private VBox createAuctionCard(Auction auction) {
+        ImageView imageView = new ImageView();
+        Label nameLabel = new Label();
+        Label priceLabel = new Label();
+        Label statusLabel = new Label();
+        VBox card = new VBox(10);
+
+        imageView.setFitHeight(150);
+        imageView.setFitWidth(150);
+        card.getStyleClass().add("auction-card");
+        nameLabel.getStyleClass().add("item-name");
+        priceLabel.getStyleClass().add("item-price");
+        statusLabel.getStyleClass().add("item-status");
+        VBox itemDetails = new VBox(5, nameLabel, priceLabel, statusLabel);
+        card.getChildren().addAll(imageView, itemDetails);
+
+        if (auction.getItem().getImageUrl() != null && !auction.getItem().getImageUrl().isEmpty()) {
+            imageView.setImage(new Image(auction.getItem().getImageUrl(), 150, 150, true, true));
+        }
+        nameLabel.setText(auction.getItem().getName());
+        priceLabel.setText("Current Price: " + auction.getCurrentPrice());
+        statusLabel.setText("Status: " + auction.getStatus());
+
+        return card;
+    }
+
+    @FXML
+    private void handleUploadImage() {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Select Item Image");
+        fileChooser.getExtensionFilters().addAll(
+                new FileChooser.ExtensionFilter("Image Files", "*.png", "*.jpg", "*.gif"));
+        selectedImageFile = fileChooser.showOpenDialog(itemNameField.getScene().getWindow());
+        if (selectedImageFile != null) {
+            try {
+                BufferedImage originalImage = ImageIO.read(selectedImageFile);
+                int size = Math.min(originalImage.getWidth(), originalImage.getHeight());
+                BufferedImage cropped = Scalr.crop(originalImage, (originalImage.getWidth() - size) / 2, (originalImage.getHeight() - size) / 2, size, size);
+                BufferedImage resized = Scalr.resize(cropped, 200);
+
+                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                ImageIO.write(resized, getFileExtension(selectedImageFile.getName()), baos);
+                croppedImageBytes = baos.toByteArray();
+
+                Image image = new Image(selectedImageFile.toURI().toString());
+                itemImageView.setImage(image);
+            } catch (Exception e) {
+                e.printStackTrace();
+                showAlert("Error", "Failed to process image.");
+            }
         }
     }
 
@@ -215,6 +272,11 @@ public class SellerHomeController {
                 return;
             }
 
+            if (selectedImageFile == null) {
+                showAlert("Error", "Please upload an image for the item.");
+                return;
+            }
+
             if (name.length() < 3 || desc.length() < 3) {
                 showAlert("Error", "Name and description must have at least 3 characters!");
                 return;
@@ -264,17 +326,36 @@ public class SellerHomeController {
             data.put("username", ctx.getCurrentUser().getUsername());
             data.put("description", desc);
 
+            if (croppedImageBytes != null) {
+                String encodedImage = Base64.getEncoder().encodeToString(croppedImageBytes);
+                data.put("image", encodedImage);
+                data.put("imageContentType", "image/" + getFileExtension(selectedImageFile.getName()));
+            }
+
             for (javafx.scene.Node node : dynamicForm.getChildren()) {
-                 if (node instanceof TextField tf) {
-                     data.put(tf.getId(), tf.getText());
-                 } else if (node instanceof CheckBox cb) {
-                     data.put(cb.getId(), String.valueOf(cb.isSelected()));
-                 } else if (node instanceof ChoiceBox cb) {
-                     Object value = cb.getValue();
-                     if (value != null) {
-                         data.put(cb.getId(), value.toString());
+                 if (node instanceof VBox) {
+                     for (javafx.scene.Node innerNode : ((VBox) node).getChildren()) {
+                         if (innerNode instanceof TextField tf) {
+                             data.put(tf.getId(), tf.getText());
+                         } else if (innerNode instanceof CheckBox cb) {
+                             data.put(cb.getId(), String.valueOf(cb.isSelected()));
+                         } else if (innerNode instanceof ChoiceBox cb) {
+                             Object value = cb.getValue();
+                             if (value != null) {
+                                 data.put(cb.getId(), value.toString());
+                             }
+                         }
                      }
-                 }
+                 } else if (node instanceof TextField tf) {
+                    data.put(tf.getId(), tf.getText());
+                } else if (node instanceof CheckBox cb) {
+                    data.put(cb.getId(), String.valueOf(cb.isSelected()));
+                } else if (node instanceof ChoiceBox cb) {
+                    Object value = cb.getValue();
+                    if (value != null) {
+                        data.put(cb.getId(), value.toString());
+                    }
+                }
              }
 
             Request req = new Request("CREATE_AUCTION", data);
@@ -282,10 +363,8 @@ public class SellerHomeController {
             Response response = ctx.sendRequestAndWait(req, 10);
             
             System.out.println("MESSAGE = " + response.getMessage()); 
-            Auction auction = null;
             if ("SUCCESS".equals(response.getStatus())) {
-                auction = gson.fromJson(response.getMessage(), Auction.class);
-                auctionList.getItems().add(auction);
+                fetchSellerAuctions(); // Refresh the grid
                  showAlert("OK", "Auction created successfully!");
                 itemNameField.clear();
                 startPriceField.clear();
@@ -300,6 +379,9 @@ public class SellerHomeController {
                 dynamicForm.getChildren().clear();
                 defaultTimingRadio.setSelected(true);
                 handleTimingTypeChange();
+                itemImageView.setImage(null);
+                selectedImageFile = null;
+                croppedImageBytes = null;
             }
             else{
                 showAlert("Lỗi", response.getMessage());
@@ -311,70 +393,18 @@ public class SellerHomeController {
         }
     }
 
+    private String getFileExtension(String fileName) {
+        int lastIndexOf = fileName.lastIndexOf(".");
+        if (lastIndexOf == -1) {
+            return ""; // empty extension
+        }
+        return fileName.substring(lastIndexOf + 1);
+    }
+
     // ================= LOGOUT =================
     @FXML
     public void handleChangePassword() {
         ChangePasswordSupport.showDialog(ctx);
-    }
-
-    @FXML
-    public void handleWithdrawRequest() {
-        Dialog<ButtonType> dialog = new Dialog<>();
-        dialog.setTitle("Withdraw Request");
-        dialog.setHeaderText("Send a withdraw request to admin");
-
-        TextField amountField = new TextField();
-        amountField.setPromptText("Enter amount");
-
-        ChoiceBox<BankList> bankBox = new ChoiceBox<>();
-        bankBox.getItems().addAll(BankList.values());
-        bankBox.setValue(BankList.VIETCOMBANK);
-
-        TextField accountNumberField = new TextField();
-        accountNumberField.setPromptText("Enter bank account number");
-
-        VBox content = new VBox(10);
-        content.getChildren().addAll(
-                new Label("Amount"), amountField,
-                new Label("Bank"), bankBox,
-                new Label("Account number"), accountNumberField
-        );
-
-        dialog.getDialogPane().setContent(content);
-        dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
-
-        dialog.showAndWait().ifPresent(buttonType -> {
-            if (buttonType != ButtonType.OK) {
-                return;
-            }
-
-            try {
-                BigDecimal amount = new BigDecimal(amountField.getText());
-                if (amount.compareTo(BigDecimal.ZERO) <= 0) {
-                    showAlert("Error", "Amount must be greater than 0");
-                    return;
-                }
-                if (accountNumberField.getText() == null || accountNumberField.getText().trim().isEmpty()) {
-                    showAlert("Error", "Bank account number cannot be empty");
-                    return;
-                }
-
-                Map<String, String> data = new HashMap<>();
-                data.put("username", ctx.getCurrentUser().getUsername());
-                data.put("amount", amount.toPlainString());
-                data.put("bankName", bankBox.getValue().name());
-                data.put("accountNumber", accountNumberField.getText().trim());
-
-                Response response = ctx.sendRequestAndWait(new Request("CREATE_WITHDRAW_REQUEST", data), 5);
-                if ("SUCCESS".equals(response.getStatus())) {
-                    showAlert("Success", response.getMessage());
-                } else {
-                    showAlert("Error", response.getMessage());
-                }
-            } catch (Exception e) {
-                showAlert("Error", "Please enter valid withdraw information");
-            }
-        });
     }
 
     @FXML
@@ -407,9 +437,8 @@ public class SellerHomeController {
             Request req = new Request("GET_SELLER_AUCTIONS", data);
             Response response = ctx.sendRequestAndWait(req, 5);
             if ("SUCCESS".equals(response.getStatus())) {
-                Auction[] auctions = gson.fromJson(response.getMessage(), Auction[].class);
-                auctionList.getItems().clear();
-                auctionList.getItems().addAll(auctions);
+                List<Auction> auctions = gson.fromJson(response.getMessage(), new TypeToken<List<Auction>>(){}.getType());
+                Platform.runLater(() -> updateAuctionGrid(auctions));
             }
         } catch (Exception e) {
             System.out.println("Failed to refresh auctions: " + e.getMessage());

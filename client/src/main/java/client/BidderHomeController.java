@@ -5,7 +5,11 @@ import com.google.gson.reflect.TypeToken;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
+import javafx.scene.layout.TilePane;
 import shared.models.Auction;
 import shared.network.Request;
 import shared.network.Response;
@@ -19,9 +23,10 @@ import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 public class BidderHomeController {
-    @FXML private ListView<Auction> auctionList;
+    @FXML private TilePane auctionGrid;
     @FXML private Label welcomeLabel;
     @FXML private Label walletBalanceLabel;
     private final AppContext ctx = AppContext.getInstance();
@@ -31,27 +36,6 @@ public class BidderHomeController {
     @FXML
     public void initialize() {
         welcomeLabel.setText("Welcome " + ctx.getCurrentUser().getUsername());
-        auctionList.setCellFactory(lv -> new ListCell<>() {
-            @Override
-            protected void updateItem(Auction item, boolean empty) {
-                super.updateItem(item, empty);
-                if (empty || item == null) {
-                    setText(null);
-                } else {
-                    setText(item.getItem().getName() + " - Current: " + item.getCurrentPrice() + " - " + item.getStatus());
-                }
-            }
-        });
-
-        // Add double-click listener
-        auctionList.setOnMouseClicked(event -> {
-            if (event.getClickCount() == 2) {
-                Auction selected = auctionList.getSelectionModel().getSelectedItem();
-                if (selected != null) {
-                    showBidOptionsDialog(selected);
-                }
-            }
-        });
 
         messageListener = line -> {
             try {
@@ -64,7 +48,7 @@ public class BidderHomeController {
                         List<Auction> list = gson.fromJson(res.getMessage(), new TypeToken<List<Auction>>(){}.getType());
                         if (list != null) {
                             Platform.runLater(() -> {
-                                auctionList.getItems().setAll(list);
+                                updateAuctionGrid(list);
                             });
                         }
                     } catch (Exception e) {
@@ -108,13 +92,71 @@ public class BidderHomeController {
         }
     }
 
+    private void updateAuctionGrid(List<Auction> auctions) {
+        Map<String, VBox> existingAuctionCards = auctionGrid.getChildren().stream()
+                .map(node -> (VBox) node)
+                .collect(Collectors.toMap(node -> (String) node.getUserData(), node -> node));
+
+        for (Auction auction : auctions) {
+            if (existingAuctionCards.containsKey(auction.getId())) {
+                // Update existing card
+                VBox card = existingAuctionCards.get(auction.getId());
+                // You can update specific labels here if needed, e.g., price
+                existingAuctionCards.remove(auction.getId());
+            } else {
+                // Add new card
+                VBox card = createAuctionCard(auction);
+                card.setUserData(auction.getId());
+                auctionGrid.getChildren().add(card);
+            }
+        }
+
+        // Remove old cards
+        auctionGrid.getChildren().removeAll(existingAuctionCards.values());
+    }
+
+    private VBox createAuctionCard(Auction auction) {
+        ImageView imageView = new ImageView();
+        Label nameLabel = new Label();
+        Label priceLabel = new Label();
+        Label statusLabel = new Label();
+        Label endsInLabel = new Label();
+        VBox card = new VBox(10);
+
+        imageView.setFitHeight(150);
+        imageView.setFitWidth(150);
+        card.getStyleClass().add("auction-card");
+        nameLabel.getStyleClass().add("item-name");
+        priceLabel.getStyleClass().add("item-price");
+        statusLabel.getStyleClass().add("item-status");
+        endsInLabel.getStyleClass().add("item-ends-in");
+        VBox itemDetails = new VBox(5, nameLabel, priceLabel, statusLabel, endsInLabel);
+        card.getChildren().addAll(imageView, itemDetails);
+
+        if (auction.getItem().getImageUrl() != null && !auction.getItem().getImageUrl().isEmpty()) {
+            imageView.setImage(new Image(auction.getItem().getImageUrl(), 150, 150, true, true));
+        }
+        nameLabel.setText(auction.getItem().getName());
+        priceLabel.setText("Current Bid: " + auction.getCurrentPrice() + " VND");
+        statusLabel.setText(auction.getStatus().toString());
+        endsInLabel.setText("Ends in: " + "12h 21m"); // Placeholder
+
+        card.setOnMouseClicked(event -> {
+            if (event.getClickCount() == 2) {
+                showBidOptionsDialog(auction);
+            }
+        });
+
+        return card;
+    }
+
     private void refreshAuctions() {
         try {
             Request req = new Request("GET_AUCTIONS", new HashMap<>());
             Response response = ctx.sendRequestAndWait(req, 5);
             if ("SUCCESS".equals(response.getStatus())) {
-                Auction[] auctions = gson.fromJson(response.getMessage(), Auction[].class);
-                Platform.runLater(() -> auctionList.getItems().setAll(auctions));
+                List<Auction> auctions = gson.fromJson(response.getMessage(), new TypeToken<List<Auction>>(){}.getType());
+                Platform.runLater(() -> updateAuctionGrid(auctions));
             }
         } catch (Exception e) {
             System.out.println("Failed to refresh auctions: " + e.getMessage());
