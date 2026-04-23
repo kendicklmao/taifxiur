@@ -121,70 +121,65 @@ public class SellerHomeController {
 
         Category c = categoryBox.getValue();
 
-        if (c == Category.ELECTRONICS) {
-             TextField brand = new TextField();
-             brand.setPromptText("Brand");
-             brand.setId("brandField");
-
-             ChoiceBox<ItemStatus> status = new ChoiceBox<>();
-             status.getItems().addAll(ItemStatus.values());
-             status.setValue(ItemStatus.NEW);
-             status.setId("statusField");
-
-             dynamicForm.getChildren().addAll(brand, status);
-         }
-
-         else if (c == Category.ARTS) {
-            TextField artist = new TextField();
-            artist.setPromptText("Artist");
-            artist.setId("artistField");
-
-            TextField year = new TextField();
-            year.setPromptText("Year");
-            year.setId("yearField");
-
-            CheckBox original = new CheckBox("Original");
-            original.setId("originalBox");
-
-            dynamicForm.getChildren().addAll(artist, year, original);
+        if (c == null) {
+            return;
         }
 
-        else if (c == Category.VEHICLES) {
-            TextField brand = new TextField();
-            brand.setPromptText("Brand");
-            brand.setId("brandField");
-
-            TextField model = new TextField();
-            model.setPromptText("Model year");
-            model.setId("modelField");
-
-            TextField km = new TextField();
-            km.setPromptText("KM traveled");
-            km.setId("kmField");
-
-            dynamicForm.getChildren().addAll(brand, model, km);
+        switch (c) {
+            case ELECTRONICS:
+                addTextField("Brand", "brandField");
+                addStatusChoiceBox("statusField");
+                break;
+            case ARTS:
+                addTextField("Artist", "artistField");
+                addTextField("Year", "yearField");
+                addCheckBox("Original", "originalBox");
+                break;
+            case VEHICLES:
+                addTextField("Brand", "brandField");
+                addTextField("Model Year", "modelField");
+                addTextField("KM Traveled", "kmField");
+                break;
+            case FASHIONS:
+                addTextField("Brand", "brandField");
+                addStatusChoiceBox("statusField");
+                break;
+            case COLLECTIBLES:
+                addTextField("Year", "yearField");
+                break;
         }
+    }
 
-         else if (c == Category.FASHIONS) {
-             TextField brand = new TextField();
-             brand.setPromptText("Brand");
-             brand.setId("brandField");
+    private void addTextField(String prompt, String id) {
+        VBox container = new VBox(6);
+        Label label = new Label(prompt);
+        label.getStyleClass().add("form-label-register");
+        TextField field = new TextField();
+        field.setPromptText("Enter " + prompt.toLowerCase());
+        field.setId(id);
+        field.getStyleClass().add("dashboard-input");
+        container.getChildren().addAll(label, field);
+        dynamicForm.getChildren().add(container);
+    }
 
-             ChoiceBox<ItemStatus> status = new ChoiceBox<>();
-             status.getItems().addAll(ItemStatus.values());
-             status.setValue(ItemStatus.NEW);
-             status.setId("statusField");
+    private void addStatusChoiceBox(String id) {
+        VBox container = new VBox(6);
+        Label label = new Label("Status");
+        label.getStyleClass().add("form-label-register");
+        ChoiceBox<ItemStatus> status = new ChoiceBox<>();
+        status.getItems().addAll(ItemStatus.values());
+        status.setValue(ItemStatus.NEW);
+        status.setId(id);
+        status.getStyleClass().add("dashboard-choicebox");
+        container.getChildren().addAll(label, status);
+        dynamicForm.getChildren().add(container);
+    }
 
-             dynamicForm.getChildren().addAll(brand, status);
-         }
-
-        else if (c == Category.COLLECTIBLES) {
-            TextField year = new TextField();
-            year.setPromptText("Year");
-            year.setId("yearField");
-
-            dynamicForm.getChildren().add(year);
-        }
+    private void addCheckBox(String text, String id) {
+        CheckBox checkbox = new CheckBox(text);
+        checkbox.setId(id);
+        checkbox.getStyleClass().add("dashboard-checkbox");
+        dynamicForm.getChildren().add(checkbox);
     }
 
     // ================= CREATE AUCTION =================

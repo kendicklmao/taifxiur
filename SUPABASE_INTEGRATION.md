@@ -11,7 +11,7 @@ This project has been configured to use **Supabase PostgreSQL** as the backend d
 - **Port**: `5432`
 - **Database**: `postgres`
 - **User**: `postgres.uxmbyzqylbtuqyyatzwj`
-- **Password**: `Hd0Ykh1LCtzbw4X6`
+- **Password**: `Hd0Ykh1LCtzbw4X6` 
 
 **Note**: This configuration uses Supabase's **Session Pooler** endpoint instead of the direct database connection. The Session Pooler provides IPv4 compatibility and is recommended for most network environments, especially corporate networks with IPv4-only connectivity.
 

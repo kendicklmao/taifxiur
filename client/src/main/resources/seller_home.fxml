@@ -31,33 +31,32 @@
                     <VBox spacing="12">
                         <!-- Item Details -->
                         <VBox spacing="8">
-                            <Label text="Item Details" styleClass="form-section-title"/>
-                            <VBox spacing="6">
-                                <Label text="Product Name" styleClass="form-label-register"/>
-                                <TextField fx:id="itemNameField" promptText="Enter product name" styleClass="dashboard-input"/>
-                            </VBox>
-                            <VBox spacing="6">
-                                <Label text="Starting Price" styleClass="form-label-register"/>
-                                <TextField fx:id="startPriceField" promptText="Enter starting price" styleClass="dashboard-input"/>
-                            </VBox>
-                            <VBox spacing="6">
-                                <Label text="Category" styleClass="form-label-register"/>
-                                <ChoiceBox fx:id="categoryBox" style="-fx-padding: 10; -fx-font-size: 13; -fx-border-color: #e0e0e0; -fx-border-width: 1; -fx-background-color: #f9f9f9; -fx-border-radius: 4;"/>
-                            </VBox>
+                            <Label text="Product Name" styleClass="form-label-register"/>
+                            <TextField fx:id="itemNameField" promptText="Enter product name" styleClass="dashboard-input"/>
+                        </VBox>
+                        <VBox spacing="8">
+                            <Label text="Starting Price" styleClass="form-label-register"/>
+                            <TextField fx:id="startPriceField" promptText="Enter starting price" styleClass="dashboard-input"/>
+                        </VBox>
+                        <VBox spacing="8">
+                            <Label text="Category" styleClass="form-label-register"/>
+                            <ChoiceBox fx:id="categoryBox" style="-fx-padding: 10; -fx-font-size: 13; -fx-border-color: #e0e0e0; -fx-border-width: 1; -fx-background-color: #f9f9f9; -fx-border-radius: 4;"/>
                         </VBox>
 
-                        <!-- Dynamic Form -->
-                        <VBox fx:id="dynamicForm" spacing="10"/>
+                        <!-- Dynamic Form for additional attributes -->
+                        <VBox fx:id="dynamicForm" spacing="10" style="-fx-padding: 5 0 5 0;"/>
 
-                        <!-- Description -->
-                        <VBox spacing="6">
-                            <Label text="Product Description" styleClass="form-label-register"/>
-                            <TextArea fx:id="descField" promptText="Detailed description of your item" style="-fx-padding: 10; -fx-font-size: 12; -fx-border-color: #e0e0e0; -fx-border-width: 1; -fx-background-color: #f9f9f9; -fx-border-radius: 4; -fx-control-inner-background: #f9f9f9;" prefHeight="100" wrapText="true"/>
+                        <!-- Auction Timing -->
+                        <VBox spacing="8">
+                            <Label text="Auction Timing" styleClass="form-section-title"/>
+                            <HBox spacing="10" alignment="CENTER_LEFT">
+                                <RadioButton fx:id="defaultTimingRadio" text="Default (1 hour from now)" onAction="#handleTimingTypeChange"/>
+                                <RadioButton fx:id="customTimingRadio" text="Custom Timing" onAction="#handleTimingTypeChange"/>
+                            </HBox>
                         </VBox>
 
-                        <!-- Date and Time Selection -->
-                        <VBox spacing="12">
-                            <Label text="Auction Schedule" styleClass="form-section-title"/>
+                        <!-- Custom Timing Pane -->
+                        <VBox fx:id="customTimingPane" spacing="12" visible="false" managed="false">
                             <HBox spacing="20">
                                 <VBox spacing="6" HBox.hgrow="ALWAYS">
                                     <Label text="Start Date" styleClass="form-label-register"/>
@@ -86,6 +85,12 @@
                                     </HBox>
                                 </VBox>
                             </HBox>
+                        </VBox>
+
+                        <!-- Description -->
+                        <VBox spacing="6">
+                            <Label text="Product Description" styleClass="form-label-register"/>
+                            <TextArea fx:id="descField" promptText="Detailed description of your item" style="-fx-padding: 10; -fx-font-size: 12; -fx-border-color: #e0e0e0; -fx-border-width: 1; -fx-background-color: #f9f9f9; -fx-border-radius: 4; -fx-control-inner-background: #f9f9f9;" prefHeight="100" wrapText="true"/>
                         </VBox>
 
                         <!-- Submit Button -->
