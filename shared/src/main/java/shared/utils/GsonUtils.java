@@ -14,8 +14,35 @@ public class GsonUtils {
         return new GsonBuilder()
                 .registerTypeAdapter(Instant.class, new InstantAdapter())
                 .registerTypeAdapter(Item.class, new ItemDeserializer())
+                .registerTypeAdapter(User.class, new UserDeserializer())
                 .registerTypeAdapter(ScheduledFuture.class, new ScheduledFutureAdapter())
                 .create();
+    }
+
+    private static class UserDeserializer implements JsonDeserializer<User> {
+        @Override
+        public User deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context) throws JsonParseException {
+            JsonObject obj = json.getAsJsonObject();
+            String role = obj.get("role").getAsString();
+            int id = obj.get("id").getAsInt();
+            String username = obj.get("username").getAsString();
+            String email = obj.get("email").getAsString();
+            String q1 = obj.get("securityQuestion1").getAsString();
+            String a1 = obj.get("securityAnswer1").getAsString();
+            String q2 = obj.get("securityQuestion2").getAsString();
+            String a2 = obj.get("securityAnswer2").getAsString();
+
+            switch (role) {
+                case "ADMIN":
+                    return new Admin(id, username, "", email, q1, a1, q2, a2);
+                case "BIDDER":
+                    return new Bidder(id, username, "", email, q1, a1, q2, a2);
+                case "SELLER":
+                    return new Seller(id, username, "", email, q1, a1, q2, a2);
+                default:
+                    throw new JsonParseException("Unknown user role: " + role);
+            }
+        }
     }
 
     private static class InstantAdapter implements JsonSerializer<Instant>, JsonDeserializer<Instant> {

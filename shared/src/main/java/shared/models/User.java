@@ -5,6 +5,7 @@ import shared.utils.hash;
 import shared.utils.Validator;
 
 public abstract class User {
+    private int id;
     private String hashedPassword; //mật khẩu đã mã hóa
     private String passwordSalt; //String ngẫu nhiên làm rối loạn mã hóa cho mật khẩu
     private final String answerSalt1;  //String ngẫu nhiên làm rối loạn mã hóa cho câu trả lời xác nhận danh tính 1
@@ -18,7 +19,8 @@ public abstract class User {
     private final String securityQuestion2;//câu hỏi xác nhận danh tính 2
     private final String securityAnswer2; //câu trả lời xác nhận danh tính 2
 
-    public User(String username, String password, String email, Role role, String q1, String a1, String q2, String a2) {
+    public User(int id, String username, String password, String email, Role role, String q1, String a1, String q2, String a2) {
+        this.id = id;
         this.username = username;
         this.email = email;
         this.role = role;
@@ -31,6 +33,10 @@ public abstract class User {
         this.securityAnswer2 = hash.formula(a2, answerSalt2);
         this.passwordSalt = hash.generateSalt();
         this.hashedPassword = hash.formula(password, passwordSalt);
+    }
+
+    public int getId() {
+        return id;
     }
 
     public String getUsername() {

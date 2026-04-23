@@ -11,8 +11,12 @@ public class Seller extends User {//người bán hàng
     private final transient ConcurrentHashMap<String, Item> items = new ConcurrentHashMap<>(); //danh sách sản phẩm
     private final transient Wallet wallet = new Wallet();
 
+    public Seller(int id, String username, String password, String email, String q1, String a1, String q2, String a2) {
+        super(id, username, password, email, Role.SELLER, q1, a1, q2, a2);
+    }
+
     public Seller(String username, String password, String email, String q1, String a1, String q2, String a2) {
-        super(username, password, email, Role.SELLER, q1, a1, q2, a2);
+        super(0, username, password, email, Role.SELLER, q1, a1, q2, a2);
     }
 
     public void createArt(String name, String description, String artist, int yearCreated, boolean isOriginal) {//tạo sản phẩm nghệ thuật

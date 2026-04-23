@@ -39,6 +39,12 @@ public class DatabaseInitializer {
             // Create withdraw_requests table
             createWithdrawRequestsTable(stmt);
 
+            // Create admin_logs table
+            createAdminLogsTable(stmt);
+
+            // Create admin_action_logs table
+            createAdminActionLogsTable(stmt);
+
             System.out.println("Database schema initialized successfully");
 
         } catch (SQLException e) {
@@ -179,7 +185,32 @@ public class DatabaseInitializer {
         stmt.execute(sql);
         System.out.println("Withdraw requests table created or already exists");
     }
+
+    private static void createAdminLogsTable(Statement stmt) throws SQLException {
+        String sql = """
+                CREATE TABLE IF NOT EXISTS admin_logs (
+                    id SERIAL PRIMARY KEY,
+                    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                    login_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    status VARCHAR(50) NOT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+                """;
+        stmt.execute(sql);
+        System.out.println("Admin logs table created or already exists");
+    }
+
+    private static void createAdminActionLogsTable(Statement stmt) throws SQLException {
+        String sql = """
+                CREATE TABLE IF NOT EXISTS admin_action_logs (
+                    id SERIAL PRIMARY KEY,
+                    admin_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                    target_user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                    action VARCHAR(50) NOT NULL,
+                    action_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+                """;
+        stmt.execute(sql);
+        System.out.println("Admin action logs table created or already exists");
+    }
 }
-
-
-

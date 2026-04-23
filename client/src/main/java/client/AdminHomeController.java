@@ -6,6 +6,7 @@ import javafx.scene.control.*;
 import com.google.gson.Gson;
 import shared.models.Auction;
 import shared.models.User;
+import shared.models.AdminActionLog;
 import shared.network.Request;
 import shared.network.Response;
 import shared.utils.GsonUtils;
@@ -16,6 +17,7 @@ import java.util.Map;
 public class AdminHomeController {
     @FXML private ListView<Auction> allAuctionsList;
     @FXML private ListView<User> allUsersList;
+    @FXML private ListView<AdminActionLog> adminActionLogsList;
     @FXML private TextField usernameField;
     @FXML private TextArea userStatusArea;
     @FXML private Label welcomeLabel;
@@ -30,6 +32,7 @@ public class AdminHomeController {
         setupUserListCell();
         refreshAuctions();
         refreshUsers();
+        refreshAdminActionLogs();
     }
 
     private void setupAuctionListCell() {
@@ -64,6 +67,20 @@ public class AdminHomeController {
                 }
             }
         });
+    }
+
+    @FXML
+    public void refreshAdminActionLogs() {
+        try {
+            Request req = new Request("GET_ADMIN_ACTION_LOGS", new HashMap<>());
+            Response response = ctx.sendRequestAndWait(req, 5);
+            if ("SUCCESS".equals(response.getStatus())) {
+                AdminActionLog[] logs = gson.fromJson(response.getMessage(), AdminActionLog[].class);
+                Platform.runLater(() -> adminActionLogsList.getItems().setAll(logs));
+            }
+        } catch (Exception e) {
+            showAlert("Error", "Failed to load admin action logs: " + e.getMessage());
+        }
     }
 
     @FXML

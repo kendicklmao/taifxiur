@@ -6,6 +6,7 @@ import shared.models.Admin;
 import shared.models.Bidder;
 import shared.models.Seller;
 import shared.models.User;
+import shared.models.AdminActionLog;
 import shared.utils.Validator;
 
 import java.sql.*;
@@ -30,61 +31,10 @@ public class UserService {
      * Initialize default users in the database on first run
      */
     private void initializeDefaultUsers() {
-        upsertDefaultUser("seller", "Admin@123", "seller@gmail.com", "q", "a", "q", "a", Role.SELLER);
-        upsertDefaultUser("bidder", "Admin@123", "bidder@gmail.com", "q", "a", "q", "b", Role.BIDDER);
-        upsertDefaultUser("admin1", "Admin@123", "admin@gmail.com", "q", "a", "q", "a", Role.ADMIN);
-        upsertDefaultUser("bidder1", "Admin@123", "bidder1@gmail.com", "q", "a", "q", "a", Role.BIDDER);
-    }
-
-    private void upsertDefaultUser(String username, String password, String email, String q1, String a1, String q2, String a2, Role role) {
-        if (!Validator.isValidUsername(username) ||
-                !Validator.isValidPassword(password) ||
-                !Validator.isValidEmail(email) ||
-                !Validator.isValidQuestion(q1) ||
-                !Validator.isValidQuestion(q2) ||
-                !Validator.isValidAnswer(a1) ||
-                !Validator.isValidAnswer(a2)) {
-            System.err.println("Invalid default user config for: " + username);
-            return;
-        }
-
-        username = Validator.normalizeUsername(username);
-        password = Validator.normalizePassword(password);
-        email = Validator.normalizeEmail(email);
-        q1 = Validator.normalizeQuestion(q1);
-        q2 = Validator.normalizeQuestion(q2);
-        a1 = Validator.normalizeAnswer(a1);
-        a2 = Validator.normalizeAnswer(a2);
-
-        try (Connection conn = DatabaseConfig.getDataSource().getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(
-                     """
-                     INSERT INTO users (username, password, email, role, question_1, answer_1, question_2, answer_2, is_banned, updated_at)
-                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, FALSE, CURRENT_TIMESTAMP)
-                     ON CONFLICT (username) DO UPDATE SET
-                         password = EXCLUDED.password,
-                         email = EXCLUDED.email,
-                         role = EXCLUDED.role,
-                         question_1 = EXCLUDED.question_1,
-                         answer_1 = EXCLUDED.answer_1,
-                         question_2 = EXCLUDED.question_2,
-                         answer_2 = EXCLUDED.answer_2,
-                         is_banned = FALSE,
-                         updated_at = CURRENT_TIMESTAMP
-                     """)) {
-
-            pstmt.setString(1, username);
-            pstmt.setString(2, password);
-            pstmt.setString(3, email);
-            pstmt.setString(4, role.name());
-            pstmt.setString(5, q1);
-            pstmt.setString(6, a1);
-            pstmt.setString(7, q2);
-            pstmt.setString(8, a2);
-            pstmt.executeUpdate();
-        } catch (SQLException e) {
-            System.err.println("Error syncing default user " + username + ": " + e.getMessage());
-        }
+        this.register("seller", "Admin@123", "seller@gmail.com", "q", "a", "q", "a", Role.SELLER);
+        this.register("bidder", "Admin@123", "bidder@gmail.com", "q", "a", "q", "a", Role.BIDDER);
+        this.register("admin1", "Admin@123", "admin@gmail.com", "q", "a", "q", "a", Role.ADMIN);
+        this.register("bidder1", "Admin@123", "bidder1@gmail.com", "q", "a", "q", "a", Role.BIDDER);
     }
 
     /**
@@ -189,6 +139,11 @@ public class UserService {
                 }
                 failedAttempts.remove(username);
                 lockUntil.remove(username);
+
+                if ("ADMIN".equals(roleStr)) {
+                    logAdminLogin(userId, "SUCCESS");
+                }
+
                 return getUserFromDatabase(username);
             } else {
                 int attempts = failedAttempts.getOrDefault(username, 0) + 1;
@@ -202,11 +157,28 @@ public class UserService {
                     }
                     lockUntil.put(username, now.plusSeconds(lockSeconds));
                 }
+
+                if ("ADMIN".equals(roleStr)) {
+                    logAdminLogin(userId, "FAILED");
+                }
+
                 return null;
             }
         } catch (SQLException e) {
             System.err.println("Error during login: " + e.getMessage());
             return null;
+        }
+    }
+
+    private void logAdminLogin(int userId, String status) {
+        String sql = "INSERT INTO admin_logs (user_id, status) VALUES (?, ?)";
+        try (Connection conn = DatabaseConfig.getDataSource().getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, userId);
+            pstmt.setString(2, status);
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            System.err.println("Error logging admin login: " + e.getMessage());
         }
     }
 
@@ -222,6 +194,7 @@ public class UserService {
             ResultSet rs = pstmt.executeQuery();
 
             if (rs.next()) {
+                int id = rs.getInt("id");
                 String role = rs.getString("role");
                 String email = rs.getString("email");
                 String password = rs.getString("password");
@@ -233,11 +206,11 @@ public class UserService {
 
                 User user = null;
                 if ("BIDDER".equals(role)) {
-                    user = new Bidder(username, password, email, q1, a1, q2, a2);
+                    user = new Bidder(id, username, password, email, q1, a1, q2, a2);
                 } else if ("SELLER".equals(role)) {
-                    user = new Seller(username, password, email, q1, a1, q2, a2);
+                    user = new Seller(id, username, password, email, q1, a1, q2, a2);
                 } else if ("ADMIN".equals(role)) {
-                    user = new Admin(username, password, email, q1, a1, q2, a2);
+                    user = new Admin(id, username, password, email, q1, a1, q2, a2);
                 }
 
                 if (user != null && isBanned) {
@@ -279,160 +252,6 @@ public class UserService {
     }
 
     /**
-     * Get stored security questions for a username/email pair.
-     */
-    public String[] getSecurityQuestions(String username, String email) {
-        if (!Validator.isValidUsername(username) || !Validator.isValidEmail(email)) {
-            return null;
-        }
-
-        username = Validator.normalizeUsername(username);
-        email = Validator.normalizeEmail(email);
-
-        try (Connection conn = DatabaseConfig.getDataSource().getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(
-                     "SELECT question_1, question_2 FROM users WHERE username = ? AND email = ?")) {
-
-            pstmt.setString(1, username);
-            pstmt.setString(2, email);
-            ResultSet rs = pstmt.executeQuery();
-
-            if (rs.next()) {
-                return new String[]{
-                        rs.getString("question_1"),
-                        rs.getString("question_2")
-                };
-            }
-        } catch (SQLException e) {
-            System.err.println("Error fetching security questions: " + e.getMessage());
-        }
-
-        return null;
-    }
-
-    /**
-     * Reset password after verifying username, email and security answers.
-     */
-    public boolean resetPassword(String username, String email, String answer1, String answer2, String newPassword) {
-        if (!Validator.isValidUsername(username) ||
-                !Validator.isValidEmail(email) ||
-                !hasAnswer(answer1) ||
-                !hasAnswer(answer2) ||
-                !Validator.isValidPassword(newPassword)) {
-            return false;
-        }
-
-        username = Validator.normalizeUsername(username);
-        email = Validator.normalizeEmail(email);
-        answer1 = Validator.normalizeAnswer(answer1);
-        answer2 = Validator.normalizeAnswer(answer2);
-        newPassword = Validator.normalizePassword(newPassword);
-
-        try (Connection conn = DatabaseConfig.getDataSource().getConnection()) {
-            try (PreparedStatement verifyStmt = conn.prepareStatement(
-                    "SELECT answer_1, answer_2 FROM users WHERE username = ? AND email = ?")) {
-
-                verifyStmt.setString(1, username);
-                verifyStmt.setString(2, email);
-                ResultSet rs = verifyStmt.executeQuery();
-
-                if (!rs.next()) {
-                    return false;
-                }
-
-                String storedAnswer1 = rs.getString("answer_1");
-                String storedAnswer2 = rs.getString("answer_2");
-
-                if (!answer1.equals(storedAnswer1) || !answer2.equals(storedAnswer2)) {
-                    return false;
-                }
-            }
-
-            try (PreparedStatement updateStmt = conn.prepareStatement(
-                    "UPDATE users SET password = ?, updated_at = CURRENT_TIMESTAMP WHERE username = ? AND email = ?")) {
-
-                updateStmt.setString(1, newPassword);
-                updateStmt.setString(2, username);
-                updateStmt.setString(3, email);
-
-                int updatedRows = updateStmt.executeUpdate();
-                if (updatedRows > 0) {
-                    failedAttempts.remove(username);
-                    lockUntil.remove(username);
-                    loggedIn.remove(username);
-                    return true;
-                }
-            }
-        } catch (SQLException e) {
-            System.err.println("Error resetting password: " + e.getMessage());
-        }
-
-        return false;
-    }
-
-    /**
-     * Change password for a logged-in user using the current password.
-     */
-    public String changePassword(String username, String oldPassword, String newPassword) {
-        if (!Validator.isValidUsername(username)) {
-            return "Invalid username";
-        }
-
-        if (oldPassword == null || oldPassword.trim().isEmpty()) {
-            return "Current password cannot be empty";
-        }
-
-        if (!Validator.isValidPassword(newPassword)) {
-            return "New password must be at least 6 characters and include uppercase, lowercase, number, and special character";
-        }
-
-        username = Validator.normalizeUsername(username);
-        oldPassword = Validator.normalizePassword(oldPassword);
-        newPassword = Validator.normalizePassword(newPassword);
-
-        if (oldPassword.equals(newPassword)) {
-            return "New password must be different from the current password";
-        }
-
-        User user = getUserFromDatabase(username);
-        if (user == null) {
-            return "User not found";
-        }
-
-        if (!user.checkPassword(oldPassword)) {
-            return "Current password is incorrect";
-        }
-
-        if (!user.changePassword(oldPassword, newPassword)) {
-            return "Failed to change password";
-        }
-
-        try (Connection conn = DatabaseConfig.getDataSource().getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(
-                     "UPDATE users SET password = ?, updated_at = CURRENT_TIMESTAMP WHERE username = ?")) {
-
-            pstmt.setString(1, newPassword);
-            pstmt.setString(2, username);
-            int updatedRows = pstmt.executeUpdate();
-
-            if (updatedRows > 0) {
-                failedAttempts.remove(username);
-                lockUntil.remove(username);
-                return null;
-            }
-        } catch (SQLException e) {
-            System.err.println("Error changing password: " + e.getMessage());
-            return "Database error while changing password";
-        }
-
-        return "Failed to update password";
-    }
-
-    private boolean hasAnswer(String answer) {
-        return answer != null && !answer.trim().isEmpty();
-    }
-
-    /**
      * Logout user
      */
     public void logout(String username) {
@@ -447,11 +266,33 @@ public class UserService {
 
         try (Connection conn = DatabaseConfig.getDataSource().getConnection();
              Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery("SELECT username FROM users")) {
+             ResultSet rs = stmt.executeQuery("SELECT id, username, password, email, role, is_banned, question_1, answer_1, question_2, answer_2 FROM users")) {
 
             while (rs.next()) {
-                User user = getUserFromDatabase(rs.getString("username"));
+                int id = rs.getInt("id");
+                String username = rs.getString("username");
+                String password = rs.getString("password");
+                String email = rs.getString("email");
+                String role = rs.getString("role");
+                boolean isBanned = rs.getBoolean("is_banned");
+                String q1 = rs.getString("question_1");
+                String a1 = rs.getString("answer_1");
+                String q2 = rs.getString("question_2");
+                String a2 = rs.getString("answer_2");
+
+                User user = null;
+                if ("BIDDER".equals(role)) {
+                    user = new Bidder(id, username, password, email, q1, a1, q2, a2);
+                } else if ("SELLER".equals(role)) {
+                    user = new Seller(id, username, password, email, q1, a1, q2, a2);
+                } else if ("ADMIN".equals(role)) {
+                    user = new Admin(id, username, password, email, q1, a1, q2, a2);
+                }
+
                 if (user != null) {
+                    if (isBanned) {
+                        user.banUser();
+                    }
                     userList.add(user);
                 }
             }
@@ -465,15 +306,25 @@ public class UserService {
     /**
      * Ban user
      */
-    public boolean banUser(String username) {
+    public boolean banUser(String username, String adminUsername) {
         username = Validator.normalizeUsername(username);
+        User admin = getUserFromDatabase(adminUsername);
+        User targetUser = getUserFromDatabase(username);
+
+        if (admin == null || targetUser == null) {
+            return false;
+        }
 
         try (Connection conn = DatabaseConfig.getDataSource().getConnection();
              PreparedStatement pstmt = conn.prepareStatement("UPDATE users SET is_banned = TRUE WHERE username = ?")) {
 
             pstmt.setString(1, username);
             int affectedRows = pstmt.executeUpdate();
-            return affectedRows > 0;
+            if (affectedRows > 0) {
+                logAdminAction(admin.getId(), targetUser.getId(), "BAN");
+                return true;
+            }
+            return false;
         } catch (SQLException e) {
             System.err.println("Error banning user: " + e.getMessage());
             return false;
@@ -483,18 +334,67 @@ public class UserService {
     /**
      * Unban user
      */
-    public boolean unbanUser(String username) {
+    public boolean unbanUser(String username, String adminUsername) {
         username = Validator.normalizeUsername(username);
+        User admin = getUserFromDatabase(adminUsername);
+        User targetUser = getUserFromDatabase(username);
+
+        if (admin == null || targetUser == null) {
+            return false;
+        }
 
         try (Connection conn = DatabaseConfig.getDataSource().getConnection();
              PreparedStatement pstmt = conn.prepareStatement("UPDATE users SET is_banned = FALSE WHERE username = ?")) {
 
             pstmt.setString(1, username);
             int affectedRows = pstmt.executeUpdate();
-            return affectedRows > 0;
+            if (affectedRows > 0) {
+                logAdminAction(admin.getId(), targetUser.getId(), "UNBAN");
+                return true;
+            }
+            return false;
         } catch (SQLException e) {
             System.err.println("Error unbanning user: " + e.getMessage());
             return false;
         }
+    }
+
+    private void logAdminAction(int adminId, int targetUserId, String action) {
+        String sql = "INSERT INTO admin_action_logs (admin_id, target_user_id, action) VALUES (?, ?, ?)";
+        try (Connection conn = DatabaseConfig.getDataSource().getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, adminId);
+            pstmt.setInt(2, targetUserId);
+            pstmt.setString(3, action);
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            System.err.println("Error logging admin action: " + e.getMessage());
+        }
+    }
+
+    public List<AdminActionLog> getAdminActionLogs() {
+        List<AdminActionLog> logs = new ArrayList<>();
+        String sql = "SELECT aal.id, u_admin.username AS admin_username, u_target.username AS target_username, aal.action, aal.action_time " +
+                     "FROM admin_action_logs aal " +
+                     "JOIN users u_admin ON aal.admin_id = u_admin.id " +
+                     "JOIN users u_target ON aal.target_user_id = u_target.id " +
+                     "ORDER BY aal.action_time DESC";
+
+        try (Connection conn = DatabaseConfig.getDataSource().getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql);
+             ResultSet rs = pstmt.executeQuery()) {
+
+            while (rs.next()) {
+                int id = rs.getInt("id");
+                String adminUsername = rs.getString("admin_username");
+                String targetUsername = rs.getString("target_username");
+                String action = rs.getString("action");
+                Instant actionTime = rs.getTimestamp("action_time").toInstant();
+                logs.add(new AdminActionLog(id, adminUsername, targetUsername, action, actionTime));
+            }
+        } catch (SQLException e) {
+            System.err.println("Error fetching admin action logs: " + e.getMessage());
+        }
+        return logs;
     }
 }
