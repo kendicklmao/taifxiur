@@ -107,6 +107,9 @@ public class ClientHandler implements Runnable {
                 String pass = request.getData().get("password");
 
                 try {
+                    if (userService.exists(user) && userService.isBanned(user)) {
+                        return new Response("FAIL", "Your account has been banned");
+                    }
                     User loggedInUser = userService.login(user, pass);
                     if (loggedInUser != null) {
                         this.loggedInUsername = loggedInUser.getUsername(); // Track logged in username
@@ -352,6 +355,85 @@ public class ClientHandler implements Runnable {
             case "GET_ADMIN_ACTION_LOGS":
                 List<AdminActionLog> logs = userService.getAdminActionLogs();
                 return new Response("SUCCESS", gson.toJson(logs));
+
+            case "GET_PENDING_DEPOSIT_REQUESTS":
+                List<Map<String, String>> depositRequests = userService.getPendingDepositRequests();
+                return new Response("SUCCESS", gson.toJson(depositRequests));
+
+            case "GET_PENDING_WITHDRAW_REQUESTS":
+                List<Map<String, String>> withdrawRequests = userService.getPendingWithdrawRequests();
+                return new Response("SUCCESS", gson.toJson(withdrawRequests));
+
+            case "APPROVE_DEPOSIT_REQUEST":
+                String approveDepositId = request.getData().get("requestId");
+                String approveDepositAdmin = loggedInUsername;
+                String approveDepositResult = userService.approveDepositRequest(approveDepositId, approveDepositAdmin);
+                if (approveDepositResult == null) {
+                    return new Response("SUCCESS", "Deposit request approved successfully");
+                } else {
+                    return new Response("FAIL", approveDepositResult);
+                }
+
+            case "REJECT_DEPOSIT_REQUEST":
+                String rejectDepositId = request.getData().get("requestId");
+                String rejectDepositAdmin = loggedInUsername;
+                String rejectDepositResult = userService.rejectDepositRequest(rejectDepositId, rejectDepositAdmin);
+                if (rejectDepositResult == null) {
+                    return new Response("SUCCESS", "Deposit request rejected successfully");
+                } else {
+                    return new Response("FAIL", rejectDepositResult);
+                }
+
+            case "APPROVE_WITHDRAW_REQUEST":
+                String approveWithdrawId = request.getData().get("requestId");
+                String approveWithdrawAdmin = loggedInUsername;
+                String approveWithdrawResult = userService.approveWithdrawRequest(approveWithdrawId, approveWithdrawAdmin);
+                if (approveWithdrawResult == null) {
+                    return new Response("SUCCESS", "Withdraw request approved successfully");
+                } else {
+                    return new Response("FAIL", approveWithdrawResult);
+                }
+
+            case "REJECT_WITHDRAW_REQUEST":
+                String rejectWithdrawId = request.getData().get("requestId");
+                String rejectWithdrawAdmin = loggedInUsername;
+                String rejectWithdrawResult = userService.rejectWithdrawRequest(rejectWithdrawId, rejectWithdrawAdmin);
+                if (rejectWithdrawResult == null) {
+                    return new Response("SUCCESS", "Withdraw request rejected successfully");
+                } else {
+                    return new Response("FAIL", rejectWithdrawResult);
+                }
+
+            case "CREATE_DEPOSIT_REQUEST":
+                String depositUsername = request.getData().get("username");
+                BigDecimal depositAmount = new BigDecimal(request.getData().get("amount"));
+                String depositError = userService.createDepositRequest(depositUsername, depositAmount);
+                if (depositError == null) {
+                    return new Response("SUCCESS", "Deposit request created successfully");
+                } else {
+                    return new Response("FAIL", depositError);
+                }
+
+            case "CREATE_WITHDRAW_REQUEST":
+                String withdrawUsername = request.getData().get("username");
+                BigDecimal withdrawAmount = new BigDecimal(request.getData().get("amount"));
+                String bankName = request.getData().get("bankName");
+                String accountNumber = request.getData().get("accountNumber");
+                String withdrawError = userService.createWithdrawRequest(withdrawUsername, withdrawAmount, bankName, accountNumber);
+                if (withdrawError == null) {
+                    return new Response("SUCCESS", "Withdraw request created successfully");
+                } else {
+                    return new Response("FAIL", withdrawError);
+                }
+
+            case "GET_WALLET_BALANCE":
+                String balanceUsername = request.getData().get("username");
+                BigDecimal balance = userService.getWalletBalance(balanceUsername);
+                if (balance != null) {
+                    return new Response("SUCCESS", balance.toPlainString());
+                } else {
+                    return new Response("FAIL", "Failed to get wallet balance");
+                }
 
             default:
                 return new Response("FAIL", "Unsupported function");

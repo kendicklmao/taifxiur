@@ -51,6 +51,10 @@ public abstract class User {
         return isBanned;
     }
 
+    public void setBanned(boolean banned) {
+        this.isBanned = banned;
+    }
+
     public Role getRole() {
         return role;
     }

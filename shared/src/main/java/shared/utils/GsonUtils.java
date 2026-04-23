@@ -17,9 +17,27 @@ public class GsonUtils {
                 .registerTypeAdapter(Instant.class, new InstantAdapter())
                 .registerTypeAdapter(LocalDateTime.class, new LocalDateTimeAdapter())
                 .registerTypeAdapter(Item.class, new ItemDeserializer())
+                .registerTypeAdapter(User.class, new UserSerializer())
                 .registerTypeAdapter(User.class, new UserDeserializer())
                 .registerTypeAdapter(ScheduledFuture.class, new ScheduledFutureAdapter())
                 .create();
+    }
+
+    private static class UserSerializer implements JsonSerializer<User> {
+        @Override
+        public JsonElement serialize(User src, Type typeOfSrc, JsonSerializationContext context) {
+            JsonObject obj = new JsonObject();
+            obj.addProperty("id", src.getId());
+            obj.addProperty("username", src.getUsername());
+            obj.addProperty("email", src.getEmail());
+            obj.addProperty("role", src.getRole().toString());
+            obj.addProperty("isBanned", src.isBanned());
+            obj.addProperty("securityQuestion1", src.getSecurityQuestion1());
+            obj.addProperty("securityQuestion2", src.getSecurityQuestion2());
+            obj.addProperty("securityAnswer1", src.getSecurityQuestion1()); // Use question for consistency
+            obj.addProperty("securityAnswer2", src.getSecurityQuestion2()); // Use question for consistency
+            return obj;
+        }
     }
 
     private static class UserDeserializer implements JsonDeserializer<User> {
@@ -34,17 +52,20 @@ public class GsonUtils {
             String a1 = obj.get("securityAnswer1").getAsString();
             String q2 = obj.get("securityQuestion2").getAsString();
             String a2 = obj.get("securityAnswer2").getAsString();
+            boolean isBanned = obj.has("isBanned") && obj.get("isBanned").getAsBoolean();
 
-            switch (role) {
-                case "ADMIN":
-                    return new Admin(id, username, "", email, q1, a1, q2, a2);
-                case "BIDDER":
-                    return new Bidder(id, username, "", email, q1, a1, q2, a2);
-                case "SELLER":
-                    return new Seller(id, username, "", email, q1, a1, q2, a2);
-                default:
-                    throw new JsonParseException("Unknown user role: " + role);
+            User user = switch (role) {
+                case "ADMIN" -> new Admin(id, username, "", email, q1, a1, q2, a2);
+                case "BIDDER" -> new Bidder(id, username, "", email, q1, a1, q2, a2);
+                case "SELLER" -> new Seller(id, username, "", email, q1, a1, q2, a2);
+                default -> throw new JsonParseException("Unknown user role: " + role);
+            };
+
+            if (isBanned) {
+                user.setBanned(true);
             }
+
+            return user;
         }
     }
 

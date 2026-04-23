@@ -140,7 +140,24 @@ public class AdminHomeController {
             Response response = ctx.sendRequestAndWait(req, 5);
             if ("SUCCESS".equals(response.getStatus())) {
                 User[] users = gson.fromJson(response.getMessage(), User[].class);
-                Platform.runLater(() -> allUsersList.getItems().setAll(users));
+                Platform.runLater(() -> {
+                    allUsersList.getItems().clear();
+                    allUsersList.setCellFactory(null); // Reset cell factory to force refresh
+                    allUsersList.setCellFactory(lv -> new ListCell<>() {
+                        @Override
+                        protected void updateItem(User item, boolean empty) {
+                            super.updateItem(item, empty);
+                            if (empty || item == null) {
+                                setText(null);
+                            } else {
+                                String status = item.isBanned() ? "BANNED" : "ACTIVE";
+                                setText(item.getUsername() + " (" + item.getRole() + ") - " + status);
+                            }
+                        }
+                    });
+                    allUsersList.getItems().setAll(users);
+                    allUsersList.refresh();
+                });
             }
         } catch (Exception e) {
             showAlert("Error", "Failed to load users: " + e.getMessage());

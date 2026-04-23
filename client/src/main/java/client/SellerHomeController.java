@@ -65,6 +65,7 @@ public class SellerHomeController {
     @FXML private TextArea descField;
     @FXML private Label welcomeLabel;
     @FXML private ImageView itemImageView;
+    @FXML private Label walletBalanceLabel;
     private File selectedImageFile;
     private byte[] croppedImageBytes;
     private PrintWriter out;
@@ -99,13 +100,17 @@ public class SellerHomeController {
 
         // Fetch seller's auctions on initialization
         fetchSellerAuctions();
+        refreshWalletBalance();
 
         // Schedule periodic refresh
         Timer timer = new Timer(true);
         timer.scheduleAtFixedRate(new TimerTask() {
             @Override
             public void run() {
-                Platform.runLater(SellerHomeController.this::fetchSellerAuctions);
+                Platform.runLater(() -> {
+                    fetchSellerAuctions();
+                    refreshWalletBalance();
+                });
             }
         }, 0, 5000); // Refresh every 5 seconds
     }
@@ -443,5 +448,75 @@ public class SellerHomeController {
         } catch (Exception e) {
             System.out.println("Failed to refresh auctions: " + e.getMessage());
         }
+    }
+
+    private void refreshWalletBalance() {
+        try {
+            Map<String, String> data = new HashMap<>();
+            data.put("username", ctx.getCurrentUser().getUsername());
+            Response response = ctx.sendRequestAndWait(new Request("GET_WALLET_BALANCE", data), 5);
+            if ("SUCCESS".equals(response.getStatus())) {
+                Platform.runLater(() -> walletBalanceLabel.setText("Balance: $" + response.getMessage()));
+            } else {
+                Platform.runLater(() -> walletBalanceLabel.setText("Balance: unavailable"));
+            }
+        } catch (Exception e) {
+            Platform.runLater(() -> walletBalanceLabel.setText("Balance: unavailable"));
+        }
+    }
+
+    @FXML
+    public void handleWithdrawRequest() {
+        Dialog<String> dialog = new Dialog<>();
+        dialog.setTitle("Withdraw Request");
+        dialog.setHeaderText("Send a withdraw request to admin");
+
+        TextField amountField = new TextField();
+        amountField.setPromptText("Enter amount");
+
+        TextField bankNameField = new TextField();
+        bankNameField.setPromptText("Enter bank name");
+
+        TextField accountNumberField = new TextField();
+        accountNumberField.setPromptText("Enter account number");
+
+        VBox content = new VBox(10);
+        content.getChildren().addAll(new Label("Amount"), amountField, new Label("Bank Name"), bankNameField, new Label("Account Number"), accountNumberField);
+        dialog.getDialogPane().setContent(content);
+        dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+
+        dialog.setResultConverter(buttonType -> buttonType == ButtonType.OK ? amountField.getText() + "," + bankNameField.getText() + "," + accountNumberField.getText() : null);
+        dialog.showAndWait().ifPresent(result -> {
+            String[] parts = result.split(",");
+            if (parts.length == 3) {
+                try {
+                    BigDecimal amount = new BigDecimal(parts[0]);
+                    String bankName = parts[1];
+                    String accountNumber = parts[2];
+                    if (amount.compareTo(BigDecimal.ZERO) <= 0) {
+                        showAlert("Error", "Amount must be greater than 0");
+                        return;
+                    }
+                    if (bankName.trim().isEmpty() || accountNumber.trim().isEmpty()) {
+                        showAlert("Error", "Bank name and account number cannot be empty");
+                        return;
+                    }
+
+                    Map<String, String> data = new HashMap<>();
+                    data.put("username", ctx.getCurrentUser().getUsername());
+                    data.put("amount", amount.toPlainString());
+                    data.put("bankName", bankName.trim());
+                    data.put("accountNumber", accountNumber.trim());
+                    Response response = ctx.sendRequestAndWait(new Request("CREATE_WITHDRAW_REQUEST", data), 5);
+                    if ("SUCCESS".equals(response.getStatus())) {
+                        showAlert("Success", response.getMessage());
+                    } else {
+                        showAlert("Error", response.getMessage());
+                    }
+                } catch (Exception e) {
+                    showAlert("Error", "Please enter valid data");
+                }
+            }
+        });
     }
 }

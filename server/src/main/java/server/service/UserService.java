@@ -14,6 +14,7 @@ import java.sql.*;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class UserService {
@@ -22,6 +23,7 @@ public class UserService {
     private final ConcurrentHashMap<String, Boolean> loggedIn = new ConcurrentHashMap<>(); //lưu trạng thái đăng nhập
     private static final int MAX_ATTEMPTS = 5; //số lượt đăng nhập thất bại tối đa
     private static final long BASE_LOCK_SECONDS = 2; //số giây cơ sở để vô hiệu hóa nếu đăng nhập thất bại
+    private static final WalletService walletService = new WalletService();
 
     public UserService() {
         // Initialize default users in the database
@@ -250,6 +252,28 @@ public class UserService {
             return rs.next();
         } catch (SQLException e) {
             System.err.println("Error checking user existence: " + e.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Check if user is banned
+     */
+    public boolean isBanned(String username) {
+        if (username == null) return false;
+        username = Validator.normalizeUsername(username);
+
+        try (Connection conn = DatabaseConfig.getDataSource().getConnection();
+             PreparedStatement pstmt = conn.prepareStatement("SELECT is_banned FROM users WHERE username = ?")) {
+
+            pstmt.setString(1, username);
+            ResultSet rs = pstmt.executeQuery();
+            if (rs.next()) {
+                return rs.getBoolean("is_banned");
+            }
+            return false;
+        } catch (SQLException e) {
+            System.err.println("Error checking if user is banned: " + e.getMessage());
             return false;
         }
     }
@@ -638,5 +662,41 @@ public class UserService {
         } else if (user instanceof Seller seller) {
             seller.getWallet().deposit(balance);
         }
+    }
+
+    public BigDecimal getWalletBalance(String username) {
+        return walletService.getWalletBalance(username);
+    }
+
+    public String createDepositRequest(String bidderUsername, BigDecimal amount) {
+        return walletService.createDepositRequest(bidderUsername, amount);
+    }
+
+    public String createWithdrawRequest(String sellerUsername, BigDecimal amount, String bankName, String accountNumber) {
+        return walletService.createWithdrawRequest(sellerUsername, amount, bankName, accountNumber);
+    }
+
+    public List<Map<String, String>> getPendingDepositRequests() {
+        return walletService.getPendingDepositRequests();
+    }
+
+    public List<Map<String, String>> getPendingWithdrawRequests() {
+        return walletService.getPendingWithdrawRequests();
+    }
+
+    public String approveDepositRequest(String requestId, String adminUsername) {
+        return walletService.approveDeposit(requestId, adminUsername);
+    }
+
+    public String rejectDepositRequest(String requestId, String adminUsername) {
+        return walletService.rejectDeposit(requestId, adminUsername);
+    }
+
+    public String approveWithdrawRequest(String requestId, String adminUsername) {
+        return walletService.approveWithdraw(requestId, adminUsername);
+    }
+
+    public String rejectWithdrawRequest(String requestId, String adminUsername) {
+        return walletService.rejectWithdraw(requestId, adminUsername);
     }
 }

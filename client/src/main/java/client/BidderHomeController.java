@@ -86,6 +86,8 @@ public class BidderHomeController {
             Response response = ctx.sendRequestAndWait(new Request("GET_WALLET_BALANCE", data), 5);
             if ("SUCCESS".equals(response.getStatus())) {
                 Platform.runLater(() -> walletBalanceLabel.setText("Balance: $" + response.getMessage()));
+            } else {
+                Platform.runLater(() -> walletBalanceLabel.setText("Balance: unavailable"));
             }
         } catch (Exception e) {
             Platform.runLater(() -> walletBalanceLabel.setText("Balance: unavailable"));
