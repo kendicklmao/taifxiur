@@ -11,6 +11,7 @@
             <Label text="🔨 BIDDER DASHBOARD" style="-fx-text-fill: #d4af6a; -fx-font-size: 22px; -fx-font-weight: bold;"/>
             <Pane HBox.hgrow="ALWAYS"/>
             <Label fx:id="welcomeLabel" style="-fx-text-fill: #ffffff; -fx-font-size: 14px;"/>
+            <Button text="CHANGE PASSWORD" onAction="#handleChangePassword" styleClass="dashboard-btn-primary" prefWidth="170"/>
             <Button text="LOGOUT" onAction="#handleLogout" styleClass="dashboard-btn-logout" prefWidth="100"/>
         </HBox>
     </top>

@@ -158,6 +158,18 @@ public class ClientHandler implements Runnable {
                     return new Response("FAIL", "Security answers are incorrect or the new password is invalid");
                 }
 
+            case "CHANGE_PASSWORD":
+                String cpUser = request.getData().get("username");
+                String cpOldPassword = request.getData().get("oldPassword");
+                String cpNewPassword = request.getData().get("newPassword");
+
+                String changePasswordError = userService.changePassword(cpUser, cpOldPassword, cpNewPassword);
+                if (changePasswordError == null) {
+                    return new Response("SUCCESS", "Password changed successfully");
+                } else {
+                    return new Response("FAIL", changePasswordError);
+                }
+
             case "GET_AUCTIONS":
                 // Return all auctions for bidders to see
                 List<Auction> list = auctionService.getAllAuctions();

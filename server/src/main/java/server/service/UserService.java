@@ -370,6 +370,64 @@ public class UserService {
         return false;
     }
 
+    /**
+     * Change password for a logged-in user using the current password.
+     */
+    public String changePassword(String username, String oldPassword, String newPassword) {
+        if (!Validator.isValidUsername(username)) {
+            return "Invalid username";
+        }
+
+        if (oldPassword == null || oldPassword.trim().isEmpty()) {
+            return "Current password cannot be empty";
+        }
+
+        if (!Validator.isValidPassword(newPassword)) {
+            return "New password must be at least 6 characters and include uppercase, lowercase, number, and special character";
+        }
+
+        username = Validator.normalizeUsername(username);
+        oldPassword = Validator.normalizePassword(oldPassword);
+        newPassword = Validator.normalizePassword(newPassword);
+
+        if (oldPassword.equals(newPassword)) {
+            return "New password must be different from the current password";
+        }
+
+        User user = getUserFromDatabase(username);
+        if (user == null) {
+            return "User not found";
+        }
+
+        if (!user.checkPassword(oldPassword)) {
+            return "Current password is incorrect";
+        }
+
+        if (!user.changePassword(oldPassword, newPassword)) {
+            return "Failed to change password";
+        }
+
+        try (Connection conn = DatabaseConfig.getDataSource().getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(
+                     "UPDATE users SET password = ?, updated_at = CURRENT_TIMESTAMP WHERE username = ?")) {
+
+            pstmt.setString(1, newPassword);
+            pstmt.setString(2, username);
+            int updatedRows = pstmt.executeUpdate();
+
+            if (updatedRows > 0) {
+                failedAttempts.remove(username);
+                lockUntil.remove(username);
+                return null;
+            }
+        } catch (SQLException e) {
+            System.err.println("Error changing password: " + e.getMessage());
+            return "Database error while changing password";
+        }
+
+        return "Failed to update password";
+    }
+
     private boolean hasAnswer(String answer) {
         return answer != null && !answer.trim().isEmpty();
     }

@@ -294,6 +294,11 @@ public class SellerHomeController {
 
     // ================= LOGOUT =================
     @FXML
+    public void handleChangePassword() {
+        ChangePasswordSupport.showDialog(ctx);
+    }
+
+    @FXML
     public void handleLogout() {
         try {
             Map<String, String> data = new HashMap<>();

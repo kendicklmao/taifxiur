@@ -107,6 +107,12 @@ public class BidderHomeController {
         // This method is no longer used - double-click on auction instead
     }
 
+    @FXML
+    public void handleChangePassword() {
+        ChangePasswordSupport.showDialog(ctx);
+    }
+
+    @FXML
     public void handleLogout() {
         ctx.removeMessageListener(messageListener);
         try {
