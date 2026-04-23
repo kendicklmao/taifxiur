@@ -51,6 +51,10 @@
                                     <Label text="Password" styleClass="form-label-login"/>
                                     <PasswordField fx:id="passwordField" promptText="Enter your password" styleClass="login-input" />
                                 </VBox>
+
+                                <HBox alignment="CENTER_RIGHT">
+                                    <Hyperlink text="Forgot password?" onAction="#goToForgotPassword" styleClass="login-link"/>
+                                </HBox>
                             </VBox>
 
                             <!-- Buttons -->

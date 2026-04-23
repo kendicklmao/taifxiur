@@ -43,10 +43,10 @@ public class Validator { //kiểm tra format các input và chuẩn hóa nó
     }
     public static boolean isValidQuestion(String question) {//kiểm tra format câu hỏi xác nhận danh tính
         if (question == null) return false;
-        return question.trim().length() >= 5;
+        return !question.trim().isEmpty();
     }
     public static boolean isValidAnswer(String answer) { //kiểm tra format câu trả lời xác nhận danh tính
         if (answer == null) return false;
-        return answer.trim().length() >= 2;
+        return !answer.trim().isEmpty();
     }
 }

@@ -1,6 +1,5 @@
 package client;
 
-import com.google.gson.Gson;
 import javafx.fxml.FXML;
 import javafx.scene.control.Alert;
 import javafx.scene.control.PasswordField;
@@ -12,10 +11,6 @@ import shared.models.User;
 import shared.network.Request;
 import shared.network.Response;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
-import java.net.Socket;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -30,9 +25,6 @@ public class LoginController {
             if (!ctx.isConnected()) {
                 ctx.connect();
             }
-
-            PrintWriter out = ctx.getOut();
-            BufferedReader in = ctx.getIn();
 
             Map<String, String> data = new HashMap<>();
             data.put("username", usernameField.getText());
@@ -77,6 +69,11 @@ public class LoginController {
     @FXML
     public void goToRegister() {
         Navigator.switchScene("register.fxml");
+    }
+
+    @FXML
+    public void goToForgotPassword() {
+        Navigator.switchScene("forgot_password.fxml");
     }
 
     private void showAlert(String title, String msg){

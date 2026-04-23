@@ -30,10 +30,61 @@ public class UserService {
      * Initialize default users in the database on first run
      */
     private void initializeDefaultUsers() {
-        this.register("seller", "Admin@123", "seller@gmail.com", "q", "a", "q", "a", Role.SELLER);
-        this.register("bidder", "Admin@123", "bidder@gmail.com", "q", "a", "q", "a", Role.BIDDER);
-        this.register("admin1", "Admin@123", "admin@gmail.com", "q", "a", "q", "a", Role.ADMIN);
-        this.register("bidder1", "Admin@123", "bidder1@gmail.com", "q", "a", "q", "a", Role.BIDDER);
+        upsertDefaultUser("seller", "Admin@123", "seller@gmail.com", "q", "a", "q", "a", Role.SELLER);
+        upsertDefaultUser("bidder", "Admin@123", "bidder@gmail.com", "q", "a", "q", "b", Role.BIDDER);
+        upsertDefaultUser("admin1", "Admin@123", "admin@gmail.com", "q", "a", "q", "a", Role.ADMIN);
+        upsertDefaultUser("bidder1", "Admin@123", "bidder1@gmail.com", "q", "a", "q", "a", Role.BIDDER);
+    }
+
+    private void upsertDefaultUser(String username, String password, String email, String q1, String a1, String q2, String a2, Role role) {
+        if (!Validator.isValidUsername(username) ||
+                !Validator.isValidPassword(password) ||
+                !Validator.isValidEmail(email) ||
+                !Validator.isValidQuestion(q1) ||
+                !Validator.isValidQuestion(q2) ||
+                !Validator.isValidAnswer(a1) ||
+                !Validator.isValidAnswer(a2)) {
+            System.err.println("Invalid default user config for: " + username);
+            return;
+        }
+
+        username = Validator.normalizeUsername(username);
+        password = Validator.normalizePassword(password);
+        email = Validator.normalizeEmail(email);
+        q1 = Validator.normalizeQuestion(q1);
+        q2 = Validator.normalizeQuestion(q2);
+        a1 = Validator.normalizeAnswer(a1);
+        a2 = Validator.normalizeAnswer(a2);
+
+        try (Connection conn = DatabaseConfig.getDataSource().getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(
+                     """
+                     INSERT INTO users (username, password, email, role, question_1, answer_1, question_2, answer_2, is_banned, updated_at)
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, FALSE, CURRENT_TIMESTAMP)
+                     ON CONFLICT (username) DO UPDATE SET
+                         password = EXCLUDED.password,
+                         email = EXCLUDED.email,
+                         role = EXCLUDED.role,
+                         question_1 = EXCLUDED.question_1,
+                         answer_1 = EXCLUDED.answer_1,
+                         question_2 = EXCLUDED.question_2,
+                         answer_2 = EXCLUDED.answer_2,
+                         is_banned = FALSE,
+                         updated_at = CURRENT_TIMESTAMP
+                     """)) {
+
+            pstmt.setString(1, username);
+            pstmt.setString(2, password);
+            pstmt.setString(3, email);
+            pstmt.setString(4, role.name());
+            pstmt.setString(5, q1);
+            pstmt.setString(6, a1);
+            pstmt.setString(7, q2);
+            pstmt.setString(8, a2);
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            System.err.println("Error syncing default user " + username + ": " + e.getMessage());
+        }
     }
 
     /**
@@ -225,6 +276,102 @@ public class UserService {
      */
     public User getUser(String username) {
         return getUserFromDatabase(username);
+    }
+
+    /**
+     * Get stored security questions for a username/email pair.
+     */
+    public String[] getSecurityQuestions(String username, String email) {
+        if (!Validator.isValidUsername(username) || !Validator.isValidEmail(email)) {
+            return null;
+        }
+
+        username = Validator.normalizeUsername(username);
+        email = Validator.normalizeEmail(email);
+
+        try (Connection conn = DatabaseConfig.getDataSource().getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(
+                     "SELECT question_1, question_2 FROM users WHERE username = ? AND email = ?")) {
+
+            pstmt.setString(1, username);
+            pstmt.setString(2, email);
+            ResultSet rs = pstmt.executeQuery();
+
+            if (rs.next()) {
+                return new String[]{
+                        rs.getString("question_1"),
+                        rs.getString("question_2")
+                };
+            }
+        } catch (SQLException e) {
+            System.err.println("Error fetching security questions: " + e.getMessage());
+        }
+
+        return null;
+    }
+
+    /**
+     * Reset password after verifying username, email and security answers.
+     */
+    public boolean resetPassword(String username, String email, String answer1, String answer2, String newPassword) {
+        if (!Validator.isValidUsername(username) ||
+                !Validator.isValidEmail(email) ||
+                !hasAnswer(answer1) ||
+                !hasAnswer(answer2) ||
+                !Validator.isValidPassword(newPassword)) {
+            return false;
+        }
+
+        username = Validator.normalizeUsername(username);
+        email = Validator.normalizeEmail(email);
+        answer1 = Validator.normalizeAnswer(answer1);
+        answer2 = Validator.normalizeAnswer(answer2);
+        newPassword = Validator.normalizePassword(newPassword);
+
+        try (Connection conn = DatabaseConfig.getDataSource().getConnection()) {
+            try (PreparedStatement verifyStmt = conn.prepareStatement(
+                    "SELECT answer_1, answer_2 FROM users WHERE username = ? AND email = ?")) {
+
+                verifyStmt.setString(1, username);
+                verifyStmt.setString(2, email);
+                ResultSet rs = verifyStmt.executeQuery();
+
+                if (!rs.next()) {
+                    return false;
+                }
+
+                String storedAnswer1 = rs.getString("answer_1");
+                String storedAnswer2 = rs.getString("answer_2");
+
+                if (!answer1.equals(storedAnswer1) || !answer2.equals(storedAnswer2)) {
+                    return false;
+                }
+            }
+
+            try (PreparedStatement updateStmt = conn.prepareStatement(
+                    "UPDATE users SET password = ?, updated_at = CURRENT_TIMESTAMP WHERE username = ? AND email = ?")) {
+
+                updateStmt.setString(1, newPassword);
+                updateStmt.setString(2, username);
+                updateStmt.setString(3, email);
+
+                int updatedRows = updateStmt.executeUpdate();
+                if (updatedRows > 0) {
+                    failedAttempts.remove(username);
+                    lockUntil.remove(username);
+                    loggedIn.remove(username);
+                    return true;
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("Error resetting password: " + e.getMessage());
+        }
+
+        return false;
+    }
+
+    private boolean hasAnswer(String answer) {
+        return answer != null && !answer.trim().isEmpty();
     }
 
     /**

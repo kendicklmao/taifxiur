@@ -26,7 +26,9 @@ import java.io.PrintWriter;
 import java.math.BigDecimal;
 import java.net.Socket;
 import java.time.*;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 public class ClientHandler implements Runnable {
@@ -126,6 +128,34 @@ public class ClientHandler implements Runnable {
                     return new Response("SUCCESS", "Registered successfully");
                 } else {
                     return new Response("FAIL", "Username is already taken or is invalid");
+                }
+
+            case "FORGOT_PASSWORD_INIT":
+                String fpUser = request.getData().get("username");
+                String fpEmail = request.getData().get("email");
+                String[] questions = userService.getSecurityQuestions(fpUser, fpEmail);
+
+                if (questions != null) {
+                    Map<String, String> payload = new HashMap<>();
+                    payload.put("q1", questions[0]);
+                    payload.put("q2", questions[1]);
+                    return new Response("SUCCESS", gson.toJson(payload));
+                } else {
+                    return new Response("FAIL", "Account information does not match");
+                }
+
+            case "RESET_PASSWORD":
+                String rpUser = request.getData().get("username");
+                String rpEmail = request.getData().get("email");
+                String rpAnswer1 = request.getData().get("a1");
+                String rpAnswer2 = request.getData().get("a2");
+                String rpNewPassword = request.getData().get("newPassword");
+
+                boolean resetSuccess = userService.resetPassword(rpUser, rpEmail, rpAnswer1, rpAnswer2, rpNewPassword);
+                if (resetSuccess) {
+                    return new Response("SUCCESS", "Password reset successfully");
+                } else {
+                    return new Response("FAIL", "Security answers are incorrect or the new password is invalid");
                 }
 
             case "GET_AUCTIONS":

@@ -366,6 +366,17 @@
     -fx-background-color: #eeeeee;
 }
 
+.login-link {
+    -fx-text-fill: #8b7355;
+    -fx-border-color: transparent;
+    -fx-padding: 0;
+    -fx-font-size: 12;
+}
+
+.login-link:hover {
+    -fx-text-fill: #d4af6a;
+}
+
 /* REGISTER SCREEN STYLES */
 .register-title-main {
     -fx-font-size: 36;
@@ -479,6 +490,20 @@
 
 .register-btn-secondary:pressed {
     -fx-background-color: #eeeeee;
+}
+
+.forgot-question-box {
+    -fx-padding: 12;
+    -fx-background-color: #f7f4ee;
+    -fx-border-color: #e0d6c2;
+    -fx-border-radius: 4;
+    -fx-background-radius: 4;
+}
+
+.forgot-question-text {
+    -fx-text-fill: #2c2c2c;
+    -fx-font-size: 12;
+    -fx-line-spacing: 2;
 }
 
 /* Legacy button styles for compatibility */
