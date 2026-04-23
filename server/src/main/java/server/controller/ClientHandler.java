@@ -38,22 +38,34 @@ public class ClientHandler implements Runnable {
 
     private final Socket socket;
     private final Gson gson = GsonUtils.createGson();
-    private static final AuctionService auctionService = new AuctionService();
+    private final AuctionService auctionService;
+
+    private final UserService userService;
+    private String loggedInUsername;
+    private BufferedReader in;
     private static final WalletService walletService = new WalletService();
     private PrintWriter out;
 
-    private static final UserService userService = new UserService();
-    private String loggedInUsername;
-
-    public ClientHandler(Socket socket) {
+    public ClientHandler(Socket socket) throws java.io.IOException {
         this.socket = socket;
+        this.userService = new UserService();
+        this.auctionService = new AuctionService();
+        this.in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+        this.out = new PrintWriter(socket.getOutputStream(), true);
+    }
+
+    // Constructor for testing with mock services and streams
+    public ClientHandler(Socket socket, UserService userService, AuctionService auctionService, BufferedReader in, PrintWriter out) {
+        this.socket = socket;
+        this.userService = userService;
+        this.auctionService = auctionService;
+        this.in = in;
+        this.out = out;
     }
 
     @Override
     public void run() {
         try {
-            BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-            out = new PrintWriter(socket.getOutputStream(), true);
 
             activeClients.add(this);
 

@@ -37,6 +37,7 @@ public class AppContext {
     public static AppContext getInstance() {
         return instance;
     }
+
     public User getCurrentUser() {
         return currentUser;
     }

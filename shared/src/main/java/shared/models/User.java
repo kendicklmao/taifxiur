@@ -25,12 +25,12 @@ public abstract class User {
         this.email = email;
         this.role = role;
         this.isBanned = false;
-        this.answerSalt1 = hash.formula(hash.generateSalt(), "");
-        this.answerSalt2 = hash.formula(hash.generateSalt(), "");
+        this.answerSalt1 = hash.generateSalt();
+        this.answerSalt2 = hash.generateSalt();
         this.securityQuestion1 = q1;
-        this.securityAnswer1 = hash.formula(a1, answerSalt1);
+        this.securityAnswer1 = hash.formula(Validator.normalizeAnswer(a1), answerSalt1);
         this.securityQuestion2 = q2;
-        this.securityAnswer2 = hash.formula(a2, answerSalt2);
+        this.securityAnswer2 = hash.formula(Validator.normalizeAnswer(a2), answerSalt2);
         this.passwordSalt = hash.generateSalt();
         this.hashedPassword = hash.formula(password, passwordSalt);
     }
