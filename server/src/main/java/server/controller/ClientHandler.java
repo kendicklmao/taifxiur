@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 
 import server.service.AuctionService;
 import server.service.UserService;
+import server.service.WalletService;
 import shared.utils.GsonUtils;
 import shared.enums.AuctionStatus;
 import shared.enums.ItemStatus;
@@ -38,6 +39,7 @@ public class ClientHandler implements Runnable {
     private final Socket socket;
     private final Gson gson = GsonUtils.createGson();
     private static final AuctionService auctionService = new AuctionService();
+    private static final WalletService walletService = new WalletService();
     private PrintWriter out;
 
     private static final UserService userService = new UserService();
@@ -170,6 +172,87 @@ public class ClientHandler implements Runnable {
                 } else {
                     return new Response("FAIL", changePasswordError);
                 }
+
+            case "GET_WALLET_BALANCE":
+                String wbUser = request.getData().get("username");
+                BigDecimal walletBalance = walletService.getWalletBalance(wbUser);
+                if (walletBalance != null) {
+                    return new Response("SUCCESS", walletBalance.toPlainString());
+                } else {
+                    return new Response("FAIL", "Cannot load wallet balance");
+                }
+
+            case "CREATE_DEPOSIT_REQUEST":
+                try {
+                    String drUser = request.getData().get("username");
+                    BigDecimal drAmount = new BigDecimal(request.getData().get("amount"));
+                    String depositError = walletService.createDepositRequest(drUser, drAmount);
+                    if (depositError == null) {
+                        return new Response("SUCCESS", "Deposit request sent to admin");
+                    }
+                    return new Response("FAIL", depositError);
+                } catch (Exception e) {
+                    return new Response("FAIL", "Invalid deposit amount");
+                }
+
+            case "CREATE_WITHDRAW_REQUEST":
+                try {
+                    String wrUser = request.getData().get("username");
+                    BigDecimal wrAmount = new BigDecimal(request.getData().get("amount"));
+                    String bankName = request.getData().get("bankName");
+                    String accountNumber = request.getData().get("accountNumber");
+                    String withdrawError = walletService.createWithdrawRequest(wrUser, wrAmount, bankName, accountNumber);
+                    if (withdrawError == null) {
+                        return new Response("SUCCESS", "Withdraw request sent to admin");
+                    }
+                    return new Response("FAIL", withdrawError);
+                } catch (Exception e) {
+                    return new Response("FAIL", "Invalid withdraw information");
+                }
+
+            case "GET_PENDING_DEPOSIT_REQUESTS":
+                if (!isAdminLoggedIn()) {
+                    return new Response("FAIL", "Only admin can view deposit requests");
+                }
+                return new Response("SUCCESS", gson.toJson(walletService.getPendingDepositRequests()));
+
+            case "GET_PENDING_WITHDRAW_REQUESTS":
+                if (!isAdminLoggedIn()) {
+                    return new Response("FAIL", "Only admin can view withdraw requests");
+                }
+                return new Response("SUCCESS", gson.toJson(walletService.getPendingWithdrawRequests()));
+
+            case "APPROVE_DEPOSIT_REQUEST":
+                String adrId = request.getData().get("requestId");
+                String approveDepositError = walletService.approveDeposit(adrId, loggedInUsername);
+                if (approveDepositError == null) {
+                    return new Response("SUCCESS", "Deposit request approved");
+                }
+                return new Response("FAIL", approveDepositError);
+
+            case "REJECT_DEPOSIT_REQUEST":
+                String rdrId = request.getData().get("requestId");
+                String rejectDepositError = walletService.rejectDeposit(rdrId, loggedInUsername);
+                if (rejectDepositError == null) {
+                    return new Response("SUCCESS", "Deposit request rejected");
+                }
+                return new Response("FAIL", rejectDepositError);
+
+            case "APPROVE_WITHDRAW_REQUEST":
+                String awrId = request.getData().get("requestId");
+                String approveWithdrawError = walletService.approveWithdraw(awrId, loggedInUsername);
+                if (approveWithdrawError == null) {
+                    return new Response("SUCCESS", "Withdraw request approved");
+                }
+                return new Response("FAIL", approveWithdrawError);
+
+            case "REJECT_WITHDRAW_REQUEST":
+                String rwrId = request.getData().get("requestId");
+                String rejectWithdrawError = walletService.rejectWithdraw(rwrId, loggedInUsername);
+                if (rejectWithdrawError == null) {
+                    return new Response("SUCCESS", "Withdraw request rejected");
+                }
+                return new Response("FAIL", rejectWithdrawError);
 
             case "GET_AUCTIONS":
                 // Return all auctions for bidders to see
@@ -337,5 +420,13 @@ public class ClientHandler implements Runnable {
             default:
                 return new Response("FAIL", "Unsupported function");
         }
+    }
+
+    private boolean isAdminLoggedIn() {
+        if (loggedInUsername == null) {
+            return false;
+        }
+        User user = userService.getUser(loggedInUsername);
+        return user != null && "ADMIN".equals(user.getRole().name());
     }
 }

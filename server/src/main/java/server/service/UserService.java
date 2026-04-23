@@ -9,6 +9,7 @@ import shared.models.User;
 import shared.models.AdminActionLog;
 import shared.utils.Validator;
 
+import java.math.BigDecimal;
 import java.sql.*;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -35,6 +36,10 @@ public class UserService {
         this.register("bidder", "Admin@123", "bidder@gmail.com", "q", "a", "q", "a", Role.BIDDER);
         this.register("admin1", "Admin@123", "admin@gmail.com", "q", "a", "q", "a", Role.ADMIN);
         this.register("bidder1", "Admin@123", "bidder1@gmail.com", "q", "a", "q", "a", Role.BIDDER);
+        ensureWalletForUsername("seller");
+        ensureWalletForUsername("bidder");
+        ensureWalletForUsername("admin1");
+        ensureWalletForUsername("bidder1");
     }
 
     /**
@@ -79,6 +84,10 @@ public class UserService {
             int affectedRows = pstmt.executeUpdate();
             if (affectedRows > 0) {
                 System.out.println("Đăng ký thành công vào sổ!");
+                ResultSet generatedKeys = pstmt.getGeneratedKeys();
+                if (generatedKeys.next()) {
+                    ensureWalletExists(conn, generatedKeys.getInt(1));
+                }
                 return true;
             }
         } catch (SQLException e) {
@@ -217,6 +226,7 @@ public class UserService {
                     user.banUser();
                 }
 
+                loadWalletBalance(conn, user);
                 return user;
             }
         } catch (SQLException e) {
@@ -317,7 +327,7 @@ public class UserService {
                 return false;
             }
 
-            User user = mapUser(rs);
+            User user = mapUser(rs, conn);
             if (user == null || !user.resetPassword(answer1, answer2, newPassword)) {
                 return false;
             }
@@ -381,7 +391,7 @@ public class UserService {
                 return "User not found";
             }
 
-            User user = mapUser(rs);
+            User user = mapUser(rs, conn);
             if (user == null) {
                 return "User not found";
             }
@@ -414,7 +424,7 @@ public class UserService {
         return answer != null && !answer.trim().isEmpty();
     }
 
-    private User mapUser(ResultSet rs) throws SQLException {
+    private User mapUser(ResultSet rs, Connection conn) throws SQLException {
         int id = rs.getInt("id");
         String username = rs.getString("username");
         String role = rs.getString("role");
@@ -439,6 +449,7 @@ public class UserService {
             user.banUser();
         }
 
+        loadWalletBalance(conn, user);
         return user;
     }
 
@@ -457,33 +468,11 @@ public class UserService {
 
         try (Connection conn = DatabaseConfig.getDataSource().getConnection();
              Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery("SELECT id, username, password, email, role, is_banned, question_1, answer_1, question_2, answer_2 FROM users")) {
+            ResultSet rs = stmt.executeQuery("SELECT id, username, password, email, role, is_banned, question_1, answer_1, question_2, answer_2 FROM users")) {
 
             while (rs.next()) {
-                int id = rs.getInt("id");
-                String username = rs.getString("username");
-                String password = rs.getString("password");
-                String email = rs.getString("email");
-                String role = rs.getString("role");
-                boolean isBanned = rs.getBoolean("is_banned");
-                String q1 = rs.getString("question_1");
-                String a1 = rs.getString("answer_1");
-                String q2 = rs.getString("question_2");
-                String a2 = rs.getString("answer_2");
-
-                User user = null;
-                if ("BIDDER".equals(role)) {
-                    user = new Bidder(id, username, password, email, q1, a1, q2, a2);
-                } else if ("SELLER".equals(role)) {
-                    user = new Seller(id, username, password, email, q1, a1, q2, a2);
-                } else if ("ADMIN".equals(role)) {
-                    user = new Admin(id, username, password, email, q1, a1, q2, a2);
-                }
-
+                User user = mapUser(rs, conn);
                 if (user != null) {
-                    if (isBanned) {
-                        user.banUser();
-                    }
                     userList.add(user);
                 }
             }
@@ -587,5 +576,67 @@ public class UserService {
             System.err.println("Error fetching admin action logs: " + e.getMessage());
         }
         return logs;
+    }
+
+    private void ensureWalletForUsername(String username) {
+        username = Validator.normalizeUsername(username);
+        if (username == null) {
+            return;
+        }
+
+        try (Connection conn = DatabaseConfig.getDataSource().getConnection();
+             PreparedStatement pstmt = conn.prepareStatement("SELECT id FROM users WHERE username = ?")) {
+            pstmt.setString(1, username);
+            ResultSet rs = pstmt.executeQuery();
+            if (rs.next()) {
+                ensureWalletExists(conn, rs.getInt("id"));
+            }
+        } catch (SQLException e) {
+            System.err.println("Error ensuring wallet for user " + username + ": " + e.getMessage());
+        }
+    }
+
+    private void ensureWalletExists(Connection conn, int userId) throws SQLException {
+        try (PreparedStatement pstmt = conn.prepareStatement(
+                """
+                INSERT INTO wallets (user_id, balance, currency, created_at, updated_at)
+                SELECT ?, 0, 'USD', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+                WHERE NOT EXISTS (SELECT 1 FROM wallets WHERE user_id = ?)
+                """)) {
+            pstmt.setInt(1, userId);
+            pstmt.setInt(2, userId);
+            pstmt.executeUpdate();
+        }
+    }
+
+    private BigDecimal getWalletBalance(Connection conn, int userId) throws SQLException {
+        ensureWalletExists(conn, userId);
+        try (PreparedStatement pstmt = conn.prepareStatement(
+                "SELECT balance FROM wallets WHERE user_id = ? ORDER BY id ASC LIMIT 1")) {
+            pstmt.setInt(1, userId);
+            ResultSet rs = pstmt.executeQuery();
+            if (rs.next()) {
+                BigDecimal balance = rs.getBigDecimal("balance");
+                return balance == null ? BigDecimal.ZERO : balance;
+            }
+            return BigDecimal.ZERO;
+        }
+    }
+
+    private void loadWalletBalance(Connection conn, User user) throws SQLException {
+        if (user == null) {
+            return;
+        }
+
+        BigDecimal balance = getWalletBalance(conn, user.getId());
+        if (balance.compareTo(BigDecimal.ZERO) <= 0) {
+            return;
+        }
+
+        if (user instanceof Bidder bidder) {
+            bidder.getWallet().deposit(balance);
+        } else if (user instanceof Seller seller) {
+            seller.getWallet().deposit(balance);
+        }
     }
 }

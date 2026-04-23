@@ -27,6 +27,7 @@ import java.util.TimerTask;
 import javafx.application.Platform;
 
 import com.google.gson.Gson;
+import shared.enums.BankList;
 import shared.enums.Category;
 import shared.enums.ItemStatus;
 import shared.utils.GsonUtils;
@@ -50,6 +51,7 @@ public class SellerHomeController {
     @FXML private ListView<Auction> auctionList;
     @FXML private TextArea descField;
     @FXML private Label welcomeLabel;
+    @FXML private Label walletBalanceLabel;
     private PrintWriter out;
     private BufferedReader in;
     private final Gson gson = GsonUtils.createGson();
@@ -98,6 +100,7 @@ public class SellerHomeController {
     });
 
         // Fetch seller's auctions on initialization
+        refreshWalletBalance();
         fetchSellerAuctions();
 
         // Schedule periodic refresh
@@ -105,9 +108,25 @@ public class SellerHomeController {
         timer.scheduleAtFixedRate(new TimerTask() {
             @Override
             public void run() {
-                Platform.runLater(SellerHomeController.this::fetchSellerAuctions);
+                Platform.runLater(() -> {
+                    refreshWalletBalance();
+                    fetchSellerAuctions();
+                });
             }
         }, 0, 5000); // Refresh every 5 seconds
+    }
+
+    private void refreshWalletBalance() {
+        try {
+            Map<String, String> data = new HashMap<>();
+            data.put("username", ctx.getCurrentUser().getUsername());
+            Response response = ctx.sendRequestAndWait(new Request("GET_WALLET_BALANCE", data), 5);
+            if ("SUCCESS".equals(response.getStatus())) {
+                walletBalanceLabel.setText("Balance: $" + response.getMessage());
+            }
+        } catch (Exception e) {
+            walletBalanceLabel.setText("Balance: unavailable");
+        }
     }
 
     @FXML
@@ -296,6 +315,66 @@ public class SellerHomeController {
     @FXML
     public void handleChangePassword() {
         ChangePasswordSupport.showDialog(ctx);
+    }
+
+    @FXML
+    public void handleWithdrawRequest() {
+        Dialog<ButtonType> dialog = new Dialog<>();
+        dialog.setTitle("Withdraw Request");
+        dialog.setHeaderText("Send a withdraw request to admin");
+
+        TextField amountField = new TextField();
+        amountField.setPromptText("Enter amount");
+
+        ChoiceBox<BankList> bankBox = new ChoiceBox<>();
+        bankBox.getItems().addAll(BankList.values());
+        bankBox.setValue(BankList.VIETCOMBANK);
+
+        TextField accountNumberField = new TextField();
+        accountNumberField.setPromptText("Enter bank account number");
+
+        VBox content = new VBox(10);
+        content.getChildren().addAll(
+                new Label("Amount"), amountField,
+                new Label("Bank"), bankBox,
+                new Label("Account number"), accountNumberField
+        );
+
+        dialog.getDialogPane().setContent(content);
+        dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+
+        dialog.showAndWait().ifPresent(buttonType -> {
+            if (buttonType != ButtonType.OK) {
+                return;
+            }
+
+            try {
+                BigDecimal amount = new BigDecimal(amountField.getText());
+                if (amount.compareTo(BigDecimal.ZERO) <= 0) {
+                    showAlert("Error", "Amount must be greater than 0");
+                    return;
+                }
+                if (accountNumberField.getText() == null || accountNumberField.getText().trim().isEmpty()) {
+                    showAlert("Error", "Bank account number cannot be empty");
+                    return;
+                }
+
+                Map<String, String> data = new HashMap<>();
+                data.put("username", ctx.getCurrentUser().getUsername());
+                data.put("amount", amount.toPlainString());
+                data.put("bankName", bankBox.getValue().name());
+                data.put("accountNumber", accountNumberField.getText().trim());
+
+                Response response = ctx.sendRequestAndWait(new Request("CREATE_WITHDRAW_REQUEST", data), 5);
+                if ("SUCCESS".equals(response.getStatus())) {
+                    showAlert("Success", response.getMessage());
+                } else {
+                    showAlert("Error", response.getMessage());
+                }
+            } catch (Exception e) {
+                showAlert("Error", "Please enter valid withdraw information");
+            }
+        });
     }
 
     @FXML

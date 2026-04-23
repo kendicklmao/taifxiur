@@ -23,6 +23,7 @@ import java.util.function.Consumer;
 public class BidderHomeController {
     @FXML private ListView<Auction> auctionList;
     @FXML private Label welcomeLabel;
+    @FXML private Label walletBalanceLabel;
     private final AppContext ctx = AppContext.getInstance();
     private final Gson gson = GsonUtils.createGson();
     private Consumer<String> messageListener;
@@ -78,6 +79,7 @@ public class BidderHomeController {
         };
         ctx.addMessageListener(messageListener);
 
+        refreshWalletBalance();
         refreshAuctions();
 
         // Schedule periodic refresh
@@ -85,9 +87,25 @@ public class BidderHomeController {
         timer.scheduleAtFixedRate(new TimerTask() {
             @Override
             public void run() {
-                Platform.runLater(BidderHomeController.this::refreshAuctions);
+                Platform.runLater(() -> {
+                    refreshWalletBalance();
+                    refreshAuctions();
+                });
             }
         }, 0, 5000); // Refresh every 5 seconds
+    }
+
+    private void refreshWalletBalance() {
+        try {
+            Map<String, String> data = new HashMap<>();
+            data.put("username", ctx.getCurrentUser().getUsername());
+            Response response = ctx.sendRequestAndWait(new Request("GET_WALLET_BALANCE", data), 5);
+            if ("SUCCESS".equals(response.getStatus())) {
+                Platform.runLater(() -> walletBalanceLabel.setText("Balance: $" + response.getMessage()));
+            }
+        } catch (Exception e) {
+            Platform.runLater(() -> walletBalanceLabel.setText("Balance: unavailable"));
+        }
     }
 
     private void refreshAuctions() {
@@ -110,6 +128,44 @@ public class BidderHomeController {
     @FXML
     public void handleChangePassword() {
         ChangePasswordSupport.showDialog(ctx);
+    }
+
+    @FXML
+    public void handleDepositRequest() {
+        Dialog<String> dialog = new Dialog<>();
+        dialog.setTitle("Deposit Request");
+        dialog.setHeaderText("Send a deposit request to admin");
+
+        TextField amountField = new TextField();
+        amountField.setPromptText("Enter amount");
+
+        VBox content = new VBox(10);
+        content.getChildren().addAll(new Label("Amount"), amountField);
+        dialog.getDialogPane().setContent(content);
+        dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+
+        dialog.setResultConverter(buttonType -> buttonType == ButtonType.OK ? amountField.getText() : null);
+        dialog.showAndWait().ifPresent(amountText -> {
+            try {
+                BigDecimal amount = new BigDecimal(amountText);
+                if (amount.compareTo(BigDecimal.ZERO) <= 0) {
+                    showAlert("Error", "Amount must be greater than 0");
+                    return;
+                }
+
+                Map<String, String> data = new HashMap<>();
+                data.put("username", ctx.getCurrentUser().getUsername());
+                data.put("amount", amount.toPlainString());
+                Response response = ctx.sendRequestAndWait(new Request("CREATE_DEPOSIT_REQUEST", data), 5);
+                if ("SUCCESS".equals(response.getStatus())) {
+                    showAlert("Success", response.getMessage());
+                } else {
+                    showAlert("Error", response.getMessage());
+                }
+            } catch (Exception e) {
+                showAlert("Error", "Please enter a valid amount");
+            }
+        });
     }
 
     @FXML

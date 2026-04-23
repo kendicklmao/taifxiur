@@ -23,6 +23,18 @@
         <ScrollPane fitToWidth="true" style="-fx-background-color: #f8f7f5; -fx-padding: 0; -fx-border-style: none;">
             <VBox spacing="20" style="-fx-padding: 25; -fx-background-color: #f8f7f5;">
 
+                <VBox spacing="12" style="-fx-border-color: #e8e6e1; -fx-border-width: 1; -fx-padding: 20; -fx-border-radius: 4; -fx-background-color: #ffffff;">
+                    <VBox spacing="6">
+                        <Label text="Wallet" styleClass="dashboard-section-title"/>
+                        <Label text="Withdraw requests are reviewed by admin and approved requests deduct from your balance" styleClass="dashboard-section-subtitle"/>
+                    </VBox>
+                    <HBox spacing="12" alignment="CENTER_LEFT">
+                        <Label fx:id="walletBalanceLabel" text="Balance: loading..." style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #1a1a1a;"/>
+                        <Pane HBox.hgrow="ALWAYS"/>
+                        <Button text="REQUEST WITHDRAW" onAction="#handleWithdrawRequest" styleClass="dashboard-btn-primary" prefWidth="190"/>
+                    </HBox>
+                </VBox>
+
                 <!-- CREATE AUCTION SECTION -->
                 <VBox spacing="12" style="-fx-border-color: #e8e6e1; -fx-border-width: 1; -fx-padding: 20; -fx-border-radius: 4; -fx-background-color: #ffffff;">
                     <VBox spacing="6">
