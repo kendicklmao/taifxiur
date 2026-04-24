@@ -12,18 +12,25 @@ import java.math.BigDecimal;
 import java.sql.*;
 import java.time.Instant;
 import java.util.ArrayList;
+ import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
-import server.service.WalletService;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import server.service.WalletService;
 import com.google.gson.Gson;
 import shared.utils.GsonUtils;
 import shared.network.Response;
 import server.controller.ClientHandler;
 
 public class AuctionService {
-    private final ConcurrentHashMap<String, Auction> auctions = new ConcurrentHashMap<>(); //lưu các cuộc giao dịch
+    private final ConcurrentHashMap<String, Auction> auctions = new ConcurrentHashMap<>();
     private static final WalletService walletService = new WalletService();
+    private static final ExecutorService asyncExecutor = Executors.newFixedThreadPool(2);
+    // Cache for user ID lookups to avoid repeated DB queries
+    private static final Map<String, Integer> userIdCache = new ConcurrentHashMap<>();
 
     /**
      * Create auction and store in database
@@ -92,9 +99,9 @@ public class AuctionService {
         if (auction == null) {
             throw new IllegalArgumentException();
         }
-        // Ensure bidder has enough available balance
-        BigDecimal available = walletService.getAvailableBalance(bidder.getUsername());
-        if (available == null || available.compareTo(amount) < 0) {
+        // Ensure bidder has enough total balance (no hold system)
+        BigDecimal balance = walletService.getWalletBalance(bidder.getUsername());
+        if (balance == null || balance.compareTo(amount) < 0) {
             return false; // insufficient funds
         }
 
@@ -173,7 +180,8 @@ public class AuctionService {
     }
 
     /**
-     * Get all auctions and update status if needed
+     * Get all auctions and update status if needed (NO blocking DB operations here!)
+     * Payment finalization is handled by finalizeAuction() callback
      */
     public List<Auction> getAllAuctions() {
         Instant now = Instant.now();
@@ -189,36 +197,8 @@ public class AuctionService {
                     java.lang.reflect.Field statusField = Auction.class.getDeclaredField("status");
                     statusField.setAccessible(true);
                     statusField.set(auction, AuctionStatus.FINISHED);
-                    // When auction becomes finished, try to finalize payment automatically
-                    try {
-                        Bidder winner = auction.getHighestBidder();
-                        if (winner != null) {
-                            String auctionId = auction.getId();
-                            String winnerUsername = winner.getUsername();
-                            String sellerUsername = auction.getSeller().getUsername();
-                            BigDecimal price = auction.getCurrentPrice();
-                            String finalizeError = walletService.finalizePaymentForWinner(auctionId, winnerUsername, sellerUsername, price);
-                            if (finalizeError == null) {
-                                // update auction status in DB to PAID
-                                try (Connection conn = DatabaseConfig.getDataSource().getConnection();
-                                     PreparedStatement pstmt = conn.prepareStatement(
-                                             "UPDATE auctions SET status = ? WHERE id = ?")) {
-                                    pstmt.setString(1, AuctionStatus.PAID.name());
-                                    pstmt.setString(2, auctionId);
-                                    pstmt.executeUpdate();
-                                } catch (SQLException e) {
-                                    System.err.println("Error updating auction status to PAID: " + e.getMessage());
-                                }
-                            } else {
-                                System.err.println("Failed to finalize payment for auction " + auction.getId() + ": " + finalizeError);
-                            }
-                        } else {
-                            // No winner -> release all holds
-                            walletService.releaseAllHoldsForAuction(auction.getId());
-                        }
-                    } catch (Exception e) {
-                        System.err.println("Error finalizing auction payment: " + e.getMessage());
-                    }
+                    // Finalization will be handled by the Auction scheduler callback (finalizeAuction)
+                    // Don't do blocking DB operations here!
                 } catch (Exception ignored) {}
             }
         }
@@ -227,26 +207,49 @@ public class AuctionService {
 
     /**
      * Finalize auction payment when auction finishes. Called by Auction.finishCallback.
+     * Works for both manual bids and auto-bids since both set a highestBidder.
+     * Runs ASYNCHRONOUSLY in background thread pool to prevent blocking!
      */
     private void finalizeAuction(Auction auction) {
-        if (auction == null) return;
-        try {
-            Bidder winner = auction.getHighestBidder();
-            if (winner != null) {
-                String auctionId = auction.getId();
-                String winnerUsername = winner.getUsername();
-                String sellerUsername = auction.getSeller().getUsername();
-                BigDecimal price = auction.getCurrentPrice();
-                String finalizeError = walletService.finalizePaymentForWinner(auctionId, winnerUsername, sellerUsername, price);
-                if (finalizeError == null) {
-                    // update auction status in DB to PAID
+        // Submit to async executor - don't block the scheduler thread
+        asyncExecutor.execute(() -> {
+            if (auction == null) return;
+            try {
+                Bidder winner = auction.getHighestBidder();
+                if (winner != null) {
+                    String auctionId = auction.getId();
+                    String winnerUsername = winner.getUsername();
+                    String sellerUsername = auction.getSeller().getUsername();
+                    BigDecimal price = auction.getCurrentPrice();
+                    String finalizeError = walletService.finalizePaymentForWinner(auctionId, winnerUsername, sellerUsername, price);
+                    if (finalizeError == null) {
+                        // update auction status in DB to PAID
+                        try (Connection conn = DatabaseConfig.getDataSource().getConnection();
+                             PreparedStatement pstmt = conn.prepareStatement("UPDATE auctions SET status = ? WHERE id = ?")) {
+                            pstmt.setString(1, AuctionStatus.PAID.name());
+                            pstmt.setString(2, auctionId);
+                            pstmt.executeUpdate();
+                        } catch (SQLException e) {
+                            System.err.println("Error updating auction status to PAID: " + e.getMessage());
+                        }
+                        // Notify clients
+                        try {
+                            Gson gson = GsonUtils.createGson();
+                            Response resp = new Response("AUCTION_FINISHED", auction.getId());
+                            ClientHandler.broadcast(gson.toJson(resp));
+                        } catch (Exception ignored) {}
+                    } else {
+                        System.err.println("Failed to finalize payment for auction " + auction.getId() + ": " + finalizeError);
+                    }
+                } else {
+                    // No winner: just update auction status to FINISHED in DB
                     try (Connection conn = DatabaseConfig.getDataSource().getConnection();
                          PreparedStatement pstmt = conn.prepareStatement("UPDATE auctions SET status = ? WHERE id = ?")) {
-                        pstmt.setString(1, AuctionStatus.PAID.name());
-                        pstmt.setString(2, auctionId);
+                        pstmt.setString(1, AuctionStatus.FINISHED.name());
+                        pstmt.setString(2, auction.getId());
                         pstmt.executeUpdate();
                     } catch (SQLException e) {
-                        System.err.println("Error updating auction status to PAID: " + e.getMessage());
+                        System.err.println("Error updating auction status to FINISHED: " + e.getMessage());
                     }
                     // Notify clients
                     try {
@@ -254,20 +257,11 @@ public class AuctionService {
                         Response resp = new Response("AUCTION_FINISHED", auction.getId());
                         ClientHandler.broadcast(gson.toJson(resp));
                     } catch (Exception ignored) {}
-                } else {
-                    System.err.println("Failed to finalize payment for auction " + auction.getId() + ": " + finalizeError);
                 }
-            } else {
-                // No winner, just notify clients
-                try {
-                    Gson gson = GsonUtils.createGson();
-                    Response resp = new Response("AUCTION_FINISHED", auction.getId());
-                    ClientHandler.broadcast(gson.toJson(resp));
-                } catch (Exception ignored) {}
+            } catch (Exception e) {
+                System.err.println("Error finalizing auction payment: " + e.getMessage());
             }
-        } catch (Exception e) {
-            System.err.println("Error finalizing auction payment: " + e.getMessage());
-        }
+        });
     }
 
     /**
@@ -377,16 +371,24 @@ public class AuctionService {
     }
 
     /**
-     * Helper method to get user ID from database by username
+     * Helper method to get user ID from database by username (WITH CACHING)
      */
     private int getUserIdFromDatabase(String username) {
+        // Check cache first
+        Integer cachedId = userIdCache.get(username);
+        if (cachedId != null) {
+            return cachedId;
+        }
+
         try (Connection conn = DatabaseConfig.getDataSource().getConnection();
              PreparedStatement pstmt = conn.prepareStatement("SELECT id FROM users WHERE username = ?")) {
 
             pstmt.setString(1, username);
             ResultSet rs = pstmt.executeQuery();
             if (rs.next()) {
-                return rs.getInt("id");
+                int id = rs.getInt("id");
+                userIdCache.put(username, id);
+                return id;
             }
         } catch (SQLException e) {
             System.err.println("Error fetching user ID: " + e.getMessage());
@@ -395,19 +397,21 @@ public class AuctionService {
     }
 
     /**
-     * Update auction current price
+     * Update auction current price (ASYNC to avoid blocking)
      */
     private void updateAuctionPrice(String auctionId, BigDecimal newPrice) {
-        try (Connection conn = DatabaseConfig.getDataSource().getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(
-                     "UPDATE auctions SET current_price = ? WHERE id = ?")) {
+        asyncExecutor.execute(() -> {
+            try (Connection conn = DatabaseConfig.getDataSource().getConnection();
+                 PreparedStatement pstmt = conn.prepareStatement(
+                         "UPDATE auctions SET current_price = ? WHERE id = ?")) {
 
-            pstmt.setBigDecimal(1, newPrice);
-            pstmt.setString(2, auctionId);
-            pstmt.executeUpdate();
-        } catch (SQLException e) {
-            System.err.println("Error updating auction price: " + e.getMessage());
-        }
+                pstmt.setBigDecimal(1, newPrice);
+                pstmt.setString(2, auctionId);
+                pstmt.executeUpdate();
+            } catch (SQLException e) {
+                System.err.println("Error updating auction price: " + e.getMessage());
+            }
+        });
     }
 }
 

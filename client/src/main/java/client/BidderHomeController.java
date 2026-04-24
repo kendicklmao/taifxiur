@@ -17,6 +17,10 @@ import shared.utils.GsonUtils;
 
 import java.io.PrintWriter;
 import java.math.BigDecimal;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -113,7 +117,7 @@ public class BidderHomeController {
                 }
                 Object endsObj = card.getProperties().get("endsInLabel");
                 if (endsObj instanceof Label) {
-                    ((Label) endsObj).setText("Ends in: " + "12h 21m"); // keep placeholder or compute real
+                    ((Label) endsObj).setText("Ends: " + formatEndTime(auction.getEndTime()));
                 }
                 // Remove from map so remaining entries are those to delete
                 existingAuctionCards.remove(id);
@@ -160,7 +164,7 @@ public class BidderHomeController {
         nameLabel.setText(auction.getItem().getName());
         priceLabel.setText("Current Bid: " + auction.getCurrentPrice() + " VND");
         statusLabel.setText(auction.getStatus().toString());
-        endsInLabel.setText("Ends in: " + "12h 21m"); // Placeholder
+        endsInLabel.setText("Ends: " + formatEndTime(auction.getEndTime()));
 
         // Store references to important labels so we can update them without recreating nodes
         card.getProperties().put("priceLabel", priceLabel);
@@ -382,5 +386,18 @@ public class BidderHomeController {
         } catch (Exception e) {
             showAlert("Error", "Failed to register auto-bid: " + e.getMessage());
         }
+    }
+
+    /**
+     * Format end time as readable date and time
+     */
+    private String formatEndTime(Instant endTime) {
+        if (endTime == null) {
+            return "Unknown";
+        }
+        
+        LocalDateTime dateTime = LocalDateTime.ofInstant(endTime, ZoneId.systemDefault());
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+        return dateTime.format(formatter);
     }
 }

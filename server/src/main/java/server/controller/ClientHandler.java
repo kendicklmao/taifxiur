@@ -235,16 +235,14 @@ public class ClientHandler implements Runnable {
                         } else {
                             // Provide more detailed feedback to the client to aid debugging
                             server.service.WalletService ws = new server.service.WalletService();
-                                BigDecimal avail = ws.getAvailableBalance(pUsername);
-                                BigDecimal total = ws.getWalletBalance(pUsername);
+                                BigDecimal balance = ws.getWalletBalance(pUsername);
                                 // Log diagnostic info for debugging
-                                System.out.println("PLACE_BID debug -> user=" + pUsername + " requested=" + pAmount + " avail=" + avail + " total=" + total);
+                                System.out.println("PLACE_BID debug -> user=" + pUsername + " requested=" + pAmount + " balance=" + balance);
                                 StringBuilder msg = new StringBuilder();
-                                if (avail == null) {
-                                    msg.append("Could not determine available balance. ");
+                                if (balance == null) {
+                                    msg.append("Could not determine balance. ");
                                 } else {
-                                    BigDecimal held = (total == null) ? BigDecimal.ZERO : total.subtract(avail);
-                                    msg.append("Available: ").append(avail.toPlainString()).append(", Held: ").append(held.toPlainString()).append(". ");
+                                    msg.append("Balance: ").append(balance.toPlainString()).append(". ");
                                 }
                             // Also include auction-level info if available
                             try {
@@ -254,8 +252,8 @@ public class ClientHandler implements Runnable {
                                 }
                             } catch (Exception ignored) {}
 
-                            // If available balance insufficient, return that, otherwise general bid failure
-                            if (avail == null || avail.compareTo(amount) < 0) {
+                            // If balance insufficient, return that, otherwise general bid failure
+                            if (balance == null || balance.compareTo(amount) < 0) {
                                 return new Response("FAIL", "Insufficient funds. " + msg.toString());
                             }
                             return new Response("FAIL", "Bid too low or auction not running. " + msg.toString());
