@@ -188,6 +188,36 @@ public class ClientHandler implements Runnable {
 
                 return new Response("SUCCESS", json);
 
+            case "GET_AUCTION_INFO":
+                String infoAuctionId = request.getData().get("auctionId");
+                if (infoAuctionId == null || infoAuctionId.isBlank()) {
+                    return new Response("FAIL", "Missing auctionId");
+                }
+                Auction infoAuction = auctionService.getAuction(infoAuctionId);
+                if (infoAuction == null) {
+                    return new Response("FAIL", "Auction not found");
+                }
+                Map<String, String> info = new HashMap<>();
+                try {
+                    info.put("id", infoAuction.getId());
+                    info.put("itemName", infoAuction.getItem().getName());
+                    info.put("seller", infoAuction.getSeller().getUsername());
+                    info.put("status", infoAuction.getStatus().toString());
+                    info.put("currentPrice", infoAuction.getCurrentPrice().toPlainString());
+                    info.put("startPrice", infoAuction.getStartPrice().toPlainString());
+                    info.put("minIncrement", infoAuction.getItem().getMinIncrement().toPlainString());
+                    info.put("startTime", infoAuction.getStartTime().toString());
+                    info.put("endTime", infoAuction.getEndTime().toString());
+                    if (infoAuction.getHighestBidder() != null) {
+                        info.put("highestBidder", infoAuction.getHighestBidder().getUsername());
+                    } else {
+                        info.put("highestBidder", "");
+                    }
+                } catch (Exception e) {
+                    return new Response("FAIL", "Error reading auction info: " + e.getMessage());
+                }
+                return new Response("SUCCESS", gson.toJson(info));
+
             case "PLACE_BID":
                 String pAuctionId = request.getData().get("auctionId");
                 String pAmount = request.getData().get("amount");
@@ -196,13 +226,46 @@ public class ClientHandler implements Runnable {
                 User pUser = userService.getUser(pUsername);
                 if (pUser instanceof Bidder bidder) {
                     BigDecimal amount = new BigDecimal(pAmount);
-                    boolean success = auctionService.placeBid(pAuctionId, bidder, amount);
-                    if (success) {
-                        Response updateResponse = new Response("UPDATE_PRICE", "UPDATE: Auction " + pAuctionId + " just had a new price: " + pAmount);
-                        broadcast(gson.toJson(updateResponse));
-                        return new Response("SUCCESS", "Bid placed successfully");
-                    } else {
-                        return new Response("FAIL", "Bid too low or auction not running");
+                    try {
+                        boolean success = auctionService.placeBid(pAuctionId, bidder, amount);
+                        if (success) {
+                            Response updateResponse = new Response("UPDATE_PRICE", "UPDATE: Auction " + pAuctionId + " just had a new price: " + pAmount);
+                            broadcast(gson.toJson(updateResponse));
+                            return new Response("SUCCESS", "Bid placed successfully");
+                        } else {
+                            // Provide more detailed feedback to the client to aid debugging
+                            server.service.WalletService ws = new server.service.WalletService();
+                                BigDecimal avail = ws.getAvailableBalance(pUsername);
+                                BigDecimal total = ws.getWalletBalance(pUsername);
+                                // Log diagnostic info for debugging
+                                System.out.println("PLACE_BID debug -> user=" + pUsername + " requested=" + pAmount + " avail=" + avail + " total=" + total);
+                                StringBuilder msg = new StringBuilder();
+                                if (avail == null) {
+                                    msg.append("Could not determine available balance. ");
+                                } else {
+                                    BigDecimal held = (total == null) ? BigDecimal.ZERO : total.subtract(avail);
+                                    msg.append("Available: ").append(avail.toPlainString()).append(", Held: ").append(held.toPlainString()).append(". ");
+                                }
+                            // Also include auction-level info if available
+                            try {
+                                var auction = auctionService.getAuction(pAuctionId);
+                                if (auction != null) {
+                                    msg.append("CurrentPrice: ").append(auction.getCurrentPrice()).append(", MinIncrement: ").append(auction.getItem().getMinIncrement()).append('.');
+                                }
+                            } catch (Exception ignored) {}
+
+                            // If available balance insufficient, return that, otherwise general bid failure
+                            if (avail == null || avail.compareTo(amount) < 0) {
+                                return new Response("FAIL", "Insufficient funds. " + msg.toString());
+                            }
+                            return new Response("FAIL", "Bid too low or auction not running. " + msg.toString());
+                        }
+                    } catch (IllegalStateException ise) {
+                        return new Response("FAIL", ise.getMessage());
+                    } catch (Exception e) {
+                        System.err.println("Error during PLACE_BID: " + e.getMessage());
+                        e.printStackTrace();
+                        return new Response("FAIL", "Error while placing bid: " + e.getMessage());
                     }
                 } else {
                     return new Response("FAIL", "Invalid user for bidding");

@@ -112,7 +112,7 @@ public class SellerHomeController {
                     refreshWalletBalance();
                 });
             }
-        }, 0, 5000); // Refresh every 5 seconds
+        }, 0, 2000); // Refresh every 2 seconds
     }
 
     private void updateAuctionGrid(List<Auction> auctions) {
@@ -315,9 +315,9 @@ public class SellerHomeController {
                     return;
                 }
 
-                Instant minStartTime = Instant.now().plusSeconds(300);
+                Instant minStartTime = Instant.now().plusSeconds(60); // require at least 1 minute
                 if (startTime.isBefore(minStartTime)) {
-                    showAlert("Error", "Start time must be at least 5 minutes from now!");
+                    showAlert("Error", "Start time must be at least 1 minute from now!");
                     return;
                 }
             }

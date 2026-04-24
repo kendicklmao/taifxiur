@@ -35,6 +35,7 @@ public class Auction { //1 phiên giao dịch
     private Instant endTime;//thời gian kết thúc
     private AuctionStatus status;//trạng thái phiên giao dịch
     private ScheduledFuture<?> finishTask; //kết thúc giao dịch
+    private transient java.util.function.Consumer<Auction> finishCallback;
 
     public Auction(String id, Item item, BigDecimal startPrice, Seller seller, Instant startTime, Instant endTime) {
         if (id == null || id.isBlank())
@@ -47,6 +48,8 @@ public class Auction { //1 phiên giao dịch
             throw new IllegalArgumentException("Auction seller is null");
         if (startTime == null || endTime == null || endTime.isBefore(startTime))
             throw new IllegalArgumentException("Invalid auction dates: start=" + startTime + ", end=" + endTime);
+        if (startTime.isBefore(Instant.now()))
+            throw new IllegalArgumentException("Start time must be after current time: " + startTime);
         this.id = id;
         this.item = item;
         this.startPrice = startPrice;
@@ -57,6 +60,10 @@ public class Auction { //1 phiên giao dịch
         this.status = startTime.isBefore(Instant.now()) ? AuctionStatus.RUNNING : AuctionStatus.OPEN;
         scheduleStart();
         scheduleFinish();
+    }
+
+    public void setFinishCallback(java.util.function.Consumer<Auction> cb) {
+        this.finishCallback = cb;
     }
 
     public void AutoBidService() {//hệ thống đấu giá tự động
@@ -145,9 +152,15 @@ public class Auction { //1 phiên giao dịch
         if (delay < 0) delay = 0;
         finishTask = globalScheduler.schedule(() -> {
                     synchronized (bidLock) {
-                        if (status == AuctionStatus.RUNNING && !Instant.now().isBefore(endTime)) {
-                            status = AuctionStatus.FINISHED;
-                        }
+                                if (status == AuctionStatus.RUNNING && !Instant.now().isBefore(endTime)) {
+                                            status = AuctionStatus.FINISHED;
+                                            // Notify listener about auction finish
+                                            try {
+                                                if (finishCallback != null) {
+                                                    finishCallback.accept(this);
+                                                }
+                                            } catch (Exception ignored) {}
+                                        }
                     }
                 }
                 , delay, TimeUnit.SECONDS);

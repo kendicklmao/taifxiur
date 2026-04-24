@@ -40,23 +40,14 @@ public class BidderHomeController {
         messageListener = line -> {
             try {
                 Response res = gson.fromJson(line, Response.class);
-                if ("SUCCESS".equals(res.getStatus())) {
-                    // Could be the result of GET_AUCTIONS or PLACE_BID
-                    // But we don't know which one.
-                    // Let's check if it looks like a list of auctions
-                    try {
-                        List<Auction> list = gson.fromJson(res.getMessage(), new TypeToken<List<Auction>>(){}.getType());
-                        if (list != null) {
-                            Platform.runLater(() -> {
-                                updateAuctionGrid(list);
-                            });
-                        }
-                    } catch (Exception e) {
-                        // Not a list, maybe a simple success message
-                    }
-                } else if ("UPDATE_PRICE".equals(res.getStatus())) {
+                // Only react to explicit update notifications from server.
+                // Avoid treating every generic SUCCESS as an auctions list to prevent
+                // duplicate/overlapping UI updates that cause flicker.
+                if ("UPDATE_PRICE".equals(res.getStatus()) || "AUCTION_UPDATED".equals(res.getStatus()) || "AUCTION_FINISHED".equals(res.getStatus())) {
                     Platform.runLater(this::refreshAuctions);
                 }
+                // Other response types (including SUCCESS from direct requests) are
+                // handled by the request sender (sendRequestAndWait), so ignore them here.
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -76,7 +67,7 @@ public class BidderHomeController {
                     refreshAuctions();
                 });
             }
-        }, 0, 5000); // Refresh every 5 seconds
+        }, 0, 2000); // Refresh every 2 seconds
     }
 
     private void refreshWalletBalance() {
@@ -95,26 +86,54 @@ public class BidderHomeController {
     }
 
     private void updateAuctionGrid(List<Auction> auctions) {
-        Map<String, VBox> existingAuctionCards = auctionGrid.getChildren().stream()
-                .map(node -> (VBox) node)
-                .collect(Collectors.toMap(node -> (String) node.getUserData(), node -> node));
+        // Build a safe map of existing cards keyed by their auction id (userData)
+        Map<String, VBox> existingAuctionCards = new java.util.HashMap<>();
+        for (var node : auctionGrid.getChildren()) {
+            if (node instanceof VBox) {
+                Object ud = node.getUserData();
+                if (ud != null) {
+                    existingAuctionCards.put(ud.toString(), (VBox) node);
+                }
+            }
+        }
 
+        // Iterate incoming auctions and update existing cards or add new ones
         for (Auction auction : auctions) {
-            if (existingAuctionCards.containsKey(auction.getId())) {
-                // Update existing card
-                VBox card = existingAuctionCards.get(auction.getId());
-                // You can update specific labels here if needed, e.g., price
-                existingAuctionCards.remove(auction.getId());
+            String id = auction.getId();
+                if (existingAuctionCards.containsKey(id)) {
+                VBox card = existingAuctionCards.get(id);
+                // Update labels stored in card properties (if present)
+                Object priceObj = card.getProperties().get("priceLabel");
+                if (priceObj instanceof Label) {
+                    ((Label) priceObj).setText("Current Bid: " + auction.getCurrentPrice() + " VND");
+                }
+                Object statusObj = card.getProperties().get("statusLabel");
+                if (statusObj instanceof Label) {
+                    ((Label) statusObj).setText(auction.getStatus().toString());
+                }
+                Object endsObj = card.getProperties().get("endsInLabel");
+                if (endsObj instanceof Label) {
+                    ((Label) endsObj).setText("Ends in: " + "12h 21m"); // keep placeholder or compute real
+                }
+                // Remove from map so remaining entries are those to delete
+                existingAuctionCards.remove(id);
+                // Update click handler to use the latest auction object so status is current
+                card.setOnMouseClicked(event -> {
+                    if (event.getClickCount() == 2) {
+                        showBidOptionsDialog(auction);
+                    }
+                });
             } else {
-                // Add new card
                 VBox card = createAuctionCard(auction);
-                card.setUserData(auction.getId());
+                card.setUserData(id);
                 auctionGrid.getChildren().add(card);
             }
         }
 
-        // Remove old cards
-        auctionGrid.getChildren().removeAll(existingAuctionCards.values());
+        // Remove cards for auctions that no longer exist
+        for (VBox oldCard : existingAuctionCards.values()) {
+            auctionGrid.getChildren().remove(oldCard);
+        }
     }
 
     private VBox createAuctionCard(Auction auction) {
@@ -142,6 +161,11 @@ public class BidderHomeController {
         priceLabel.setText("Current Bid: " + auction.getCurrentPrice() + " VND");
         statusLabel.setText(auction.getStatus().toString());
         endsInLabel.setText("Ends in: " + "12h 21m"); // Placeholder
+
+        // Store references to important labels so we can update them without recreating nodes
+        card.getProperties().put("priceLabel", priceLabel);
+        card.getProperties().put("statusLabel", statusLabel);
+        card.getProperties().put("endsInLabel", endsInLabel);
 
         card.setOnMouseClicked(event -> {
             if (event.getClickCount() == 2) {

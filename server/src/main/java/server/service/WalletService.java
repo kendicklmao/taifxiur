@@ -407,4 +407,190 @@ public class WalletService {
 
     private record PendingRequestData(int userId, BigDecimal amount) {
     }
+
+    /* --- Hold / reservation functionality for bids --- */
+
+    /**
+     * Get available wallet balance (just total balance, no holds)
+     */
+    public BigDecimal getAvailableBalance(String username) {
+        if (!Validator.isValidUsername(username)) return null;
+        username = Validator.normalizeUsername(username);
+        try (Connection conn = DatabaseConfig.getDataSource().getConnection()) {
+            Integer userId = getUserIdByUsername(conn, username);
+            if (userId == null) return null;
+            ensureWalletExists(conn, userId);
+            return getWalletBalance(conn, userId);
+        } catch (SQLException e) {
+            System.err.println("Error getting available balance: " + e.getMessage());
+            return null;
+        }
+    }
+
+    private BigDecimal getTotalHeldAmount(Connection conn, int userId) throws SQLException {
+        try (PreparedStatement pstmt = conn.prepareStatement(
+                "SELECT COALESCE(SUM(amount),0) as total FROM wallet_holds WHERE bidder_id = ? AND status = 'HELD'")) {
+            pstmt.setInt(1, userId);
+            ResultSet rs = pstmt.executeQuery();
+            if (rs.next()) {
+                return rs.getBigDecimal("total");
+            }
+            return BigDecimal.ZERO;
+        }
+    }
+
+    /**
+     * Create or update a hold for a bidder on an auction. Returns null on success, or error message.
+     */
+    public String createOrUpdateHold(String auctionId, String bidderUsername, BigDecimal amount) {
+        if (auctionId == null || auctionId.isBlank()) return "Invalid auction id";
+        if (!Validator.isValidUsername(bidderUsername)) return "Invalid bidder";
+        if (!isPositiveAmount(amount)) return "Amount must be positive";
+        bidderUsername = Validator.normalizeUsername(bidderUsername);
+        try (Connection conn = DatabaseConfig.getDataSource().getConnection()) {
+            conn.setAutoCommit(false);
+            try {
+                Integer bidderId = getUserIdByUsernameAndRole(conn, bidderUsername, "BIDDER");
+                if (bidderId == null) {
+                    conn.rollback();
+                    return "Bidder not found";
+                }
+                ensureWalletExists(conn, bidderId);
+                // If there's an existing hold for this auction by the bidder, allow updating it by
+                // considering the existing hold amount when checking available funds.
+                BigDecimal existingHold = BigDecimal.ZERO;
+                try (PreparedStatement check = conn.prepareStatement(
+                        "SELECT amount FROM wallet_holds WHERE auction_id = ? AND bidder_id = ? AND status = 'HELD'")) {
+                    check.setString(1, auctionId);
+                    check.setInt(2, bidderId);
+                    ResultSet rs = check.executeQuery();
+                    if (rs.next()) {
+                        existingHold = rs.getBigDecimal("amount");
+                        if (existingHold == null) existingHold = BigDecimal.ZERO;
+                    }
+                }
+
+                BigDecimal totalHeld = getTotalHeldAmount(conn, bidderId);
+                if (totalHeld == null) totalHeld = BigDecimal.ZERO;
+                BigDecimal totalHeldExcludingCurrent = totalHeld.subtract(existingHold == null ? BigDecimal.ZERO : existingHold);
+                BigDecimal balance = getWalletBalance(conn, bidderId);
+                BigDecimal available = balance.subtract(totalHeldExcludingCurrent);
+                // Now ensure available (excluding current auction's existing hold) is enough for the requested amount
+                if (available.compareTo(amount) < 0) {
+                    conn.rollback();
+                    return "Insufficient available balance";
+                }
+
+                // Upsert hold
+                try (PreparedStatement upsert = conn.prepareStatement(
+                        "INSERT INTO wallet_holds (auction_id, bidder_id, amount, status, created_at, updated_at) " +
+                                "VALUES (?, ?, ?, 'HELD', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP) " +
+                                "ON CONFLICT(auction_id, bidder_id) DO UPDATE SET amount = EXCLUDED.amount, status = 'HELD', updated_at = CURRENT_TIMESTAMP")) {
+                    upsert.setString(1, auctionId);
+                    upsert.setInt(2, bidderId);
+                    upsert.setBigDecimal(3, amount);
+                    upsert.executeUpdate();
+                }
+
+                conn.commit();
+                return null;
+            } catch (SQLException e) {
+                conn.rollback();
+                System.err.println("Error creating/updating hold: " + e.getMessage());
+                return "Database error while creating hold";
+            } finally {
+                conn.setAutoCommit(true);
+            }
+        } catch (SQLException e) {
+            System.err.println("Error creating/updating hold: " + e.getMessage());
+            return "Database error while creating hold";
+        }
+    }
+
+    /**
+     * Release (cancel) a hold for a bidder on an auction
+     */
+    public void releaseHold(String auctionId, String bidderUsername) {
+        if (auctionId == null || auctionId.isBlank() || !Validator.isValidUsername(bidderUsername)) return;
+        bidderUsername = Validator.normalizeUsername(bidderUsername);
+        try (Connection conn = DatabaseConfig.getDataSource().getConnection()) {
+            Integer bidderId = getUserIdByUsername(conn, bidderUsername);
+            if (bidderId == null) return;
+            try (PreparedStatement pstmt = conn.prepareStatement(
+                    "UPDATE wallet_holds SET status = 'RELEASED', updated_at = CURRENT_TIMESTAMP WHERE auction_id = ? AND bidder_id = ? AND status = 'HELD'")) {
+                pstmt.setString(1, auctionId);
+                pstmt.setInt(2, bidderId);
+                pstmt.executeUpdate();
+            }
+        } catch (SQLException e) {
+            System.err.println("Error releasing hold: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Release all holds for an auction (used when auction finishes to release non-winning holds)
+     */
+    public void releaseAllHoldsForAuction(String auctionId) {
+        if (auctionId == null || auctionId.isBlank()) return;
+        try (Connection conn = DatabaseConfig.getDataSource().getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(
+                     "UPDATE wallet_holds SET status = 'RELEASED', updated_at = CURRENT_TIMESTAMP WHERE auction_id = ? AND status = 'HELD'")) {
+            pstmt.setString(1, auctionId);
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            System.err.println("Error releasing holds for auction: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Finalize payment for a winning bidder: deduct amount and credit seller.
+     * Returns null on success or error message.
+     */
+    public String finalizePaymentForWinner(String auctionId, String bidderUsername, String sellerUsername, BigDecimal amount) {
+        if (auctionId == null || auctionId.isBlank()) return "Invalid auction id";
+        if (!Validator.isValidUsername(bidderUsername) || !Validator.isValidUsername(sellerUsername)) return "Invalid user";
+        if (!isPositiveAmount(amount)) return "Invalid amount";
+
+        bidderUsername = Validator.normalizeUsername(bidderUsername);
+        sellerUsername = Validator.normalizeUsername(sellerUsername);
+
+        try (Connection conn = DatabaseConfig.getDataSource().getConnection()) {
+            conn.setAutoCommit(false);
+            try {
+                Integer bidderId = getUserIdByUsernameAndRole(conn, bidderUsername, "BIDDER");
+                Integer sellerId = getUserIdByUsernameAndRole(conn, sellerUsername, "SELLER");
+                if (bidderId == null || sellerId == null) {
+                    conn.rollback();
+                    return "User not found";
+                }
+                ensureWalletExists(conn, bidderId);
+                ensureWalletExists(conn, sellerId);
+
+                // Check bidder has sufficient balance to pay
+                BigDecimal bidderBalance = getWalletBalance(conn, bidderId);
+                if (bidderBalance.compareTo(amount) < 0) {
+                    conn.rollback();
+                    return "Bidder insufficient balance";
+                }
+
+                // Deduct amount from bidder wallet
+                updateWalletBalance(conn, bidderId, amount.negate());
+                // Credit seller wallet
+                updateWalletBalance(conn, sellerId, amount);
+
+
+                conn.commit();
+                return null;
+            } catch (SQLException e) {
+                conn.rollback();
+                System.err.println("Error finalizing payment: " + e.getMessage());
+                return "Database error while finalizing payment";
+            } finally {
+                conn.setAutoCommit(true);
+            }
+        } catch (SQLException e) {
+            System.err.println("Error finalizing payment: " + e.getMessage());
+            return "Database error while finalizing payment";
+        }
+    }
 }
