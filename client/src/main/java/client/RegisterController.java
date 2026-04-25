@@ -11,6 +11,8 @@ public class RegisterController {
     @FXML
     private PasswordField passwordField;
     @FXML
+    private PasswordField confirmPasswordField;
+    @FXML
     private TextField emailField;
     @FXML
     private TextField q1Field;
@@ -26,6 +28,8 @@ public class RegisterController {
     private Label usernameError;
     @FXML
     private Label passwordError;
+    @FXML
+    private Label confirmPasswordError;
     @FXML
     private Label emailError;
     @FXML
@@ -47,9 +51,9 @@ public class RegisterController {
 
         usernameField.focusedProperty().addListener((obs, oldVal, newVal) -> {
             if (!newVal) {
-                String username = usernameField.getText();
+                String username = usernameField.getText().trim();
                 if (!username.isEmpty() && !Validator.isValidUsername(username)) {
-                    usernameError.setText("Username must contain letters and numbers, length between 6 and 20");
+                    usernameError.setText("Username must be 6+ characters, contain only letters, numbers, and underscores (no spaces)");
                     usernameField.getStyleClass().add("error-field");
                 } else {
                     usernameError.setText("");
@@ -70,6 +74,19 @@ public class RegisterController {
                 } else {
                     passwordError.setText("");
                     passwordField.getStyleClass().remove("error-field");
+                }
+            }
+        });
+        confirmPasswordField.focusedProperty().addListener((obs, oldVal, newVal) -> {
+            if (!newVal) {
+                String password = passwordField.getText();
+                String confirmPassword = confirmPasswordField.getText();
+                if (!confirmPassword.isEmpty() && !password.equals(confirmPassword)) {
+                    confirmPasswordError.setText("Passwords do not match");
+                    confirmPasswordField.getStyleClass().add("error-field");
+                } else {
+                    confirmPasswordError.setText("");
+                    confirmPasswordField.getStyleClass().remove("error-field");
                 }
             }
         });
@@ -147,10 +164,11 @@ public class RegisterController {
         boolean isValid = true;
         usernameError.setText("");
         passwordError.setText("");
+        confirmPasswordError.setText("");
         emailError.setText("");
 
         if (!Validator.isValidUsername(usernameField.getText())) {
-            usernameError.setText("Username must be 6-20 characters, no spaces");
+            usernameError.setText("Username must be 6+ characters, contain only letters, numbers, and underscores (no spaces)");
             isValid = false;
         }
 
@@ -158,6 +176,12 @@ public class RegisterController {
             passwordError.setText("Password must be >= 6 characters with uppercase, lowercase, numbers and special characters");
             isValid = false;
         }
+
+        if (!passwordField.getText().equals(confirmPasswordField.getText())) {
+            confirmPasswordError.setText("Passwords do not match");
+            isValid = false;
+        }
+
         if (!Validator.isValidEmail(emailField.getText())) {
             emailError.setText("Invalid email format (example: user@example.com)");
             isValid = false;
@@ -174,6 +198,7 @@ public class RegisterController {
         // Clear all error styles
         clearErrorStyle(usernameField);
         clearErrorStyle(passwordField);
+        clearErrorStyle(confirmPasswordField);
         clearErrorStyle(emailField);
         clearErrorStyle(q1Field);
         clearErrorStyle(a1Field);
@@ -186,6 +211,10 @@ public class RegisterController {
         }
         if (passwordField.getText() == null || passwordField.getText().trim().isEmpty()) {
             addErrorStyle(passwordField);
+            valid = false;
+        }
+        if (confirmPasswordField.getText() == null || confirmPasswordField.getText().trim().isEmpty()) {
+            addErrorStyle(confirmPasswordField);
             valid = false;
         }
         if (emailField.getText() == null || emailField.getText().trim().isEmpty()) {

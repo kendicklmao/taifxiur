@@ -65,6 +65,13 @@
                                         <PasswordField fx:id="passwordField" promptText="Use uppercase, numbers, and special characters" styleClass="register-input"/>
                                         <Label fx:id="passwordError" styleClass="error-label"/>
                                     </VBox>
+
+                                    <!-- Confirm Password -->
+                                    <VBox spacing="6">
+                                        <Label text="Confirm Password" styleClass="form-label-register"/>
+                                        <PasswordField fx:id="confirmPasswordField" promptText="Re-enter your password" styleClass="register-input"/>
+                                        <Label fx:id="confirmPasswordError" styleClass="error-label"/>
+                                    </VBox>
                                 </VBox>
 
                                 <!-- Security Section -->

@@ -48,16 +48,17 @@ public class UserService {
      * Register a new user in the database
      */
     public boolean register(String username, String password, String email, String q1, String a1, String q2, String a2, Role role) {
+        System.out.println("DEBUG REGISTER: Attempting to register user: " + username);
         if (!Validator.isValidUsername(username)) {
-            System.out.println("Username sai định dạng r ngu");
+            System.out.println("DEBUG REGISTER: Invalid username format: " + username);
             return false;
         }
         if (!Validator.isValidPassword(password)) {
-            System.out.println("Password sai định dạng r ngu");
+            System.out.println("DEBUG REGISTER: Invalid password format");
             return false;
         }
         if (!Validator.isValidEmail(email)) {
-            System.out.println("Email sai định dạng r ngu");
+            System.out.println("DEBUG REGISTER: Invalid email format: " + email);
             return false;
         }
 
@@ -69,10 +70,24 @@ public class UserService {
         a1 = Validator.normalizeAnswer(a1);
         a2 = Validator.normalizeAnswer(a2);
 
+        System.out.println("DEBUG REGISTER: After normalization - username: " + username + ", email: " + email);
+
+        // Check if username already exists
+        if (exists(username)) {
+            System.out.println("DEBUG REGISTER: Username already exists: " + username);
+            return false;
+        }
+
+        // Check if email already exists
+        if (emailExists(email)) {
+            System.out.println("DEBUG REGISTER: Email already exists: " + email);
+            return false;
+        }
+
         try (Connection conn = DatabaseConfig.getDataSource().getConnection();
              PreparedStatement pstmt = conn.prepareStatement(
-                     "INSERT INTO users (username, password, email, role, question_1, answer_1, question_2, answer_2) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-                     Statement.RETURN_GENERATED_KEYS)) {
+                    "INSERT INTO users (username, password, email, role, question_1, answer_1, question_2, answer_2) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                    Statement.RETURN_GENERATED_KEYS)) {
 
             pstmt.setString(1, username);
             pstmt.setString(2, password);
@@ -85,7 +100,7 @@ public class UserService {
 
             int affectedRows = pstmt.executeUpdate();
             if (affectedRows > 0) {
-                System.out.println("Đăng ký thành công vào sổ!");
+                System.out.println("DEBUG REGISTER: User registered successfully!");
                 ResultSet generatedKeys = pstmt.getGeneratedKeys();
                 if (generatedKeys.next()) {
                     ensureWalletExists(conn, generatedKeys.getInt(1));
@@ -93,10 +108,12 @@ public class UserService {
                 return true;
             }
         } catch (SQLException e) {
+            System.out.println("DEBUG REGISTER: SQL Exception - " + e.getMessage());
             if (e.getMessage().contains("duplicate key")) {
-                System.out.println("Username này đã tồn tại trong Sổ!");
+                System.out.println("Duplicate key error - username or email already exists!");
             } else {
                 System.err.println("Error registering user: " + e.getMessage());
+                e.printStackTrace();
             }
             return false;
         }
@@ -235,6 +252,25 @@ public class UserService {
             System.err.println("Error fetching user: " + e.getMessage());
         }
         return null;
+    }
+
+    /**
+     * Check if email exists
+     */
+    public boolean emailExists(String email) {
+        if (email == null) return false;
+        email = Validator.normalizeEmail(email);
+
+        try (Connection conn = DatabaseConfig.getDataSource().getConnection();
+             PreparedStatement pstmt = conn.prepareStatement("SELECT 1 FROM users WHERE email = ?")) {
+
+            pstmt.setString(1, email);
+            ResultSet rs = pstmt.executeQuery();
+            return rs.next();
+        } catch (SQLException e) {
+            System.err.println("Error checking email existence: " + e.getMessage());
+            return false;
+        }
     }
 
     /**
@@ -508,15 +544,20 @@ public class UserService {
     }
 
     /**
-     * Ban user
+     * Ban user - returns null if successful, error message otherwise
      */
-    public boolean banUser(String username, String adminUsername) {
+    public String banUser(String username, String adminUsername) {
         username = Validator.normalizeUsername(username);
         User admin = getUserFromDatabase(adminUsername);
         User targetUser = getUserFromDatabase(username);
 
         if (admin == null || targetUser == null) {
-            return false;
+            return "User not found";
+        }
+
+        // Check if user is already banned
+        if (isBanned(username)) {
+            return "User is already banned";
         }
 
         try (Connection conn = DatabaseConfig.getDataSource().getConnection();
@@ -526,25 +567,30 @@ public class UserService {
             int affectedRows = pstmt.executeUpdate();
             if (affectedRows > 0) {
                 logAdminAction(admin.getId(), targetUser.getId(), "BAN");
-                return true;
+                return null; // Success
             }
-            return false;
+            return "Failed to ban user";
         } catch (SQLException e) {
             System.err.println("Error banning user: " + e.getMessage());
-            return false;
+            return "Database error while banning user";
         }
     }
 
     /**
-     * Unban user
+     * Unban user - returns null if successful, error message otherwise
      */
-    public boolean unbanUser(String username, String adminUsername) {
+    public String unbanUser(String username, String adminUsername) {
         username = Validator.normalizeUsername(username);
         User admin = getUserFromDatabase(adminUsername);
         User targetUser = getUserFromDatabase(username);
 
         if (admin == null || targetUser == null) {
-            return false;
+            return "User not found";
+        }
+
+        // Check if user is already active (not banned)
+        if (!isBanned(username)) {
+            return "User is not banned";
         }
 
         try (Connection conn = DatabaseConfig.getDataSource().getConnection();
@@ -554,12 +600,12 @@ public class UserService {
             int affectedRows = pstmt.executeUpdate();
             if (affectedRows > 0) {
                 logAdminAction(admin.getId(), targetUser.getId(), "UNBAN");
-                return true;
+                return null; // Success
             }
-            return false;
+            return "Failed to unban user";
         } catch (SQLException e) {
             System.err.println("Error unbanning user: " + e.getMessage());
-            return false;
+            return "Database error while unbanning user";
         }
     }
 

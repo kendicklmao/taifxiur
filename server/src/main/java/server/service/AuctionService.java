@@ -283,8 +283,25 @@ public class AuctionService {
      */
     public List<Auction> getAuctionsBySeller(String sellerUsername) {
         List<Auction> sellerAuctions = new ArrayList<>();
+        Instant now = Instant.now();
         for (Auction auction : auctions.values()) {
             if (auction.getSeller() != null && auction.getSeller().getUsername().equals(sellerUsername)) {
+                // Update status if needed
+                if (auction.getStatus() == AuctionStatus.OPEN && !now.isBefore(auction.getStartTime()) && now.isBefore(auction.getEndTime())) {
+                    try {
+                        java.lang.reflect.Field statusField = Auction.class.getDeclaredField("status");
+                        statusField.setAccessible(true);
+                        statusField.set(auction, AuctionStatus.RUNNING);
+                    } catch (Exception ignored) {}
+                } else if (auction.getStatus() == AuctionStatus.RUNNING && !now.isBefore(auction.getEndTime())) {
+                    try {
+                        java.lang.reflect.Field statusField = Auction.class.getDeclaredField("status");
+                        statusField.setAccessible(true);
+                        statusField.set(auction, AuctionStatus.FINISHED);
+                        // Finalization will be handled by the Auction scheduler callback (finalizeAuction)
+                        // Don't do blocking DB operations here!
+                    } catch (Exception ignored) {}
+                }
                 sellerAuctions.add(auction);
             }
         }
