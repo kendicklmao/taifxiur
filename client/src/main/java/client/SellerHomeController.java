@@ -36,6 +36,8 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.List;
 import java.util.stream.Collectors;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 
 import javafx.application.Platform;
 
@@ -73,6 +75,12 @@ public class SellerHomeController {
     private final Gson gson = GsonUtils.createGson();
 
     private final AppContext ctx = AppContext.getInstance();
+    private static final List<String> BANK_NAMES = Arrays.asList(
+            "Vietcombank", "Techcombank", "BIDV", "Agribank", "VPBank",
+            "MBBank", "ACB", "Sacombank", "Eximbank", "HDBank",
+            "TPBank", "VIB", "SeABank", "SHB", "OCB",
+            "MSB", "LienVietPostBank", "BacABank", "VietBank", "PVcomBank"
+    );
 
     @FXML
     public void initialize() {
@@ -112,7 +120,7 @@ public class SellerHomeController {
                     refreshWalletBalance();
                 });
             }
-        }, 0, 2000); // Refresh every 2 seconds
+        }, 0, 5000); // Refresh every 5 seconds
     }
 
     private void updateAuctionGrid(List<Auction> auctions) {
@@ -315,7 +323,7 @@ public class SellerHomeController {
                     return;
                 }
 
-                Instant minStartTime = Instant.now().plusSeconds(60); // require at least 1 minute
+                Instant minStartTime = Instant.now().plusSeconds(60);
                 if (startTime.isBefore(minStartTime)) {
                     showAlert("Error", "Start time must be at least 1 minute from now!");
                     return;
@@ -366,8 +374,8 @@ public class SellerHomeController {
             Request req = new Request("CREATE_AUCTION", data);
 
             Response response = ctx.sendRequestAndWait(req, 10);
-            
-            System.out.println("MESSAGE = " + response.getMessage()); 
+
+            System.out.println("MESSAGE = " + response.getMessage());
             if ("SUCCESS".equals(response.getStatus())) {
                 fetchSellerAuctions(); // Refresh the grid
                  showAlert("OK", "Auction created successfully!");
@@ -474,18 +482,41 @@ public class SellerHomeController {
         TextField amountField = new TextField();
         amountField.setPromptText("Enter amount");
 
-        TextField bankNameField = new TextField();
-        bankNameField.setPromptText("Enter bank name");
+        ComboBox<String> bankNameComboBox = new ComboBox<>();
+        bankNameComboBox.setPromptText("Select bank name");
+        bankNameComboBox.setEditable(true);
+        ObservableList<String> bankOptions = FXCollections.observableArrayList(BANK_NAMES);
+        bankNameComboBox.setItems(bankOptions);
+
+        bankNameComboBox.getEditor().textProperty().addListener((obs, oldText, newText) -> {
+            if (newText == null || newText.isEmpty()) {
+                bankNameComboBox.setItems(bankOptions);
+            } else {
+                List<String> filteredList = BANK_NAMES.stream()
+                        .filter(s -> s.toLowerCase().contains(newText.toLowerCase()))
+                        .collect(Collectors.toList());
+                bankNameComboBox.setItems(FXCollections.observableArrayList(filteredList));
+            }
+        });
 
         TextField accountNumberField = new TextField();
         accountNumberField.setPromptText("Enter account number");
 
         VBox content = new VBox(10);
-        content.getChildren().addAll(new Label("Amount"), amountField, new Label("Bank Name"), bankNameField, new Label("Account Number"), accountNumberField);
+        content.getChildren().addAll(new Label("Amount"), amountField, new Label("Bank Name"), bankNameComboBox, new Label("Account Number"), accountNumberField);
         dialog.getDialogPane().setContent(content);
         dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
 
-        dialog.setResultConverter(buttonType -> buttonType == ButtonType.OK ? amountField.getText() + "," + bankNameField.getText() + "," + accountNumberField.getText() : null);
+        dialog.setResultConverter(buttonType -> {
+            if (buttonType == ButtonType.OK) {
+                String selectedBank = bankNameComboBox.getSelectionModel().getSelectedItem();
+                if (selectedBank == null && !bankNameComboBox.getEditor().getText().isEmpty()) {
+                    selectedBank = bankNameComboBox.getEditor().getText();
+                }
+                return amountField.getText() + "," + selectedBank + "," + accountNumberField.getText();
+            }
+            return null;
+        });
         dialog.showAndWait().ifPresent(result -> {
             String[] parts = result.split(",");
             if (parts.length == 3) {
@@ -520,3 +551,4 @@ public class SellerHomeController {
         });
     }
 }
+

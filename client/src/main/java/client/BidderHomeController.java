@@ -21,6 +21,7 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -28,6 +29,8 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 
 public class BidderHomeController {
     @FXML private TilePane auctionGrid;
@@ -36,6 +39,12 @@ public class BidderHomeController {
     private final AppContext ctx = AppContext.getInstance();
     private final Gson gson = GsonUtils.createGson();
     private Consumer<String> messageListener;
+    private static final List<String> BANK_NAMES = Arrays.asList(
+            "Vietcombank", "Techcombank", "BIDV", "Agribank", "VPBank",
+            "MBBank", "ACB", "Sacombank", "Eximbank", "HDBank",
+            "TPBank", "VIB", "SeABank", "SHB", "OCB",
+            "MSB", "LienVietPostBank", "BacABank", "VietBank", "PVcomBank"
+    );
 
     @FXML
     public void initialize() {
@@ -211,31 +220,149 @@ public class BidderHomeController {
         TextField amountField = new TextField();
         amountField.setPromptText("Enter amount");
 
+        ComboBox<String> bankNameComboBox = new ComboBox<>();
+        bankNameComboBox.setPromptText("Select bank name");
+        bankNameComboBox.setEditable(true);
+        ObservableList<String> bankOptions = FXCollections.observableArrayList(BANK_NAMES);
+        bankNameComboBox.setItems(bankOptions);
+
+        bankNameComboBox.getEditor().textProperty().addListener((obs, oldText, newText) -> {
+            if (newText == null || newText.isEmpty()) {
+                bankNameComboBox.setItems(bankOptions);
+            } else {
+                List<String> filteredList = BANK_NAMES.stream()
+                        .filter(s -> s.toLowerCase().contains(newText.toLowerCase()))
+                        .collect(Collectors.toList());
+                bankNameComboBox.setItems(FXCollections.observableArrayList(filteredList));
+            }
+        });
+
+        TextField accountNumberField = new TextField();
+        accountNumberField.setPromptText("Enter account number");
+
         VBox content = new VBox(10);
-        content.getChildren().addAll(new Label("Amount"), amountField);
+        content.getChildren().addAll(new Label("Amount"), amountField, new Label("Bank Name"), bankNameComboBox, new Label("Account Number"), accountNumberField);
         dialog.getDialogPane().setContent(content);
         dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
 
-        dialog.setResultConverter(buttonType -> buttonType == ButtonType.OK ? amountField.getText() : null);
-        dialog.showAndWait().ifPresent(amountText -> {
-            try {
-                BigDecimal amount = new BigDecimal(amountText);
-                if (amount.compareTo(BigDecimal.ZERO) <= 0) {
-                    showAlert("Error", "Amount must be greater than 0");
-                    return;
+        dialog.setResultConverter(buttonType -> {
+            if (buttonType == ButtonType.OK) {
+                String selectedBank = bankNameComboBox.getSelectionModel().getSelectedItem();
+                if (selectedBank == null && !bankNameComboBox.getEditor().getText().isEmpty()) {
+                    selectedBank = bankNameComboBox.getEditor().getText();
                 }
+                return amountField.getText() + "," + selectedBank + "," + accountNumberField.getText();
+            }
+            return null;
+        });
+        dialog.showAndWait().ifPresent(result -> {
+            String[] parts = result.split(",");
+            if (parts.length == 3) {
+                try {
+                    BigDecimal amount = new BigDecimal(parts[0]);
+                    String bankName = parts[1];
+                    String accountNumber = parts[2];
+                    if (amount.compareTo(BigDecimal.ZERO) <= 0) {
+                        showAlert("Error", "Amount must be greater than 0");
+                        return;
+                    }
+                    if (bankName.trim().isEmpty() || accountNumber.trim().isEmpty()) {
+                        showAlert("Error", "Bank name and account number cannot be empty");
+                        return;
+                    }
 
-                Map<String, String> data = new HashMap<>();
-                data.put("username", ctx.getCurrentUser().getUsername());
-                data.put("amount", amount.toPlainString());
-                Response response = ctx.sendRequestAndWait(new Request("CREATE_DEPOSIT_REQUEST", data), 5);
-                if ("SUCCESS".equals(response.getStatus())) {
-                    showAlert("Success", response.getMessage());
-                } else {
-                    showAlert("Error", response.getMessage());
+                    Map<String, String> data = new HashMap<>();
+                    data.put("username", ctx.getCurrentUser().getUsername());
+                    data.put("amount", amount.toPlainString());
+                    data.put("bankName", bankName.trim());
+                    data.put("accountNumber", accountNumber.trim());
+                    Response response = ctx.sendRequestAndWait(new Request("CREATE_DEPOSIT_REQUEST", data), 5);
+                    if ("SUCCESS".equals(response.getStatus())) {
+                        showAlert("Success", response.getMessage());
+                    } else {
+                        showAlert("Error", response.getMessage());
+                    }
+                } catch (Exception e) {
+                    showAlert("Error", "Please enter valid data");
                 }
-            } catch (Exception e) {
-                showAlert("Error", "Please enter a valid amount");
+            }
+        });
+    }
+
+    @FXML
+    public void handleWithdrawRequest() {
+        Dialog<String> dialog = new Dialog<>();
+        dialog.setTitle("Withdraw Request");
+        dialog.setHeaderText("Send a withdraw request to admin");
+
+        TextField amountField = new TextField();
+        amountField.setPromptText("Enter amount");
+
+        ComboBox<String> bankNameComboBox = new ComboBox<>();
+        bankNameComboBox.setPromptText("Select bank name");
+        bankNameComboBox.setEditable(true);
+        ObservableList<String> bankOptions = FXCollections.observableArrayList(BANK_NAMES);
+        bankNameComboBox.setItems(bankOptions);
+
+        bankNameComboBox.getEditor().textProperty().addListener((obs, oldText, newText) -> {
+            if (newText == null || newText.isEmpty()) {
+                bankNameComboBox.setItems(bankOptions);
+            } else {
+                List<String> filteredList = BANK_NAMES.stream()
+                        .filter(s -> s.toLowerCase().contains(newText.toLowerCase()))
+                        .collect(Collectors.toList());
+                bankNameComboBox.setItems(FXCollections.observableArrayList(filteredList));
+            }
+        });
+
+        TextField accountNumberField = new TextField();
+        accountNumberField.setPromptText("Enter account number");
+
+        VBox content = new VBox(10);
+        content.getChildren().addAll(new Label("Amount"), amountField, new Label("Bank Name"), bankNameComboBox, new Label("Account Number"), accountNumberField);
+        dialog.getDialogPane().setContent(content);
+        dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+
+        dialog.setResultConverter(buttonType -> {
+            if (buttonType == ButtonType.OK) {
+                String selectedBank = bankNameComboBox.getSelectionModel().getSelectedItem();
+                if (selectedBank == null && !bankNameComboBox.getEditor().getText().isEmpty()) {
+                    selectedBank = bankNameComboBox.getEditor().getText();
+                }
+                return amountField.getText() + "," + selectedBank + "," + accountNumberField.getText();
+            }
+            return null;
+        });
+        dialog.showAndWait().ifPresent(result -> {
+            String[] parts = result.split(",");
+            if (parts.length == 3) {
+                try {
+                    BigDecimal amount = new BigDecimal(parts[0]);
+                    String bankName = parts[1];
+                    String accountNumber = parts[2];
+                    if (amount.compareTo(BigDecimal.ZERO) <= 0) {
+                        showAlert("Error", "Amount must be greater than 0");
+                        return;
+                    }
+                    if (bankName.trim().isEmpty() || accountNumber.trim().isEmpty()) {
+                        showAlert("Error", "Bank name and account number cannot be empty");
+                        return;
+                    }
+
+                    Map<String, String> data = new HashMap<>();
+                    data.put("username", ctx.getCurrentUser().getUsername());
+                    data.put("amount", amount.toPlainString());
+                    data.put("bankName", bankName.trim());
+                    data.put("accountNumber", accountNumber.trim());
+                    Response response = ctx.sendRequestAndWait(new Request("CREATE_WITHDRAW_REQUEST", data), 5);
+                    if ("SUCCESS".equals(response.getStatus())) {
+                        showAlert("Success", response.getMessage());
+                    } else {
+                        showAlert("Error", response.getMessage());
+                    }
+                } catch (Exception e) {
+                    showAlert("Error", "Please enter valid data");
+                }
             }
         });
     }
@@ -395,7 +522,7 @@ public class BidderHomeController {
         if (endTime == null) {
             return "Unknown";
         }
-        
+
         LocalDateTime dateTime = LocalDateTime.ofInstant(endTime, ZoneId.systemDefault());
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
         return dateTime.format(formatter);

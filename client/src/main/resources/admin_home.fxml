@@ -29,6 +29,9 @@
                         <Label text="Browse all active and completed auctions" styleClass="dashboard-section-subtitle"/>
                     </VBox>
                     <ListView fx:id="allAuctionsList" style="-fx-padding: 10; -fx-border-radius: 4; -fx-border-color: #d0ccc6; -fx-background-color: #ffffff;"/>
+                    <HBox spacing="10" style="-fx-padding: 10 0 0 0;">
+                        <Button text="REFRESH" onAction="#refreshAuctions" styleClass="dashboard-btn-primary" prefWidth="120"/>
+                    </HBox>
                 </VBox>
             </Tab>
 

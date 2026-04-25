@@ -28,6 +28,7 @@
                     <Label fx:id="walletBalanceLabel" text="Balance: loading..." style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #1a1a1a;"/>
                     <Pane HBox.hgrow="ALWAYS"/>
                     <Button text="REQUEST DEPOSIT" onAction="#handleDepositRequest" styleClass="dashboard-btn-primary" prefWidth="170"/>
+                    <Button text="REQUEST WITHDRAW" onAction="#handleWithdrawRequest" styleClass="dashboard-btn-primary" prefWidth="170"/>
                 </HBox>
             </VBox>
 

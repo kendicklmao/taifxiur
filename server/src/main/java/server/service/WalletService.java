@@ -75,8 +75,14 @@ public class WalletService {
     }
 
     public String createWithdrawRequest(String sellerUsername, BigDecimal amount, String bankName, String accountNumber) {
+        if (sellerUsername == null || sellerUsername.trim().isEmpty()) {
+            return "Username is required";
+        }
         if (!Validator.isValidUsername(sellerUsername)) {
             return "Invalid username";
+        }
+        if (amount == null) {
+            return "Amount is required";
         }
         if (!isPositiveAmount(amount)) {
             return "Amount must be greater than 0";
@@ -98,9 +104,9 @@ public class WalletService {
                      VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
                      """)) {
 
-            Integer sellerId = getUserIdByUsernameAndRole(conn, sellerUsername, "SELLER");
+            Integer sellerId = getUserIdByUsername(conn, sellerUsername);
             if (sellerId == null) {
-                return "Seller not found";
+                return "User not found";
             }
 
             ensureWalletExists(conn, sellerId);
@@ -324,14 +330,16 @@ public class WalletService {
 
     private void ensureWalletExists(Connection conn, int userId) throws SQLException {
         try (PreparedStatement pstmt = conn.prepareStatement(
-                """
-                INSERT INTO wallets (user_id, balance, currency, created_at, updated_at)
-                SELECT ?, 0, 'USD', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
-                WHERE NOT EXISTS (SELECT 1 FROM wallets WHERE user_id = ?)
-                """)) {
+                "SELECT 1 FROM wallets WHERE user_id = ?")) {
             pstmt.setInt(1, userId);
-            pstmt.setInt(2, userId);
-            pstmt.executeUpdate();
+            ResultSet rs = pstmt.executeQuery();
+            if (!rs.next()) {
+                try (PreparedStatement insertStmt = conn.prepareStatement(
+                        "INSERT INTO wallets (user_id, balance, currency, created_at, updated_at) VALUES (?, 0, 'USD', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)")) {
+                    insertStmt.setInt(1, userId);
+                    insertStmt.executeUpdate();
+                }
+            }
         }
     }
 
@@ -353,7 +361,7 @@ public class WalletService {
                 """
                 UPDATE wallets
                 SET balance = balance + ?, updated_at = CURRENT_TIMESTAMP
-                WHERE id = (SELECT id FROM wallets WHERE user_id = ? ORDER BY id ASC LIMIT 1)
+                WHERE user_id = ?
                 """)) {
             pstmt.setBigDecimal(1, amountDelta);
             pstmt.setInt(2, userId);
@@ -557,8 +565,8 @@ public class WalletService {
         try (Connection conn = DatabaseConfig.getDataSource().getConnection()) {
             conn.setAutoCommit(false);
             try {
-                Integer bidderId = getUserIdByUsernameAndRole(conn, bidderUsername, "BIDDER");
-                Integer sellerId = getUserIdByUsernameAndRole(conn, sellerUsername, "SELLER");
+                Integer bidderId = getUserIdByUsername(conn, bidderUsername);
+                Integer sellerId = getUserIdByUsername(conn, sellerUsername);
                 if (bidderId == null || sellerId == null) {
                     conn.rollback();
                     return "User not found";
