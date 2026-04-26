@@ -70,18 +70,12 @@ public class BidderHomeController {
 
         refreshWalletBalance();
         refreshAuctions();
+    }
 
-        // Schedule periodic refresh
-        Timer timer = new Timer(true);
-        timer.scheduleAtFixedRate(new TimerTask() {
-            @Override
-            public void run() {
-                Platform.runLater(() -> {
-                    refreshWalletBalance();
-                    refreshAuctions();
-                });
-            }
-        }, 0, 2000); // Refresh every 2 seconds
+    @FXML
+    public void handleRefresh() {
+        refreshWalletBalance();
+        refreshAuctions();
     }
 
     private void refreshWalletBalance() {
@@ -155,6 +149,7 @@ public class BidderHomeController {
         Label nameLabel = new Label();
         Label priceLabel = new Label();
         Label statusLabel = new Label();
+        Label startsAtLabel = new Label();
         Label endsInLabel = new Label();
         VBox card = new VBox(10);
 
@@ -164,8 +159,9 @@ public class BidderHomeController {
         nameLabel.getStyleClass().add("item-name");
         priceLabel.getStyleClass().add("item-price");
         statusLabel.getStyleClass().add("item-status");
+        startsAtLabel.getStyleClass().add("item-ends-in");
         endsInLabel.getStyleClass().add("item-ends-in");
-        VBox itemDetails = new VBox(5, nameLabel, priceLabel, statusLabel, endsInLabel);
+        VBox itemDetails = new VBox(5, nameLabel, priceLabel, statusLabel, startsAtLabel, endsInLabel);
         card.getChildren().addAll(imageView, itemDetails);
 
         if (auction.getItem().getImageUrl() != null && !auction.getItem().getImageUrl().isEmpty()) {
@@ -174,6 +170,7 @@ public class BidderHomeController {
         nameLabel.setText(auction.getItem().getName());
         priceLabel.setText("Current Bid: " + auction.getCurrentPrice() + " VND");
         statusLabel.setText(auction.getStatus().toString());
+        startsAtLabel.setText("Starts: " + formatEndTime(auction.getStartTime()));
         endsInLabel.setText("Ends: " + formatEndTime(auction.getEndTime()));
 
         // Store references to important labels so we can update them without recreating

@@ -111,18 +111,12 @@ public class SellerHomeController {
         // Fetch seller's auctions on initialization
         fetchSellerAuctions();
         refreshWalletBalance();
+    }
 
-        // Schedule periodic refresh
-        Timer timer = new Timer(true);
-        timer.scheduleAtFixedRate(new TimerTask() {
-            @Override
-            public void run() {
-                Platform.runLater(() -> {
-                    fetchSellerAuctions();
-                    refreshWalletBalance();
-                });
-            }
-        }, 0, 5000); // Refresh every 5 seconds
+    @FXML
+    public void handleRefresh() {
+        fetchSellerAuctions();
+        refreshWalletBalance();
     }
 
     private void updateAuctionGrid(List<Auction> auctions) {
@@ -152,6 +146,8 @@ public class SellerHomeController {
         Label nameLabel = new Label();
         Label priceLabel = new Label();
         Label statusLabel = new Label();
+        Label startsAtLabel = new Label();
+        Label endsAtLabel = new Label();
         VBox card = new VBox(10);
 
         imageView.setFitHeight(150);
@@ -160,7 +156,9 @@ public class SellerHomeController {
         nameLabel.getStyleClass().add("item-name");
         priceLabel.getStyleClass().add("item-price");
         statusLabel.getStyleClass().add("item-status");
-        VBox itemDetails = new VBox(5, nameLabel, priceLabel, statusLabel);
+        startsAtLabel.getStyleClass().add("item-ends-in");
+        endsAtLabel.getStyleClass().add("item-ends-in");
+        VBox itemDetails = new VBox(5, nameLabel, priceLabel, statusLabel, startsAtLabel, endsAtLabel);
         card.getChildren().addAll(imageView, itemDetails);
 
         if (auction.getItem().getImageUrl() != null && !auction.getItem().getImageUrl().isEmpty()) {
@@ -169,6 +167,8 @@ public class SellerHomeController {
         nameLabel.setText(auction.getItem().getName());
         priceLabel.setText("Current Price: " + auction.getCurrentPrice());
         statusLabel.setText("Status: " + auction.getStatus());
+        startsAtLabel.setText("Starts: " + formatTime(auction.getStartTime()));
+        endsAtLabel.setText("Ends: " + formatTime(auction.getEndTime()));
 
         return card;
     }
@@ -436,11 +436,19 @@ public class SellerHomeController {
     }
 
     // ================= ALERT =================
-    private void showAlert(String title, String msg) {
+    private void showAlert(String title, String message) {
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
         alert.setTitle(title);
-        alert.setContentText(msg);
+        alert.setHeaderText(null);
+        alert.setContentText(message);
         alert.showAndWait();
+    }
+
+    private String formatTime(java.time.Instant instant) {
+        if (instant == null) return "Unknown";
+        java.time.LocalDateTime dateTime = java.time.LocalDateTime.ofInstant(instant, java.time.ZoneId.systemDefault());
+        java.time.format.DateTimeFormatter formatter = java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+        return dateTime.format(formatter);
     }
 
     // ================= FETCH SELLER AUCTIONS =================

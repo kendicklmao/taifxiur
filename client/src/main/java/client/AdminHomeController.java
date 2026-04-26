@@ -71,9 +71,12 @@ public class AdminHomeController {
                 } else {
                     setText(
                         "📦 " + item.getItem().getName() +
+                        " | ID: " + item.getId().substring(0, 8) + "..." +
                         " | Seller: " + item.getSeller().getUsername() +
                         " | Price: " + item.getCurrentPrice() +
-                        " | Status: " + item.getStatus()
+                        " | Status: " + item.getStatus() +
+                        " | Start: " + formatTime(item.getStartTime()) +
+                        " | End: " + formatTime(item.getEndTime())
                     );
                 }
             }
@@ -340,11 +343,18 @@ public class AdminHomeController {
         }
     }
 
-    private void showAlert(String title, String msg) {
+    private void showAlert(String title, String message) {
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
         alert.setTitle(title);
-        alert.setContentText(msg);
+        alert.setHeaderText(null);
+        alert.setContentText(message);
         alert.showAndWait();
     }
-}
 
+    private String formatTime(java.time.Instant instant) {
+        if (instant == null) return "Unknown";
+        java.time.LocalDateTime dateTime = java.time.LocalDateTime.ofInstant(instant, java.time.ZoneId.systemDefault());
+        java.time.format.DateTimeFormatter formatter = java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+        return dateTime.format(formatter);
+    }
+}
