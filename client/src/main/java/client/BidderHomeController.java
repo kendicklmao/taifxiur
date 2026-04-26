@@ -7,7 +7,6 @@ import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.scene.layout.TilePane;
 import shared.models.Auction;
@@ -15,7 +14,6 @@ import shared.network.Request;
 import shared.network.Response;
 import shared.utils.GsonUtils;
 
-import java.io.PrintWriter;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -33,9 +31,12 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 
 public class BidderHomeController {
-    @FXML private TilePane auctionGrid;
-    @FXML private Label welcomeLabel;
-    @FXML private Label walletBalanceLabel;
+    @FXML
+    private TilePane auctionGrid;
+    @FXML
+    private Label welcomeLabel;
+    @FXML
+    private Label walletBalanceLabel;
     private final AppContext ctx = AppContext.getInstance();
     private final Gson gson = GsonUtils.createGson();
     private Consumer<String> messageListener;
@@ -43,8 +44,7 @@ public class BidderHomeController {
             "Vietcombank", "Techcombank", "BIDV", "Agribank", "VPBank",
             "MBBank", "ACB", "Sacombank", "Eximbank", "HDBank",
             "TPBank", "VIB", "SeABank", "SHB", "OCB",
-            "MSB", "LienVietPostBank", "BacABank", "VietBank", "PVcomBank"
-    );
+            "MSB", "LienVietPostBank", "BacABank", "VietBank", "PVcomBank");
 
     @FXML
     public void initialize() {
@@ -56,7 +56,8 @@ public class BidderHomeController {
                 // Only react to explicit update notifications from server.
                 // Avoid treating every generic SUCCESS as an auctions list to prevent
                 // duplicate/overlapping UI updates that cause flicker.
-                if ("UPDATE_PRICE".equals(res.getStatus()) || "AUCTION_UPDATED".equals(res.getStatus()) || "AUCTION_FINISHED".equals(res.getStatus())) {
+                if ("UPDATE_PRICE".equals(res.getStatus()) || "AUCTION_UPDATED".equals(res.getStatus())
+                        || "AUCTION_FINISHED".equals(res.getStatus())) {
                     Platform.runLater(this::refreshAuctions);
                 }
                 // Other response types (including SUCCESS from direct requests) are
@@ -113,7 +114,7 @@ public class BidderHomeController {
         // Iterate incoming auctions and update existing cards or add new ones
         for (Auction auction : auctions) {
             String id = auction.getId();
-                if (existingAuctionCards.containsKey(id)) {
+            if (existingAuctionCards.containsKey(id)) {
                 VBox card = existingAuctionCards.get(id);
                 // Update labels stored in card properties (if present)
                 Object priceObj = card.getProperties().get("priceLabel");
@@ -175,7 +176,8 @@ public class BidderHomeController {
         statusLabel.setText(auction.getStatus().toString());
         endsInLabel.setText("Ends: " + formatEndTime(auction.getEndTime()));
 
-        // Store references to important labels so we can update them without recreating nodes
+        // Store references to important labels so we can update them without recreating
+        // nodes
         card.getProperties().put("priceLabel", priceLabel);
         card.getProperties().put("statusLabel", statusLabel);
         card.getProperties().put("endsInLabel", endsInLabel);
@@ -194,7 +196,8 @@ public class BidderHomeController {
             Request req = new Request("GET_AUCTIONS", new HashMap<>());
             Response response = ctx.sendRequestAndWait(req, 5);
             if ("SUCCESS".equals(response.getStatus())) {
-                List<Auction> auctions = gson.fromJson(response.getMessage(), new TypeToken<List<Auction>>(){}.getType());
+                List<Auction> auctions = gson.fromJson(response.getMessage(), new TypeToken<List<Auction>>() {
+                }.getType());
                 Platform.runLater(() -> updateAuctionGrid(auctions));
             }
         } catch (Exception e) {
@@ -241,7 +244,8 @@ public class BidderHomeController {
         accountNumberField.setPromptText("Enter account number");
 
         VBox content = new VBox(10);
-        content.getChildren().addAll(new Label("Amount"), amountField, new Label("Bank Name"), bankNameComboBox, new Label("Account Number"), accountNumberField);
+        content.getChildren().addAll(new Label("Amount"), amountField, new Label("Bank Name"), bankNameComboBox,
+                new Label("Account Number"), accountNumberField);
         dialog.getDialogPane().setContent(content);
         dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
 
@@ -319,7 +323,8 @@ public class BidderHomeController {
         accountNumberField.setPromptText("Enter account number");
 
         VBox content = new VBox(10);
-        content.getChildren().addAll(new Label("Amount"), amountField, new Label("Bank Name"), bankNameComboBox, new Label("Account Number"), accountNumberField);
+        content.getChildren().addAll(new Label("Amount"), amountField, new Label("Bank Name"), bankNameComboBox,
+                new Label("Account Number"), accountNumberField);
         dialog.getDialogPane().setContent(content);
         dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
 
@@ -437,7 +442,8 @@ public class BidderHomeController {
 
         VBox content = new VBox(10);
         content.getChildren().add(new Label("Current price: " + auction.getCurrentPrice()));
-        content.getChildren().add(new Label("Minimum bid: " + minBid + " (current + " + auction.getItem().getMinIncrement() + ")"));
+        content.getChildren()
+                .add(new Label("Minimum bid: " + minBid + " (current + " + auction.getItem().getMinIncrement() + ")"));
         content.getChildren().add(new Label("Enter amount:"));
         content.getChildren().add(amountField);
 
@@ -456,7 +462,8 @@ public class BidderHomeController {
                 try {
                     BigDecimal bidAmount = new BigDecimal(amount);
                     if (bidAmount.compareTo(minBid) < 0) {
-                        showAlert("Error", "Bid amount must be at least " + minBid + " (current price + minimum increment)");
+                        showAlert("Error",
+                                "Bid amount must be at least " + minBid + " (current price + minimum increment)");
                         return;
                     }
                     if (isAutoBid) {

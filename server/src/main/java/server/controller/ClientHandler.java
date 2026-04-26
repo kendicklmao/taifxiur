@@ -28,8 +28,6 @@ import java.io.PrintWriter;
 import java.math.BigDecimal;
 import java.net.Socket;
 import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZoneOffset;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
@@ -316,10 +314,6 @@ public class ClientHandler implements Runnable {
 
                     Instant start = Instant.parse(data.get("startTime"));
                     Instant end = Instant.parse(data.get("endTime"));
-
-                    LocalDateTime startTime = LocalDateTime.ofInstant(start, ZoneOffset.UTC);
-                    LocalDateTime endTime = LocalDateTime.ofInstant(end, ZoneOffset.UTC);
-
                     String category = data.get("category");
                     String imageBase64 = data.get("image");
 
@@ -400,9 +394,12 @@ public class ClientHandler implements Runnable {
                 }
                 return new Response("SUCCESS", "Logged out");
 
-            case "GET_ALL_USERS":
+            case "GET_ALL_USERS": {
+                User u = userService.getUser(loggedInUsername);
+                if (u == null || u.getRole() != shared.enums.Role.ADMIN) return new Response("FAIL", "Unauthorized");
                 List<User> allUsers = userService.getAllUsers();
                 return new Response("SUCCESS", gson.toJson(allUsers));
+            }
 
             case "BAN_USER":
                 String banUsername = request.getData().get("username");
@@ -422,17 +419,26 @@ public class ClientHandler implements Runnable {
                     return new Response("FAIL", unbanError);
                 }
 
-            case "GET_ADMIN_ACTION_LOGS":
+            case "GET_ADMIN_ACTION_LOGS": {
+                User u = userService.getUser(loggedInUsername);
+                if (u == null || u.getRole() != shared.enums.Role.ADMIN) return new Response("FAIL", "Unauthorized");
                 List<AdminActionLog> logs = userService.getAdminActionLogs();
                 return new Response("SUCCESS", gson.toJson(logs));
+            }
 
-            case "GET_PENDING_DEPOSIT_REQUESTS":
+            case "GET_PENDING_DEPOSIT_REQUESTS": {
+                User u = userService.getUser(loggedInUsername);
+                if (u == null || u.getRole() != shared.enums.Role.ADMIN) return new Response("FAIL", "Unauthorized");
                 List<Map<String, String>> depositRequests = userService.getPendingDepositRequests();
                 return new Response("SUCCESS", gson.toJson(depositRequests));
+            }
 
-            case "GET_PENDING_WITHDRAW_REQUESTS":
+            case "GET_PENDING_WITHDRAW_REQUESTS": {
+                User u = userService.getUser(loggedInUsername);
+                if (u == null || u.getRole() != shared.enums.Role.ADMIN) return new Response("FAIL", "Unauthorized");
                 List<Map<String, String>> withdrawRequests = userService.getPendingWithdrawRequests();
                 return new Response("SUCCESS", gson.toJson(withdrawRequests));
+            }
 
             case "APPROVE_DEPOSIT_REQUEST":
                 String approveDepositId = request.getData().get("requestId");

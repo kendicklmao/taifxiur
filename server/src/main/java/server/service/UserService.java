@@ -18,21 +18,22 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class UserService {
-    private final ConcurrentHashMap<String, Integer> failedAttempts = new ConcurrentHashMap<>(); //lưu số lần đăng nhập thất bại của từng tài khoản
-    private final ConcurrentHashMap<String, Instant> lockUntil = new ConcurrentHashMap<>(); //lưu số giây bị ban của từng tài khoản
-    private final ConcurrentHashMap<String, Boolean> loggedIn = new ConcurrentHashMap<>(); //lưu trạng thái đăng nhập
-    private static final int MAX_ATTEMPTS = 5; //số lượt đăng nhập thất bại tối đa
-    private static final long BASE_LOCK_SECONDS = 2; //số giây cơ sở để vô hiệu hóa nếu đăng nhập thất bại
+    private final ConcurrentHashMap<String, Integer> failedAttempts = new ConcurrentHashMap<>(); // Lưu số lần đăng nhập
+                                                                                                 // thất bại của từng
+                                                                                                 // tài khoản
+    private final ConcurrentHashMap<String, Instant> lockUntil = new ConcurrentHashMap<>(); // Lưu số giây bị ban của
+                                                                                            // từng tài khoản
+    private final ConcurrentHashMap<String, Boolean> loggedIn = new ConcurrentHashMap<>(); // Lưu trạng thái đăng nhập
+    private static final int MAX_ATTEMPTS = 5; // Số lượt đăng nhập thất bại tối đa
+    private static final long BASE_LOCK_SECONDS = 2; // Số giây cơ sở để vô hiệu hóa nếu đăng nhập thất bại
     private static final WalletService walletService = new WalletService();
 
+    // Khởi tạo người dùng mặc định trong cơ sở dữ liệu
     public UserService() {
-        // Initialize default users in the database
         initializeDefaultUsers();
     }
 
-    /**
-     * Initialize default users in the database on first run
-     */
+    // Khởi tạo người dùng mặc định trong cơ sở dữ liệu lần đầu chạy
     private void initializeDefaultUsers() {
         this.register("seller", "Admin@123", "seller@gmail.com", "q", "a", "q", "a", Role.SELLER);
         this.register("bidder", "Admin@123", "bidder@gmail.com", "q", "a", "q", "a", Role.BIDDER);
@@ -44,10 +45,9 @@ public class UserService {
         ensureWalletForUsername("bidder1");
     }
 
-    /**
-     * Register a new user in the database
-     */
-    public boolean register(String username, String password, String email, String q1, String a1, String q2, String a2, Role role) {
+    // Đăng ký người dùng mới trong cơ sở dữ liệu
+    public boolean register(String username, String password, String email, String q1, String a1, String q2, String a2,
+            Role role) {
         System.out.println("DEBUG REGISTER: Attempting to register user: " + username);
         if (!Validator.isValidUsername(username)) {
             System.out.println("DEBUG REGISTER: Invalid username format: " + username);
@@ -72,22 +72,22 @@ public class UserService {
 
         System.out.println("DEBUG REGISTER: After normalization - username: " + username + ", email: " + email);
 
-        // Check if username already exists
+        // Kiểm tra xem tên người dùng đã tồn tại chưa
         if (exists(username)) {
             System.out.println("DEBUG REGISTER: Username already exists: " + username);
             return false;
         }
 
-        // Check if email already exists
+        // Kiểm tra xem email đã tồn tại chưa
         if (emailExists(email)) {
             System.out.println("DEBUG REGISTER: Email already exists: " + email);
             return false;
         }
 
         try (Connection conn = DatabaseConfig.getDataSource().getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(
-                    "INSERT INTO users (username, password, email, role, question_1, answer_1, question_2, answer_2) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-                    Statement.RETURN_GENERATED_KEYS)) {
+                PreparedStatement pstmt = conn.prepareStatement(
+                        "INSERT INTO users (username, password, email, role, question_1, answer_1, question_2, answer_2) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                        Statement.RETURN_GENERATED_KEYS)) {
 
             pstmt.setString(1, username);
             pstmt.setString(2, password);
@@ -120,9 +120,7 @@ public class UserService {
         return false;
     }
 
-    /**
-     * Login user and authenticate
-     */
+    // Đăng nhập người dùng và xác thực
     public User login(String username, String password) {
         if (username == null || password == null) {
             return null;
@@ -142,8 +140,8 @@ public class UserService {
         }
 
         try (Connection conn = DatabaseConfig.getDataSource().getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(
-                     "SELECT id, password, role, is_banned FROM users WHERE username = ?")) {
+                PreparedStatement pstmt = conn.prepareStatement(
+                        "SELECT id, password, role, is_banned FROM users WHERE username = ?")) {
 
             pstmt.setString(1, username);
             ResultSet rs = pstmt.executeQuery();
@@ -163,7 +161,8 @@ public class UserService {
 
             if (storedPassword.equals(password)) {
                 if (loggedIn.putIfAbsent(username, true) != null) {
-                    throw new UserAlreadyLoggedInException("User " + username + " is already logged in from another device");
+                    throw new UserAlreadyLoggedInException(
+                            "User " + username + " is already logged in from another device");
                 }
                 failedAttempts.remove(username);
                 lockUntil.remove(username);
@@ -201,7 +200,7 @@ public class UserService {
     private void logAdminLogin(int userId, String status) {
         String sql = "INSERT INTO admin_logs (user_id, status) VALUES (?, ?)";
         try (Connection conn = DatabaseConfig.getDataSource().getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setInt(1, userId);
             pstmt.setString(2, status);
             pstmt.executeUpdate();
@@ -210,13 +209,11 @@ public class UserService {
         }
     }
 
-    /**
-     * Get user from database by username
-     */
+    // Lấy thông tin người dùng từ cơ sở dữ liệu theo tên người dùng
     private User getUserFromDatabase(String username) {
         try (Connection conn = DatabaseConfig.getDataSource().getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(
-                     "SELECT id, username, password, email, role, is_banned, question_1, answer_1, question_2, answer_2 FROM users WHERE username = ?")) {
+                PreparedStatement pstmt = conn.prepareStatement(
+                        "SELECT id, username, password, email, role, is_banned, question_1, answer_1, question_2, answer_2 FROM users WHERE username = ?")) {
 
             pstmt.setString(1, username);
             ResultSet rs = pstmt.executeQuery();
@@ -254,15 +251,14 @@ public class UserService {
         return null;
     }
 
-    /**
-     * Check if email exists
-     */
+    // Kiểm tra xem email đã tồn tại chưa
     public boolean emailExists(String email) {
-        if (email == null) return false;
+        if (email == null)
+            return false;
         email = Validator.normalizeAndLowercase(email);
 
         try (Connection conn = DatabaseConfig.getDataSource().getConnection();
-             PreparedStatement pstmt = conn.prepareStatement("SELECT 1 FROM users WHERE email = ?")) {
+                PreparedStatement pstmt = conn.prepareStatement("SELECT 1 FROM users WHERE email = ?")) {
 
             pstmt.setString(1, email);
             ResultSet rs = pstmt.executeQuery();
@@ -273,15 +269,14 @@ public class UserService {
         }
     }
 
-    /**
-     * Check if user exists
-     */
+    // Kiểm tra xem người dùng có tồn tại không
     public boolean exists(String username) {
-        if (username == null) return false;
+        if (username == null)
+            return false;
         username = Validator.normalizeAndLowercase(username);
 
         try (Connection conn = DatabaseConfig.getDataSource().getConnection();
-             PreparedStatement pstmt = conn.prepareStatement("SELECT 1 FROM users WHERE username = ?")) {
+                PreparedStatement pstmt = conn.prepareStatement("SELECT 1 FROM users WHERE username = ?")) {
 
             pstmt.setString(1, username);
             ResultSet rs = pstmt.executeQuery();
@@ -292,15 +287,14 @@ public class UserService {
         }
     }
 
-    /**
-     * Check if user is banned
-     */
+    // Kiểm tra xem người dùng có bị cấm không
     public boolean isBanned(String username) {
-        if (username == null) return false;
+        if (username == null)
+            return false;
         username = Validator.normalizeAndLowercase(username);
 
         try (Connection conn = DatabaseConfig.getDataSource().getConnection();
-             PreparedStatement pstmt = conn.prepareStatement("SELECT is_banned FROM users WHERE username = ?")) {
+                PreparedStatement pstmt = conn.prepareStatement("SELECT is_banned FROM users WHERE username = ?")) {
 
             pstmt.setString(1, username);
             ResultSet rs = pstmt.executeQuery();
@@ -314,16 +308,12 @@ public class UserService {
         }
     }
 
-    /**
-     * Get user by username
-     */
+    // Lấy thông tin người dùng theo tên người dùng
     public User getUser(String username) {
         return getUserFromDatabase(username);
     }
 
-    /**
-     * Get stored security questions for a username/email pair.
-     */
+    // Lấy câu trả lời bảo mật cho tên người dùng/email
     public String[] getSecurityQuestions(String username, String email) {
         if (!Validator.isValidUsername(username) || !Validator.isValidEmail(email)) {
             return null;
@@ -333,8 +323,8 @@ public class UserService {
         email = Validator.normalizeAndLowercase(email);
 
         try (Connection conn = DatabaseConfig.getDataSource().getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(
-                     "SELECT question_1, question_2 FROM users WHERE username = ? AND email = ?")) {
+                PreparedStatement pstmt = conn.prepareStatement(
+                        "SELECT question_1, question_2 FROM users WHERE username = ? AND email = ?")) {
 
             pstmt.setString(1, username);
             pstmt.setString(2, email);
@@ -353,9 +343,7 @@ public class UserService {
         return null;
     }
 
-    /**
-     * Reset password after verifying username, email and security answers.
-     */
+    // Reset mật khẩu sau khi xác minh tên người dùng, email và câu trả lời bảo mật
     public boolean resetPassword(String username, String email, String answer1, String answer2, String newPassword) {
         if (!Validator.isValidUsername(username) ||
                 !Validator.isValidEmail(email) ||
@@ -372,12 +360,12 @@ public class UserService {
         newPassword = Validator.normalize(newPassword);
 
         try (Connection conn = DatabaseConfig.getDataSource().getConnection();
-             PreparedStatement selectStmt = conn.prepareStatement(
-                     """
-                     SELECT id, username, password, email, role, is_banned, question_1, answer_1, question_2, answer_2
-                     FROM users
-                     WHERE username = ? AND email = ?
-                     """)) {
+                PreparedStatement selectStmt = conn.prepareStatement(
+                        """
+                                SELECT id, username, password, email, role, is_banned, question_1, answer_1, question_2, answer_2
+                                FROM users
+                                WHERE username = ? AND email = ?
+                                """)) {
 
             selectStmt.setString(1, username);
             selectStmt.setString(2, email);
@@ -414,9 +402,7 @@ public class UserService {
         return false;
     }
 
-    /**
-     * Change password for a logged-in user using the current password.
-     */
+    // Đổi mật khẩu cho người dùng đã đăng nhập bằng mật khẩu hiện tại
     public String changePassword(String username, String oldPassword, String newPassword) {
         if (!Validator.isValidUsername(username)) {
             return "Invalid username";
@@ -437,12 +423,12 @@ public class UserService {
         }
 
         try (Connection conn = DatabaseConfig.getDataSource().getConnection();
-             PreparedStatement selectStmt = conn.prepareStatement(
-                     """
-                     SELECT id, username, password, email, role, is_banned, question_1, answer_1, question_2, answer_2
-                     FROM users
-                     WHERE username = ?
-                     """)) {
+                PreparedStatement selectStmt = conn.prepareStatement(
+                        """
+                                SELECT id, username, password, email, role, is_banned, question_1, answer_1, question_2, answer_2
+                                FROM users
+                                WHERE username = ?
+                                """)) {
 
             selectStmt.setString(1, username);
             ResultSet rs = selectStmt.executeQuery();
@@ -513,22 +499,19 @@ public class UserService {
         return user;
     }
 
-    /**
-     * Logout user
-     */
+    // Logout người dùng
     public void logout(String username) {
         loggedIn.remove(username);
     }
 
-    /**
-     * Get all users from database
-     */
+    // Lấy tất cả người dùng từ cơ sở dữ liệu
     public List<User> getAllUsers() {
         List<User> userList = new ArrayList<>();
 
         try (Connection conn = DatabaseConfig.getDataSource().getConnection();
-             Statement stmt = conn.createStatement();
-            ResultSet rs = stmt.executeQuery("SELECT id, username, password, email, role, is_banned, question_1, answer_1, question_2, answer_2 FROM users")) {
+                Statement stmt = conn.createStatement();
+                ResultSet rs = stmt.executeQuery(
+                        "SELECT id, username, password, email, role, is_banned, question_1, answer_1, question_2, answer_2 FROM users")) {
 
             while (rs.next()) {
                 User user = mapUser(rs, conn);
@@ -543,9 +526,8 @@ public class UserService {
         return userList;
     }
 
-    /**
-     * Ban user - returns null if successful, error message otherwise
-     */
+    // Cấm người dùng - trả về null nếu thành công, thông báo lỗi nếu không thành
+    // công
     public String banUser(String username, String adminUsername) {
         username = Validator.normalizeAndLowercase(username);
         User admin = getUserFromDatabase(adminUsername);
@@ -555,13 +537,22 @@ public class UserService {
             return "User not found";
         }
 
-        // Check if user is already banned
+        if (admin.getRole() != Role.ADMIN) {
+            return "Only admin can ban users";
+        }
+
+        if (targetUser.getRole() == Role.ADMIN) {
+            return "Cannot ban an administrator";
+        }
+
+        // Kiểm tra xem người dùng đã bị cấm chưa
         if (isBanned(username)) {
             return "User is already banned";
         }
 
         try (Connection conn = DatabaseConfig.getDataSource().getConnection();
-             PreparedStatement pstmt = conn.prepareStatement("UPDATE users SET is_banned = TRUE WHERE username = ?")) {
+                PreparedStatement pstmt = conn
+                        .prepareStatement("UPDATE users SET is_banned = TRUE WHERE username = ?")) {
 
             pstmt.setString(1, username);
             int affectedRows = pstmt.executeUpdate();
@@ -576,9 +567,8 @@ public class UserService {
         }
     }
 
-    /**
-     * Unban user - returns null if successful, error message otherwise
-     */
+    // Bỏ cấm người dùng - trả về null nếu thành công, thông báo lỗi nếu không thành
+    // công
     public String unbanUser(String username, String adminUsername) {
         username = Validator.normalizeAndLowercase(username);
         User admin = getUserFromDatabase(adminUsername);
@@ -588,19 +578,28 @@ public class UserService {
             return "User not found";
         }
 
-        // Check if user is already active (not banned)
+        if (admin.getRole() != Role.ADMIN) {
+            return "Only admin can unban users";
+        }
+
+        if (targetUser.getRole() == Role.ADMIN) {
+            return "Cannot unban an administrator";
+        }
+
+        // Kiểm tra xem người dùng đã bị cấm chưa
         if (!isBanned(username)) {
             return "User is not banned";
         }
 
         try (Connection conn = DatabaseConfig.getDataSource().getConnection();
-             PreparedStatement pstmt = conn.prepareStatement("UPDATE users SET is_banned = FALSE WHERE username = ?")) {
+                PreparedStatement pstmt = conn
+                        .prepareStatement("UPDATE users SET is_banned = FALSE WHERE username = ?")) {
 
             pstmt.setString(1, username);
             int affectedRows = pstmt.executeUpdate();
             if (affectedRows > 0) {
                 logAdminAction(admin.getId(), targetUser.getId(), "UNBAN");
-                return null; // Success
+                return null; // Thành công
             }
             return "Failed to unban user";
         } catch (SQLException e) {
@@ -612,7 +611,7 @@ public class UserService {
     private void logAdminAction(int adminId, int targetUserId, String action) {
         String sql = "INSERT INTO admin_action_logs (admin_id, target_user_id, action) VALUES (?, ?, ?)";
         try (Connection conn = DatabaseConfig.getDataSource().getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setInt(1, adminId);
             pstmt.setInt(2, targetUserId);
             pstmt.setString(3, action);
@@ -624,15 +623,16 @@ public class UserService {
 
     public List<AdminActionLog> getAdminActionLogs() {
         List<AdminActionLog> logs = new ArrayList<>();
-        String sql = "SELECT aal.id, u_admin.username AS admin_username, u_target.username AS target_username, aal.action, aal.action_time " +
-                     "FROM admin_action_logs aal " +
-                     "JOIN users u_admin ON aal.admin_id = u_admin.id " +
-                     "JOIN users u_target ON aal.target_user_id = u_target.id " +
-                     "ORDER BY aal.action_time DESC";
+        String sql = "SELECT aal.id, u_admin.username AS admin_username, u_target.username AS target_username, aal.action, aal.action_time "
+                +
+                "FROM admin_action_logs aal " +
+                "JOIN users u_admin ON aal.admin_id = u_admin.id " +
+                "JOIN users u_target ON aal.target_user_id = u_target.id " +
+                "ORDER BY aal.action_time DESC";
 
         try (Connection conn = DatabaseConfig.getDataSource().getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql);
-             ResultSet rs = pstmt.executeQuery()) {
+                PreparedStatement pstmt = conn.prepareStatement(sql);
+                ResultSet rs = pstmt.executeQuery()) {
 
             while (rs.next()) {
                 int id = rs.getInt("id");
@@ -655,7 +655,7 @@ public class UserService {
         }
 
         try (Connection conn = DatabaseConfig.getDataSource().getConnection();
-             PreparedStatement pstmt = conn.prepareStatement("SELECT id FROM users WHERE username = ?")) {
+                PreparedStatement pstmt = conn.prepareStatement("SELECT id FROM users WHERE username = ?")) {
             pstmt.setString(1, username);
             ResultSet rs = pstmt.executeQuery();
             if (rs.next()) {
@@ -669,10 +669,10 @@ public class UserService {
     private void ensureWalletExists(Connection conn, int userId) throws SQLException {
         try (PreparedStatement pstmt = conn.prepareStatement(
                 """
-                INSERT INTO wallets (user_id, balance, currency, created_at, updated_at)
-                SELECT ?, 0, 'USD', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
-                WHERE NOT EXISTS (SELECT 1 FROM wallets WHERE user_id = ?)
-                """)) {
+                        INSERT INTO wallets (user_id, balance, currency, created_at, updated_at)
+                        SELECT ?, 0, 'USD', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+                        WHERE NOT EXISTS (SELECT 1 FROM wallets WHERE user_id = ?)
+                        """)) {
             pstmt.setInt(1, userId);
             pstmt.setInt(2, userId);
             pstmt.executeUpdate();
@@ -718,7 +718,8 @@ public class UserService {
         return walletService.createDepositRequest(bidderUsername, amount);
     }
 
-    public String createWithdrawRequest(String sellerUsername, BigDecimal amount, String bankName, String accountNumber) {
+    public String createWithdrawRequest(String sellerUsername, BigDecimal amount, String bankName,
+            String accountNumber) {
         return walletService.createWithdrawRequest(sellerUsername, amount, bankName, accountNumber);
     }
 

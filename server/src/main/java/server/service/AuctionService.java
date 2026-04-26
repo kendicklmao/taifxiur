@@ -6,20 +6,17 @@ import shared.models.Auction;
 import shared.models.Bidder;
 import shared.models.Item;
 import shared.models.Seller;
-import shared.models.User;
 
 import java.math.BigDecimal;
 import java.sql.*;
 import java.time.Instant;
 import java.util.ArrayList;
- import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import server.service.WalletService;
 import com.google.gson.Gson;
 import shared.utils.GsonUtils;
 import shared.network.Response;
@@ -60,7 +57,8 @@ public class AuctionService {
 
         String id = UUID.randomUUID().toString();
         Auction auction = new Auction(id, item, startPrice, seller, startTime, endTime);
-        // Register finish callback so the service finalizes payment automatically when auction finishes
+        // Register finish callback so the service finalizes payment automatically when
+        // auction finishes
         auction.setFinishCallback(a -> finalizeAuction(a));
         auctions.put(id, auction);
 
@@ -69,8 +67,8 @@ public class AuctionService {
 
         // Store auction in database
         try (Connection conn = DatabaseConfig.getDataSource().getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(
-                     "INSERT INTO auctions (id, item_id, seller_id, start_price, current_price, status, start_time, end_time) VALUES (?, ?, ?, ?, ?, ?, ?, ?)")) {
+                PreparedStatement pstmt = conn.prepareStatement(
+                        "INSERT INTO auctions (id, item_id, seller_id, start_price, current_price, status, start_time, end_time) VALUES (?, ?, ?, ?, ?, ?, ?, ?)")) {
 
             pstmt.setString(1, id);
             pstmt.setInt(2, itemId); // Use actual item ID from database
@@ -94,7 +92,8 @@ public class AuctionService {
      * Place a bid and store in database
      */
     public boolean placeBid(String auctionId, Bidder bidder, BigDecimal amount) {
-        if (auctionId == null || bidder == null || amount == null) throw new IllegalArgumentException();
+        if (auctionId == null || bidder == null || amount == null)
+            throw new IllegalArgumentException();
         Auction auction = auctions.get(auctionId);
         if (auction == null) {
             throw new IllegalArgumentException();
@@ -105,14 +104,13 @@ public class AuctionService {
             return false; // insufficient funds
         }
 
-        Bidder previousHighest = auction.getHighestBidder();
         boolean success = auction.placeBid(bidder, amount);
 
         if (success) {
             // Store bid in database
             try (Connection conn = DatabaseConfig.getDataSource().getConnection();
-                 PreparedStatement pstmt = conn.prepareStatement(
-                         "INSERT INTO bids (auction_id, bidder_id, bid_amount) VALUES ((SELECT id FROM auctions WHERE id = ?), ?, ?)")) {
+                    PreparedStatement pstmt = conn.prepareStatement(
+                            "INSERT INTO bids (auction_id, bidder_id, bid_amount) VALUES ((SELECT id FROM auctions WHERE id = ?), ?, ?)")) {
 
                 pstmt.setString(1, auctionId);
                 pstmt.setInt(2, getUserIdFromDatabase(bidder.getUsername()));
@@ -134,7 +132,8 @@ public class AuctionService {
      * Get auction by ID
      */
     public Auction getAuction(String id) {
-        if (id == null) return null;
+        if (id == null)
+            return null;
         return auctions.get(id);
     }
 
@@ -153,8 +152,8 @@ public class AuctionService {
 
         // Store in database
         try (Connection conn = DatabaseConfig.getDataSource().getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(
-                     "INSERT INTO auto_bids (auction_id, bidder_id, max_bid_amount) VALUES ((SELECT id FROM auctions WHERE id = ?), ?, ?)")) {
+                PreparedStatement pstmt = conn.prepareStatement(
+                        "INSERT INTO auto_bids (auction_id, bidder_id, max_bid_amount) VALUES ((SELECT id FROM auctions WHERE id = ?), ?, ?)")) {
 
             pstmt.setString(1, auctionId);
             pstmt.setInt(2, getUserIdFromDatabase(bidder.getUsername()));
@@ -180,40 +179,47 @@ public class AuctionService {
     }
 
     /**
-     * Get all auctions and update status if needed (NO blocking DB operations here!)
+     * Get all auctions and update status if needed (NO blocking DB operations
+     * here!)
      * Payment finalization is handled by finalizeAuction() callback
      */
     public List<Auction> getAllAuctions() {
         Instant now = Instant.now();
         for (Auction auction : auctions.values()) {
-            if (auction.getStatus() == AuctionStatus.OPEN && !now.isBefore(auction.getStartTime()) && now.isBefore(auction.getEndTime())) {
+            if (auction.getStatus() == AuctionStatus.OPEN && !now.isBefore(auction.getStartTime())
+                    && now.isBefore(auction.getEndTime())) {
                 try {
                     java.lang.reflect.Field statusField = Auction.class.getDeclaredField("status");
                     statusField.setAccessible(true);
                     statusField.set(auction, AuctionStatus.RUNNING);
-                } catch (Exception ignored) {}
+                } catch (Exception ignored) {
+                }
             } else if (auction.getStatus() == AuctionStatus.RUNNING && !now.isBefore(auction.getEndTime())) {
                 try {
                     java.lang.reflect.Field statusField = Auction.class.getDeclaredField("status");
                     statusField.setAccessible(true);
                     statusField.set(auction, AuctionStatus.FINISHED);
-                    // Finalization will be handled by the Auction scheduler callback (finalizeAuction)
+                    // Finalization will be handled by the Auction scheduler callback
+                    // (finalizeAuction)
                     // Don't do blocking DB operations here!
-                } catch (Exception ignored) {}
+                } catch (Exception ignored) {
+                }
             }
         }
         return new ArrayList<>(auctions.values());
     }
 
     /**
-     * Finalize auction payment when auction finishes. Called by Auction.finishCallback.
+     * Finalize auction payment when auction finishes. Called by
+     * Auction.finishCallback.
      * Works for both manual bids and auto-bids since both set a highestBidder.
      * Runs ASYNCHRONOUSLY in background thread pool to prevent blocking!
      */
     private void finalizeAuction(Auction auction) {
         // Submit to async executor - don't block the scheduler thread
         asyncExecutor.execute(() -> {
-            if (auction == null) return;
+            if (auction == null)
+                return;
             try {
                 Bidder winner = auction.getHighestBidder();
                 if (winner != null) {
@@ -221,11 +227,13 @@ public class AuctionService {
                     String winnerUsername = winner.getUsername();
                     String sellerUsername = auction.getSeller().getUsername();
                     BigDecimal price = auction.getCurrentPrice();
-                    String finalizeError = walletService.finalizePaymentForWinner(auctionId, winnerUsername, sellerUsername, price);
+                    String finalizeError = walletService.finalizePaymentForWinner(auctionId, winnerUsername,
+                            sellerUsername, price);
                     if (finalizeError == null) {
                         // update auction status in DB to PAID
                         try (Connection conn = DatabaseConfig.getDataSource().getConnection();
-                             PreparedStatement pstmt = conn.prepareStatement("UPDATE auctions SET status = ? WHERE id = ?")) {
+                                PreparedStatement pstmt = conn
+                                        .prepareStatement("UPDATE auctions SET status = ? WHERE id = ?")) {
                             pstmt.setString(1, AuctionStatus.PAID.name());
                             pstmt.setString(2, auctionId);
                             pstmt.executeUpdate();
@@ -237,14 +245,17 @@ public class AuctionService {
                             Gson gson = GsonUtils.createGson();
                             Response resp = new Response("AUCTION_FINISHED", auction.getId());
                             ClientHandler.broadcast(gson.toJson(resp));
-                        } catch (Exception ignored) {}
+                        } catch (Exception ignored) {
+                        }
                     } else {
-                        System.err.println("Failed to finalize payment for auction " + auction.getId() + ": " + finalizeError);
+                        System.err.println(
+                                "Failed to finalize payment for auction " + auction.getId() + ": " + finalizeError);
                     }
                 } else {
                     // No winner: just update auction status to FINISHED in DB
                     try (Connection conn = DatabaseConfig.getDataSource().getConnection();
-                         PreparedStatement pstmt = conn.prepareStatement("UPDATE auctions SET status = ? WHERE id = ?")) {
+                            PreparedStatement pstmt = conn
+                                    .prepareStatement("UPDATE auctions SET status = ? WHERE id = ?")) {
                         pstmt.setString(1, AuctionStatus.FINISHED.name());
                         pstmt.setString(2, auction.getId());
                         pstmt.executeUpdate();
@@ -256,7 +267,8 @@ public class AuctionService {
                         Gson gson = GsonUtils.createGson();
                         Response resp = new Response("AUCTION_FINISHED", auction.getId());
                         ClientHandler.broadcast(gson.toJson(resp));
-                    } catch (Exception ignored) {}
+                    } catch (Exception ignored) {
+                    }
                 }
             } catch (Exception e) {
                 System.err.println("Error finalizing auction payment: " + e.getMessage());
@@ -287,20 +299,24 @@ public class AuctionService {
         for (Auction auction : auctions.values()) {
             if (auction.getSeller() != null && auction.getSeller().getUsername().equals(sellerUsername)) {
                 // Update status if needed
-                if (auction.getStatus() == AuctionStatus.OPEN && !now.isBefore(auction.getStartTime()) && now.isBefore(auction.getEndTime())) {
+                if (auction.getStatus() == AuctionStatus.OPEN && !now.isBefore(auction.getStartTime())
+                        && now.isBefore(auction.getEndTime())) {
                     try {
                         java.lang.reflect.Field statusField = Auction.class.getDeclaredField("status");
                         statusField.setAccessible(true);
                         statusField.set(auction, AuctionStatus.RUNNING);
-                    } catch (Exception ignored) {}
+                    } catch (Exception ignored) {
+                    }
                 } else if (auction.getStatus() == AuctionStatus.RUNNING && !now.isBefore(auction.getEndTime())) {
                     try {
                         java.lang.reflect.Field statusField = Auction.class.getDeclaredField("status");
                         statusField.setAccessible(true);
                         statusField.set(auction, AuctionStatus.FINISHED);
-                        // Finalization will be handled by the Auction scheduler callback (finalizeAuction)
+                        // Finalization will be handled by the Auction scheduler callback
+                        // (finalizeAuction)
                         // Don't do blocking DB operations here!
-                    } catch (Exception ignored) {}
+                    } catch (Exception ignored) {
+                    }
                 }
                 sellerAuctions.add(auction);
             }
@@ -313,12 +329,13 @@ public class AuctionService {
      */
     private int saveItemToDatabase(Item item, Seller seller, BigDecimal startPrice) {
         try (Connection conn = DatabaseConfig.getDataSource().getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(
-                     "INSERT INTO items (seller_id, name, description, category, status, item_type, " +
-                     "base_price, current_price, legit_check, seller_name, " +
-                     "brand, item_status, model_year, km_travel, artist, year_created, is_original, image_url) " +
-                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                     Statement.RETURN_GENERATED_KEYS)) {
+                PreparedStatement pstmt = conn.prepareStatement(
+                        "INSERT INTO items (seller_id, name, description, category, status, item_type, " +
+                                "base_price, current_price, legit_check, seller_name, " +
+                                "brand, item_status, model_year, km_travel, artist, year_created, is_original, image_url) "
+                                +
+                                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                        Statement.RETURN_GENERATED_KEYS)) {
 
             int sellerId = getUserIdFromDatabase(seller.getUsername());
             pstmt.setInt(1, sellerId);
@@ -327,11 +344,16 @@ public class AuctionService {
 
             // Get category from item class type
             String category = item.getClass().getSimpleName().toUpperCase();
-            if (category.equals("COLLECTIBLE")) category = "COLLECTIBLES";
-            else if (category.equals("ELECTRONIC")) category = "ELECTRONICS";
-            else if (category.equals("ART")) category = "ARTS";
-            else if (category.equals("VEHICLE")) category = "VEHICLES";
-            else if (category.equals("FASHION")) category = "FASHIONS";
+            if (category.equals("COLLECTIBLE"))
+                category = "COLLECTIBLES";
+            else if (category.equals("ELECTRONIC"))
+                category = "ELECTRONICS";
+            else if (category.equals("ART"))
+                category = "ARTS";
+            else if (category.equals("VEHICLE"))
+                category = "VEHICLES";
+            else if (category.equals("FASHION"))
+                category = "FASHIONS";
 
             pstmt.setString(4, category);
             pstmt.setString(5, "AVAILABLE"); // Default status
@@ -398,7 +420,7 @@ public class AuctionService {
         }
 
         try (Connection conn = DatabaseConfig.getDataSource().getConnection();
-             PreparedStatement pstmt = conn.prepareStatement("SELECT id FROM users WHERE username = ?")) {
+                PreparedStatement pstmt = conn.prepareStatement("SELECT id FROM users WHERE username = ?")) {
 
             pstmt.setString(1, username);
             ResultSet rs = pstmt.executeQuery();
@@ -419,8 +441,8 @@ public class AuctionService {
     private void updateAuctionPrice(String auctionId, BigDecimal newPrice) {
         asyncExecutor.execute(() -> {
             try (Connection conn = DatabaseConfig.getDataSource().getConnection();
-                 PreparedStatement pstmt = conn.prepareStatement(
-                         "UPDATE auctions SET current_price = ? WHERE id = ?")) {
+                    PreparedStatement pstmt = conn.prepareStatement(
+                            "UPDATE auctions SET current_price = ? WHERE id = ?")) {
 
                 pstmt.setBigDecimal(1, newPrice);
                 pstmt.setString(2, auctionId);
@@ -431,4 +453,3 @@ public class AuctionService {
         });
     }
 }
-

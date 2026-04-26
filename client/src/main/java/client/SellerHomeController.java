@@ -15,19 +15,13 @@ import shared.network.Response;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
-import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
 import java.math.BigDecimal;
-import java.net.Socket;
-import java.nio.file.Files;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.HashMap;
@@ -46,30 +40,43 @@ import com.google.gson.reflect.TypeToken;
 import shared.enums.Category;
 import shared.enums.ItemStatus;
 import shared.utils.GsonUtils;
-import shared.models.Auction;
 
 public class SellerHomeController {
 
-    @FXML private TextField itemNameField;
-    @FXML private TextField startPriceField;
-    @FXML private ChoiceBox<Category> categoryBox;
-    @FXML private VBox dynamicForm;
-    @FXML private DatePicker startDatePicker;
-    @FXML private DatePicker endDatePicker;
-    @FXML private Spinner<Integer> startHourSpinner;
-    @FXML private Spinner<Integer> startMinuteSpinner;
-    @FXML private Spinner<Integer> endHourSpinner;
-    @FXML private Spinner<Integer> endMinuteSpinner;
-    @FXML private VBox customTimingPane;
-    @FXML private TilePane auctionGrid;
-    @FXML private TextArea descField;
-    @FXML private Label welcomeLabel;
-    @FXML private ImageView itemImageView;
-    @FXML private Label walletBalanceLabel;
+    @FXML
+    private TextField itemNameField;
+    @FXML
+    private TextField startPriceField;
+    @FXML
+    private ChoiceBox<Category> categoryBox;
+    @FXML
+    private VBox dynamicForm;
+    @FXML
+    private DatePicker startDatePicker;
+    @FXML
+    private DatePicker endDatePicker;
+    @FXML
+    private Spinner<Integer> startHourSpinner;
+    @FXML
+    private Spinner<Integer> startMinuteSpinner;
+    @FXML
+    private Spinner<Integer> endHourSpinner;
+    @FXML
+    private Spinner<Integer> endMinuteSpinner;
+    @FXML
+    private VBox customTimingPane;
+    @FXML
+    private TilePane auctionGrid;
+    @FXML
+    private TextArea descField;
+    @FXML
+    private Label welcomeLabel;
+    @FXML
+    private ImageView itemImageView;
+    @FXML
+    private Label walletBalanceLabel;
     private File selectedImageFile;
     private byte[] croppedImageBytes;
-    private PrintWriter out;
-    private BufferedReader in;
     private final Gson gson = GsonUtils.createGson();
 
     private final AppContext ctx = AppContext.getInstance();
@@ -77,18 +84,10 @@ public class SellerHomeController {
             "Vietcombank", "Techcombank", "BIDV", "Agribank", "VPBank",
             "MBBank", "ACB", "Sacombank", "Eximbank", "HDBank",
             "TPBank", "VIB", "SeABank", "SHB", "OCB",
-            "MSB", "LienVietPostBank", "BacABank", "VietBank", "PVcomBank"
-    );
+            "MSB", "LienVietPostBank", "BacABank", "VietBank", "PVcomBank");
 
     @FXML
     public void initialize() {
-        try {
-             out = ctx.getOut();   // ✅ NO data type before this
-            in = ctx.getIn();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
         welcomeLabel.setText("Welcome " + ctx.getCurrentUser().getUsername());
         categoryBox.getItems().addAll(Category.values());
         categoryBox.setOnAction(e -> updateForm());
@@ -99,12 +98,15 @@ public class SellerHomeController {
         LocalDateTime endTime = startTime.plusMinutes(30);
 
         startDatePicker.setValue(startTime.toLocalDate());
-        startHourSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 23, startTime.getHour()));
-        startMinuteSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 59, startTime.getMinute()));
+        startHourSpinner
+                .setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 23, startTime.getHour()));
+        startMinuteSpinner
+                .setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 59, startTime.getMinute()));
 
         endDatePicker.setValue(endTime.toLocalDate());
         endHourSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 23, endTime.getHour()));
-        endMinuteSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 59, endTime.getMinute()));
+        endMinuteSpinner
+                .setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 59, endTime.getMinute()));
 
         // Fetch seller's auctions on initialization
         fetchSellerAuctions();
@@ -131,7 +133,6 @@ public class SellerHomeController {
         for (Auction auction : auctions) {
             if (existingAuctionCards.containsKey(auction.getId())) {
                 // Update existing card
-                VBox card = existingAuctionCards.get(auction.getId());
                 // You can update specific labels here if needed, e.g., price
                 existingAuctionCards.remove(auction.getId());
             } else {
@@ -183,7 +184,8 @@ public class SellerHomeController {
             try {
                 BufferedImage originalImage = ImageIO.read(selectedImageFile);
                 int size = Math.min(originalImage.getWidth(), originalImage.getHeight());
-                BufferedImage cropped = Scalr.crop(originalImage, (originalImage.getWidth() - size) / 2, (originalImage.getHeight() - size) / 2, size, size);
+                BufferedImage cropped = Scalr.crop(originalImage, (originalImage.getWidth() - size) / 2,
+                        (originalImage.getHeight() - size) / 2, size, size);
                 BufferedImage resized = Scalr.resize(cropped, 200);
 
                 ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -334,20 +336,20 @@ public class SellerHomeController {
             }
 
             for (javafx.scene.Node node : dynamicForm.getChildren()) {
-                 if (node instanceof VBox) {
-                     for (javafx.scene.Node innerNode : ((VBox) node).getChildren()) {
-                         if (innerNode instanceof TextField tf) {
-                             data.put(tf.getId(), tf.getText());
-                         } else if (innerNode instanceof CheckBox cb) {
-                             data.put(cb.getId(), String.valueOf(cb.isSelected()));
-                         } else if (innerNode instanceof ChoiceBox cb) {
-                             Object value = cb.getValue();
-                             if (value != null) {
-                                 data.put(cb.getId(), value.toString());
-                             }
-                         }
-                     }
-                 } else if (node instanceof TextField tf) {
+                if (node instanceof VBox) {
+                    for (javafx.scene.Node innerNode : ((VBox) node).getChildren()) {
+                        if (innerNode instanceof TextField tf) {
+                            data.put(tf.getId(), tf.getText());
+                        } else if (innerNode instanceof CheckBox cb) {
+                            data.put(cb.getId(), String.valueOf(cb.isSelected()));
+                        } else if (innerNode instanceof ChoiceBox cb) {
+                            Object value = cb.getValue();
+                            if (value != null) {
+                                data.put(cb.getId(), value.toString());
+                            }
+                        }
+                    }
+                } else if (node instanceof TextField tf) {
                     data.put(tf.getId(), tf.getText());
                 } else if (node instanceof CheckBox cb) {
                     data.put(cb.getId(), String.valueOf(cb.isSelected()));
@@ -357,7 +359,7 @@ public class SellerHomeController {
                         data.put(cb.getId(), value.toString());
                     }
                 }
-             }
+            }
 
             Request req = new Request("CREATE_AUCTION", data);
 
@@ -366,7 +368,7 @@ public class SellerHomeController {
             System.out.println("MESSAGE = " + response.getMessage());
             if ("SUCCESS".equals(response.getStatus())) {
                 fetchSellerAuctions(); // Refresh the grid
-                 showAlert("OK", "Auction created successfully!");
+                showAlert("OK", "Auction created successfully!");
                 itemNameField.clear();
                 startPriceField.clear();
                 descField.clear();
@@ -379,20 +381,23 @@ public class SellerHomeController {
                 LocalDateTime nextEndTime = nextStartTime.plusMinutes(5);
 
                 startDatePicker.setValue(nextStartTime.toLocalDate());
-                startHourSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 23, nextStartTime.getHour()));
-                startMinuteSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 59, nextStartTime.getMinute()));
+                startHourSpinner.setValueFactory(
+                        new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 23, nextStartTime.getHour()));
+                startMinuteSpinner.setValueFactory(
+                        new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 59, nextStartTime.getMinute()));
 
                 endDatePicker.setValue(nextEndTime.toLocalDate());
-                endHourSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 23, nextEndTime.getHour()));
-                endMinuteSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 59, nextEndTime.getMinute()));
+                endHourSpinner.setValueFactory(
+                        new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 23, nextEndTime.getHour()));
+                endMinuteSpinner.setValueFactory(
+                        new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 59, nextEndTime.getMinute()));
 
                 categoryBox.setValue(null);
                 dynamicForm.getChildren().clear();
                 itemImageView.setImage(null);
                 selectedImageFile = null;
                 croppedImageBytes = null;
-            }
-            else{
+            } else {
                 showAlert("Lỗi", response.getMessage());
             }
 
@@ -446,7 +451,8 @@ public class SellerHomeController {
             Request req = new Request("GET_SELLER_AUCTIONS", data);
             Response response = ctx.sendRequestAndWait(req, 5);
             if ("SUCCESS".equals(response.getStatus())) {
-                List<Auction> auctions = gson.fromJson(response.getMessage(), new TypeToken<List<Auction>>(){}.getType());
+                List<Auction> auctions = gson.fromJson(response.getMessage(), new TypeToken<List<Auction>>() {
+                }.getType());
                 Platform.runLater(() -> updateAuctionGrid(auctions));
             }
         } catch (Exception e) {
@@ -499,7 +505,8 @@ public class SellerHomeController {
         accountNumberField.setPromptText("Enter account number");
 
         VBox content = new VBox(10);
-        content.getChildren().addAll(new Label("Amount"), amountField, new Label("Bank Name"), bankNameComboBox, new Label("Account Number"), accountNumberField);
+        content.getChildren().addAll(new Label("Amount"), amountField, new Label("Bank Name"), bankNameComboBox,
+                new Label("Account Number"), accountNumberField);
         dialog.getDialogPane().setContent(content);
         dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
 
@@ -547,4 +554,3 @@ public class SellerHomeController {
         });
     }
 }
-

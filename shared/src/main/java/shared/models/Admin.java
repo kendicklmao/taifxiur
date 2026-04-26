@@ -11,14 +11,22 @@ public class Admin extends User { //quản trị viên
         super(0, username, password, email, Role.ADMIN, q1, a1, q2, a2);
     }
 
-    public void ban(User user) { //chặn người dùng
+    // Chặn người dùng
+    public void ban(User user) {
         if (user != null) {
+            if (user.getRole() == Role.ADMIN) {
+                throw new IllegalArgumentException("Cannot ban an administrator");
+            }
             user.banUser();
         }
     }
 
-    public void unban(User user) { //bỏ chặn người dùng
+    // Bỏ chặn người dùng
+    public void unban(User user) {
         if (user != null) {
+            if (user.getRole() == Role.ADMIN) {
+                throw new IllegalArgumentException("Cannot unban an administrator");
+            }
             user.unbanUser();
         }
     }

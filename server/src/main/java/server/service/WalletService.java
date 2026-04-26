@@ -9,7 +9,6 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -49,11 +48,11 @@ public class WalletService {
         bidderUsername = Validator.normalizeAndLowercase(bidderUsername);
 
         try (Connection conn = DatabaseConfig.getDataSource().getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(
-                     """
-                     INSERT INTO deposit_requests (id, bidder_id, amount, status, created_at, updated_at)
-                     VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-                     """)) {
+                PreparedStatement pstmt = conn.prepareStatement(
+                        """
+                                INSERT INTO deposit_requests (id, bidder_id, amount, status, created_at, updated_at)
+                                VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                                """)) {
 
             Integer bidderId = getUserIdByUsernameAndRole(conn, bidderUsername, "BIDDER");
             if (bidderId == null) {
@@ -74,7 +73,8 @@ public class WalletService {
         }
     }
 
-    public String createWithdrawRequest(String sellerUsername, BigDecimal amount, String bankName, String accountNumber) {
+    public String createWithdrawRequest(String sellerUsername, BigDecimal amount, String bankName,
+            String accountNumber) {
         if (sellerUsername == null || Validator.normalizeAndLowercase(sellerUsername).isEmpty()) {
             return "Username is required";
         }
@@ -99,11 +99,11 @@ public class WalletService {
         accountNumber = Validator.normalizeAndLowercase(accountNumber);
 
         try (Connection conn = DatabaseConfig.getDataSource().getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(
-                     """
-                     INSERT INTO withdraw_requests (id, seller_id, amount, bank_account, status, created_at, updated_at)
-                     VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-                     """)) {
+                PreparedStatement pstmt = conn.prepareStatement(
+                        """
+                                INSERT INTO withdraw_requests (id, seller_id, amount, bank_account, status, created_at, updated_at)
+                                VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                                """)) {
 
             Integer sellerId = getUserIdByUsername(conn, sellerUsername);
             if (sellerId == null) {
@@ -141,7 +141,7 @@ public class WalletService {
                 """;
 
         try (Connection conn = DatabaseConfig.getDataSource().getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setString(1, RequestStatus.PENDING.name());
             ResultSet rs = pstmt.executeQuery();
@@ -174,7 +174,7 @@ public class WalletService {
                 """;
 
         try (Connection conn = DatabaseConfig.getDataSource().getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setString(1, RequestStatus.PENDING.name());
             ResultSet rs = pstmt.executeQuery();
@@ -298,7 +298,8 @@ public class WalletService {
     }
 
     private boolean isValidRequestInput(String requestId, String adminUsername) {
-        return requestId != null && !Validator.normalize(requestId).isEmpty() && Validator.isValidUsername(adminUsername);
+        return requestId != null && !Validator.normalize(requestId).isEmpty()
+                && Validator.isValidUsername(adminUsername);
     }
 
     private boolean isPositiveAmount(BigDecimal amount) {
@@ -360,10 +361,10 @@ public class WalletService {
     private void updateWalletBalance(Connection conn, int userId, BigDecimal amountDelta) throws SQLException {
         try (PreparedStatement pstmt = conn.prepareStatement(
                 """
-                UPDATE wallets
-                SET balance = balance + ?, updated_at = CURRENT_TIMESTAMP
-                WHERE user_id = ?
-                """)) {
+                        UPDATE wallets
+                        SET balance = balance + ?, updated_at = CURRENT_TIMESTAMP
+                        WHERE user_id = ?
+                        """)) {
             pstmt.setBigDecimal(1, amountDelta);
             pstmt.setInt(2, userId);
             pstmt.executeUpdate();
@@ -396,7 +397,8 @@ public class WalletService {
         }
     }
 
-    private void updateDepositRequestStatus(Connection conn, String requestId, RequestStatus status) throws SQLException {
+    private void updateDepositRequestStatus(Connection conn, String requestId, RequestStatus status)
+            throws SQLException {
         try (PreparedStatement pstmt = conn.prepareStatement(
                 "UPDATE deposit_requests SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?")) {
             pstmt.setString(1, status.name());
@@ -405,7 +407,8 @@ public class WalletService {
         }
     }
 
-    private void updateWithdrawRequestStatus(Connection conn, String requestId, RequestStatus status) throws SQLException {
+    private void updateWithdrawRequestStatus(Connection conn, String requestId, RequestStatus status)
+            throws SQLException {
         try (PreparedStatement pstmt = conn.prepareStatement(
                 "UPDATE withdraw_requests SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?")) {
             pstmt.setString(1, status.name());
@@ -423,11 +426,13 @@ public class WalletService {
      * Get available wallet balance (just total balance, no holds)
      */
     public BigDecimal getAvailableBalance(String username) {
-        if (!Validator.isValidUsername(username)) return null;
+        if (!Validator.isValidUsername(username))
+            return null;
         username = Validator.normalizeAndLowercase(username);
         try (Connection conn = DatabaseConfig.getDataSource().getConnection()) {
             Integer userId = getUserIdByUsername(conn, username);
-            if (userId == null) return null;
+            if (userId == null)
+                return null;
             ensureWalletExists(conn, userId);
             return getWalletBalance(conn, userId);
         } catch (SQLException e) {
@@ -449,12 +454,16 @@ public class WalletService {
     }
 
     /**
-     * Create or update a hold for a bidder on an auction. Returns null on success, or error message.
+     * Create or update a hold for a bidder on an auction. Returns null on success,
+     * or error message.
      */
     public String createOrUpdateHold(String auctionId, String bidderUsername, BigDecimal amount) {
-        if (auctionId == null || Validator.normalize(auctionId).isEmpty()) return "Invalid auction id";
-        if (!Validator.isValidUsername(bidderUsername)) return "Invalid bidder";
-        if (!isPositiveAmount(amount)) return "Amount must be positive";
+        if (auctionId == null || Validator.normalize(auctionId).isEmpty())
+            return "Invalid auction id";
+        if (!Validator.isValidUsername(bidderUsername))
+            return "Invalid bidder";
+        if (!isPositiveAmount(amount))
+            return "Amount must be positive";
         bidderUsername = Validator.normalizeAndLowercase(bidderUsername);
         try (Connection conn = DatabaseConfig.getDataSource().getConnection()) {
             conn.setAutoCommit(false);
@@ -465,7 +474,8 @@ public class WalletService {
                     return "Bidder not found";
                 }
                 ensureWalletExists(conn, bidderId);
-                // If there's an existing hold for this auction by the bidder, allow updating it by
+                // If there's an existing hold for this auction by the bidder, allow updating it
+                // by
                 // considering the existing hold amount when checking available funds.
                 BigDecimal existingHold = BigDecimal.ZERO;
                 try (PreparedStatement check = conn.prepareStatement(
@@ -475,16 +485,20 @@ public class WalletService {
                     ResultSet rs = check.executeQuery();
                     if (rs.next()) {
                         existingHold = rs.getBigDecimal("amount");
-                        if (existingHold == null) existingHold = BigDecimal.ZERO;
+                        if (existingHold == null)
+                            existingHold = BigDecimal.ZERO;
                     }
                 }
 
                 BigDecimal totalHeld = getTotalHeldAmount(conn, bidderId);
-                if (totalHeld == null) totalHeld = BigDecimal.ZERO;
-                BigDecimal totalHeldExcludingCurrent = totalHeld.subtract(existingHold == null ? BigDecimal.ZERO : existingHold);
+                if (totalHeld == null)
+                    totalHeld = BigDecimal.ZERO;
+                BigDecimal totalHeldExcludingCurrent = totalHeld
+                        .subtract(existingHold == null ? BigDecimal.ZERO : existingHold);
                 BigDecimal balance = getWalletBalance(conn, bidderId);
                 BigDecimal available = balance.subtract(totalHeldExcludingCurrent);
-                // Now ensure available (excluding current auction's existing hold) is enough for the requested amount
+                // Now ensure available (excluding current auction's existing hold) is enough
+                // for the requested amount
                 if (available.compareTo(amount) < 0) {
                     conn.rollback();
                     return "Insufficient available balance";
@@ -520,11 +534,13 @@ public class WalletService {
      * Release (cancel) a hold for a bidder on an auction
      */
     public void releaseHold(String auctionId, String bidderUsername) {
-        if (auctionId == null || Validator.normalize(auctionId).isEmpty() || !Validator.isValidUsername(bidderUsername)) return;
+        if (auctionId == null || Validator.normalize(auctionId).isEmpty() || !Validator.isValidUsername(bidderUsername))
+            return;
         bidderUsername = Validator.normalizeAndLowercase(bidderUsername);
         try (Connection conn = DatabaseConfig.getDataSource().getConnection()) {
             Integer bidderId = getUserIdByUsername(conn, bidderUsername);
-            if (bidderId == null) return;
+            if (bidderId == null)
+                return;
             try (PreparedStatement pstmt = conn.prepareStatement(
                     "UPDATE wallet_holds SET status = 'RELEASED', updated_at = CURRENT_TIMESTAMP WHERE auction_id = ? AND bidder_id = ? AND status = 'HELD'")) {
                 pstmt.setString(1, auctionId);
@@ -537,13 +553,15 @@ public class WalletService {
     }
 
     /**
-     * Release all holds for an auction (used when auction finishes to release non-winning holds)
+     * Release all holds for an auction (used when auction finishes to release
+     * non-winning holds)
      */
     public void releaseAllHoldsForAuction(String auctionId) {
-        if (auctionId == null || Validator.normalize(auctionId).isEmpty()) return;
+        if (auctionId == null || Validator.normalize(auctionId).isEmpty())
+            return;
         try (Connection conn = DatabaseConfig.getDataSource().getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(
-                     "UPDATE wallet_holds SET status = 'RELEASED', updated_at = CURRENT_TIMESTAMP WHERE auction_id = ? AND status = 'HELD'")) {
+                PreparedStatement pstmt = conn.prepareStatement(
+                        "UPDATE wallet_holds SET status = 'RELEASED', updated_at = CURRENT_TIMESTAMP WHERE auction_id = ? AND status = 'HELD'")) {
             pstmt.setString(1, auctionId);
             pstmt.executeUpdate();
         } catch (SQLException e) {
@@ -555,10 +573,14 @@ public class WalletService {
      * Finalize payment for a winning bidder: deduct amount and credit seller.
      * Returns null on success or error message.
      */
-    public String finalizePaymentForWinner(String auctionId, String bidderUsername, String sellerUsername, BigDecimal amount) {
-        if (auctionId == null || Validator.normalize(auctionId).isEmpty()) return "Invalid auction id";
-        if (!Validator.isValidUsername(bidderUsername) || !Validator.isValidUsername(sellerUsername)) return "Invalid user";
-        if (!isPositiveAmount(amount)) return "Invalid amount";
+    public String finalizePaymentForWinner(String auctionId, String bidderUsername, String sellerUsername,
+            BigDecimal amount) {
+        if (auctionId == null || Validator.normalize(auctionId).isEmpty())
+            return "Invalid auction id";
+        if (!Validator.isValidUsername(bidderUsername) || !Validator.isValidUsername(sellerUsername))
+            return "Invalid user";
+        if (!isPositiveAmount(amount))
+            return "Invalid amount";
 
         bidderUsername = Validator.normalizeAndLowercase(bidderUsername);
         sellerUsername = Validator.normalizeAndLowercase(sellerUsername);
@@ -586,7 +608,6 @@ public class WalletService {
                 updateWalletBalance(conn, bidderId, amount.negate());
                 // Credit seller wallet
                 updateWalletBalance(conn, sellerId, amount);
-
 
                 conn.commit();
                 return null;
