@@ -22,7 +22,7 @@ public class WalletService {
             return null;
         }
 
-        username = Validator.normalizeUsername(username);
+        username = Validator.normalizeAndLowercase(username);
 
         try (Connection conn = DatabaseConfig.getDataSource().getConnection()) {
             Integer userId = getUserIdByUsername(conn, username);
@@ -46,7 +46,7 @@ public class WalletService {
             return "Amount must be greater than 0";
         }
 
-        bidderUsername = Validator.normalizeUsername(bidderUsername);
+        bidderUsername = Validator.normalizeAndLowercase(bidderUsername);
 
         try (Connection conn = DatabaseConfig.getDataSource().getConnection();
              PreparedStatement pstmt = conn.prepareStatement(
@@ -75,7 +75,7 @@ public class WalletService {
     }
 
     public String createWithdrawRequest(String sellerUsername, BigDecimal amount, String bankName, String accountNumber) {
-        if (sellerUsername == null || sellerUsername.trim().isEmpty()) {
+        if (sellerUsername == null || Validator.normalizeAndLowercase(sellerUsername).isEmpty()) {
             return "Username is required";
         }
         if (!Validator.isValidUsername(sellerUsername)) {
@@ -87,15 +87,16 @@ public class WalletService {
         if (!isPositiveAmount(amount)) {
             return "Amount must be greater than 0";
         }
-        if (bankName == null || bankName.trim().isEmpty()) {
+        if (bankName == null || Validator.normalizeAndLowercase(bankName).isEmpty()) {
             return "Bank name cannot be empty";
         }
-        if (accountNumber == null || accountNumber.trim().isEmpty()) {
+        if (accountNumber == null || Validator.normalizeAndLowercase(accountNumber).isEmpty()) {
             return "Bank account cannot be empty";
         }
 
-        sellerUsername = Validator.normalizeUsername(sellerUsername);
-        accountNumber = accountNumber.trim();
+        sellerUsername = Validator.normalizeAndLowercase(sellerUsername);
+        bankName = Validator.normalizeAndLowercase(bankName);
+        accountNumber = Validator.normalizeAndLowercase(accountNumber);
 
         try (Connection conn = DatabaseConfig.getDataSource().getConnection();
              PreparedStatement pstmt = conn.prepareStatement(
@@ -118,7 +119,7 @@ public class WalletService {
             pstmt.setString(1, UUID.randomUUID().toString());
             pstmt.setInt(2, sellerId);
             pstmt.setBigDecimal(3, amount);
-            pstmt.setString(4, bankName.trim() + " - " + accountNumber);
+            pstmt.setString(4, bankName + " - " + accountNumber);
             pstmt.setString(5, RequestStatus.PENDING.name());
             pstmt.executeUpdate();
             return null;
@@ -219,7 +220,7 @@ public class WalletService {
         try (Connection conn = DatabaseConfig.getDataSource().getConnection()) {
             conn.setAutoCommit(false);
             try {
-                if (getUserIdByUsernameAndRole(conn, Validator.normalizeUsername(adminUsername), "ADMIN") == null) {
+                if (getUserIdByUsernameAndRole(conn, Validator.normalizeAndLowercase(adminUsername), "ADMIN") == null) {
                     conn.rollback();
                     return "Only admin can process deposit requests";
                 }
@@ -259,7 +260,7 @@ public class WalletService {
         try (Connection conn = DatabaseConfig.getDataSource().getConnection()) {
             conn.setAutoCommit(false);
             try {
-                if (getUserIdByUsernameAndRole(conn, Validator.normalizeUsername(adminUsername), "ADMIN") == null) {
+                if (getUserIdByUsernameAndRole(conn, Validator.normalizeAndLowercase(adminUsername), "ADMIN") == null) {
                     conn.rollback();
                     return "Only admin can process withdraw requests";
                 }
@@ -297,7 +298,7 @@ public class WalletService {
     }
 
     private boolean isValidRequestInput(String requestId, String adminUsername) {
-        return requestId != null && !requestId.trim().isEmpty() && Validator.isValidUsername(adminUsername);
+        return requestId != null && !Validator.normalize(requestId).isEmpty() && Validator.isValidUsername(adminUsername);
     }
 
     private boolean isPositiveAmount(BigDecimal amount) {
@@ -423,7 +424,7 @@ public class WalletService {
      */
     public BigDecimal getAvailableBalance(String username) {
         if (!Validator.isValidUsername(username)) return null;
-        username = Validator.normalizeUsername(username);
+        username = Validator.normalizeAndLowercase(username);
         try (Connection conn = DatabaseConfig.getDataSource().getConnection()) {
             Integer userId = getUserIdByUsername(conn, username);
             if (userId == null) return null;
@@ -451,10 +452,10 @@ public class WalletService {
      * Create or update a hold for a bidder on an auction. Returns null on success, or error message.
      */
     public String createOrUpdateHold(String auctionId, String bidderUsername, BigDecimal amount) {
-        if (auctionId == null || auctionId.isBlank()) return "Invalid auction id";
+        if (auctionId == null || Validator.normalize(auctionId).isEmpty()) return "Invalid auction id";
         if (!Validator.isValidUsername(bidderUsername)) return "Invalid bidder";
         if (!isPositiveAmount(amount)) return "Amount must be positive";
-        bidderUsername = Validator.normalizeUsername(bidderUsername);
+        bidderUsername = Validator.normalizeAndLowercase(bidderUsername);
         try (Connection conn = DatabaseConfig.getDataSource().getConnection()) {
             conn.setAutoCommit(false);
             try {
@@ -519,8 +520,8 @@ public class WalletService {
      * Release (cancel) a hold for a bidder on an auction
      */
     public void releaseHold(String auctionId, String bidderUsername) {
-        if (auctionId == null || auctionId.isBlank() || !Validator.isValidUsername(bidderUsername)) return;
-        bidderUsername = Validator.normalizeUsername(bidderUsername);
+        if (auctionId == null || Validator.normalize(auctionId).isEmpty() || !Validator.isValidUsername(bidderUsername)) return;
+        bidderUsername = Validator.normalizeAndLowercase(bidderUsername);
         try (Connection conn = DatabaseConfig.getDataSource().getConnection()) {
             Integer bidderId = getUserIdByUsername(conn, bidderUsername);
             if (bidderId == null) return;
@@ -539,7 +540,7 @@ public class WalletService {
      * Release all holds for an auction (used when auction finishes to release non-winning holds)
      */
     public void releaseAllHoldsForAuction(String auctionId) {
-        if (auctionId == null || auctionId.isBlank()) return;
+        if (auctionId == null || Validator.normalize(auctionId).isEmpty()) return;
         try (Connection conn = DatabaseConfig.getDataSource().getConnection();
              PreparedStatement pstmt = conn.prepareStatement(
                      "UPDATE wallet_holds SET status = 'RELEASED', updated_at = CURRENT_TIMESTAMP WHERE auction_id = ? AND status = 'HELD'")) {
@@ -555,12 +556,12 @@ public class WalletService {
      * Returns null on success or error message.
      */
     public String finalizePaymentForWinner(String auctionId, String bidderUsername, String sellerUsername, BigDecimal amount) {
-        if (auctionId == null || auctionId.isBlank()) return "Invalid auction id";
+        if (auctionId == null || Validator.normalize(auctionId).isEmpty()) return "Invalid auction id";
         if (!Validator.isValidUsername(bidderUsername) || !Validator.isValidUsername(sellerUsername)) return "Invalid user";
         if (!isPositiveAmount(amount)) return "Invalid amount";
 
-        bidderUsername = Validator.normalizeUsername(bidderUsername);
-        sellerUsername = Validator.normalizeUsername(sellerUsername);
+        bidderUsername = Validator.normalizeAndLowercase(bidderUsername);
+        sellerUsername = Validator.normalizeAndLowercase(sellerUsername);
 
         try (Connection conn = DatabaseConfig.getDataSource().getConnection()) {
             conn.setAutoCommit(false);

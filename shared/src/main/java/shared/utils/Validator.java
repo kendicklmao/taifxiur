@@ -1,52 +1,62 @@
 package shared.utils;
 
-public class Validator { //kiểm tra format các input và chuẩn hóa nó
-    public static String normalizeUsername(String username) {//chuẩn hóa tên tài khoản
-        if (username == null) return null;
-        return username.trim().toLowerCase();
+// Kiểm tra format các input và chuẩn hóa nó
+public class Validator {
+    // Bỏ trắng và chuyển về chữ thường
+    public static String normalizeAndLowercase(String text) {
+        if (text == null) {
+            return null;
+        }
+        return text.trim().toLowerCase();
     }
-    public static String normalizePassword(String password) { //chuẩn hóa mật khẩu
-        if (password == null) return null;
-        return password.trim();
+
+    // Bỏ trắng nhưng giữ nguyên chữ hoa thường
+    public static String normalize(String text) {
+        if (text == null) {
+            return null;
+        }
+        return text.trim();
     }
-    public static String normalizeEmail(String email) {//chuẩn hóa email
-        if (email == null) return null;
-        return email.trim().toLowerCase();
-    }
-    public static String normalizeQuestion(String question) {//chuẩn hóa câu hỏi xác nhận danh tính
-        if (question == null) return null;
-        return question.trim();
-    }
-    public static String normalizeAnswer(String answer) {//chuẩn hóa câu trả lời xác nhận danh tính
-        if (answer == null) return null;
-        return answer.trim().toLowerCase();
-    }
-    public static boolean isValidUsername(String username) {//kểm tra format tên tài khoản
+
+    // Kiểm tra format tên tài khoản
+    public static boolean isValidUsername(String username) {
         if (username == null) return false;
-        username = username.trim();
+        username = normalizeAndLowercase(username);
         return username.length() >= 6 && !username.contains(" ") && username.matches("^[a-zA-Z0-9_]+$");
     }
-    public static boolean isValidPassword(String password) {//kiểm tra format mật khẩu
+
+    // Kiểm tra format mật khẩu
+    public static boolean isValidPassword(String password) {
         if (password == null) return false;
-        password = password.trim();
+        password = normalize(password);
         return password.length() >= 6 && !password.contains(" ") &&
-               password.matches(".*[A-Z].*") &&
-               password.matches(".*[a-z].*") &&
-               password.matches(".*\\d.*") &&
-               password.matches(".*[!@#$%^&*(),.?\":{}|<>].*");
+                password.matches(".*[A-Z].*") &&
+                password.matches(".*[a-z].*") &&
+                password.matches(".*\\d.*") &&
+                password.matches(".*[!@#$%^&*(),.?\":{}|<>].*");
     }
-    public static boolean isValidEmail(String email) {//kiểm tra format email
+
+    // Kiểm tra format email
+    public static boolean isValidEmail(String email) {
         if (email == null) return false;
-        email = email.trim();
+        email = normalizeAndLowercase(email);
         return !email.contains(" ") &&
-               email.matches("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$");
+                email.matches("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$");
     }
-    public static boolean isValidQuestion(String question) {//kiểm tra format câu hỏi xác nhận danh tính
-        if (question == null) return false;
-        return !question.trim().isEmpty();
+
+    // Kiểm tra format câu hỏi xác nhận danh tính
+    public static boolean isValidQuestion(String question) {
+        if (question == null) {
+            return false;
+        }
+        return !normalize(question).isEmpty();
     }
-    public static boolean isValidAnswer(String answer) { //kiểm tra format câu trả lời xác nhận danh tính
-        if (answer == null) return false;
-        return !answer.trim().isEmpty();
+
+    // Kiểm tra format câu trả lời xác nhận danh tính
+    public static boolean isValidAnswer(String answer) {
+        if (answer == null) {
+            return false;
+        }
+        return !normalizeAndLowercase(answer).isEmpty();
     }
 }

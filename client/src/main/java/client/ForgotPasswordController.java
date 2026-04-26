@@ -101,8 +101,8 @@ public class ForgotPasswordController {
 
             question1Label.setText(questions.getOrDefault("q1", ""));
             question2Label.setText(questions.getOrDefault("q2", ""));
-            loadedUsername = Validator.normalizeUsername(username);
-            loadedEmail = Validator.normalizeEmail(email);
+            loadedUsername = Validator.normalizeAndLowercase(username);
+            loadedEmail = Validator.normalizeAndLowercase(email);
 
             verificationBox.setVisible(true);
             verificationBox.setManaged(true);
@@ -131,8 +131,8 @@ public class ForgotPasswordController {
 
         String answer1 = answer1Field.getText();
         String answer2 = answer2Field.getText();
-        String newPassword = Validator.normalizePassword(newPasswordField.getText());
-        String confirmPassword = Validator.normalizePassword(confirmPasswordField.getText());
+        String newPassword = Validator.normalize(newPasswordField.getText());
+        String confirmPassword = Validator.normalize(confirmPasswordField.getText());
 
         boolean valid = true;
         List<String> errors = new ArrayList<>();

@@ -62,13 +62,13 @@ public class UserService {
             return false;
         }
 
-        username = Validator.normalizeUsername(username);
-        password = Validator.normalizePassword(password);
-        email = Validator.normalizeEmail(email);
-        q1 = Validator.normalizeQuestion(q1);
-        q2 = Validator.normalizeQuestion(q2);
-        a1 = Validator.normalizeAnswer(a1);
-        a2 = Validator.normalizeAnswer(a2);
+        username = Validator.normalizeAndLowercase(username);
+        password = Validator.normalize(password);
+        email = Validator.normalizeAndLowercase(email);
+        q1 = Validator.normalize(q1);
+        q2 = Validator.normalize(q2);
+        a1 = Validator.normalizeAndLowercase(a1);
+        a2 = Validator.normalizeAndLowercase(a2);
 
         System.out.println("DEBUG REGISTER: After normalization - username: " + username + ", email: " + email);
 
@@ -127,8 +127,8 @@ public class UserService {
         if (username == null || password == null) {
             return null;
         }
-        username = Validator.normalizeUsername(username);
-        password = Validator.normalizePassword(password);
+        username = Validator.normalizeAndLowercase(username);
+        password = Validator.normalize(password);
 
         Instant now = Instant.now();
         if (lockUntil.containsKey(username)) {
@@ -259,7 +259,7 @@ public class UserService {
      */
     public boolean emailExists(String email) {
         if (email == null) return false;
-        email = Validator.normalizeEmail(email);
+        email = Validator.normalizeAndLowercase(email);
 
         try (Connection conn = DatabaseConfig.getDataSource().getConnection();
              PreparedStatement pstmt = conn.prepareStatement("SELECT 1 FROM users WHERE email = ?")) {
@@ -278,7 +278,7 @@ public class UserService {
      */
     public boolean exists(String username) {
         if (username == null) return false;
-        username = Validator.normalizeUsername(username);
+        username = Validator.normalizeAndLowercase(username);
 
         try (Connection conn = DatabaseConfig.getDataSource().getConnection();
              PreparedStatement pstmt = conn.prepareStatement("SELECT 1 FROM users WHERE username = ?")) {
@@ -297,7 +297,7 @@ public class UserService {
      */
     public boolean isBanned(String username) {
         if (username == null) return false;
-        username = Validator.normalizeUsername(username);
+        username = Validator.normalizeAndLowercase(username);
 
         try (Connection conn = DatabaseConfig.getDataSource().getConnection();
              PreparedStatement pstmt = conn.prepareStatement("SELECT is_banned FROM users WHERE username = ?")) {
@@ -329,8 +329,8 @@ public class UserService {
             return null;
         }
 
-        username = Validator.normalizeUsername(username);
-        email = Validator.normalizeEmail(email);
+        username = Validator.normalizeAndLowercase(username);
+        email = Validator.normalizeAndLowercase(email);
 
         try (Connection conn = DatabaseConfig.getDataSource().getConnection();
              PreparedStatement pstmt = conn.prepareStatement(
@@ -365,11 +365,11 @@ public class UserService {
             return false;
         }
 
-        username = Validator.normalizeUsername(username);
-        email = Validator.normalizeEmail(email);
-        answer1 = Validator.normalizeAnswer(answer1);
-        answer2 = Validator.normalizeAnswer(answer2);
-        newPassword = Validator.normalizePassword(newPassword);
+        username = Validator.normalizeAndLowercase(username);
+        email = Validator.normalizeAndLowercase(email);
+        answer1 = Validator.normalizeAndLowercase(answer1);
+        answer2 = Validator.normalizeAndLowercase(answer2);
+        newPassword = Validator.normalize(newPassword);
 
         try (Connection conn = DatabaseConfig.getDataSource().getConnection();
              PreparedStatement selectStmt = conn.prepareStatement(
@@ -428,9 +428,9 @@ public class UserService {
             return "New password must be at least 6 characters and include uppercase, lowercase, number, and special character";
         }
 
-        username = Validator.normalizeUsername(username);
-        oldPassword = Validator.normalizePassword(oldPassword);
-        newPassword = Validator.normalizePassword(newPassword);
+        username = Validator.normalizeAndLowercase(username);
+        oldPassword = Validator.normalize(oldPassword);
+        newPassword = Validator.normalize(newPassword);
 
         if (oldPassword.equals(newPassword)) {
             return "New password must be different from the current password";
@@ -547,7 +547,7 @@ public class UserService {
      * Ban user - returns null if successful, error message otherwise
      */
     public String banUser(String username, String adminUsername) {
-        username = Validator.normalizeUsername(username);
+        username = Validator.normalizeAndLowercase(username);
         User admin = getUserFromDatabase(adminUsername);
         User targetUser = getUserFromDatabase(username);
 
@@ -580,7 +580,7 @@ public class UserService {
      * Unban user - returns null if successful, error message otherwise
      */
     public String unbanUser(String username, String adminUsername) {
-        username = Validator.normalizeUsername(username);
+        username = Validator.normalizeAndLowercase(username);
         User admin = getUserFromDatabase(adminUsername);
         User targetUser = getUserFromDatabase(username);
 
@@ -649,7 +649,7 @@ public class UserService {
     }
 
     private void ensureWalletForUsername(String username) {
-        username = Validator.normalizeUsername(username);
+        username = Validator.normalizeAndLowercase(username);
         if (username == null) {
             return;
         }

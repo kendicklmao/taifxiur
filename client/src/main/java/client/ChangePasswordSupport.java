@@ -99,8 +99,8 @@ public final class ChangePasswordSupport {
             return "Current password cannot be empty.";
         }
 
-        String normalizedNewPassword = Validator.normalizePassword(newPassword);
-        String normalizedConfirmPassword = Validator.normalizePassword(confirmPassword);
+        String normalizedNewPassword = Validator.normalize(newPassword);
+        String normalizedConfirmPassword = Validator.normalize(confirmPassword);
 
         if (!Validator.isValidPassword(normalizedNewPassword)) {
             return "New password must be at least 6 characters and include uppercase, lowercase, number, and special character.";
@@ -110,7 +110,7 @@ public final class ChangePasswordSupport {
             return "Confirm password does not match.";
         }
 
-        if (Validator.normalizePassword(currentPassword).equals(normalizedNewPassword)) {
+        if (Validator.normalize(currentPassword).equals(normalizedNewPassword)) {
             return "New password must be different from the current password.";
         }
 

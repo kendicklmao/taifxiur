@@ -31,13 +31,13 @@ public class Main {
             return;
         }
 
-        username = Validator.normalizeUsername(username);
-        password = Validator.normalizePassword(password);
-        email = Validator.normalizeEmail(email);
-        q1 = Validator.normalizeQuestion(q1);
-        q2 = Validator.normalizeQuestion(q2);
-        a1 = Validator.normalizeAnswer(a1);
-        a2 = Validator.normalizeAnswer(a2);
+        username = Validator.normalizeAndLowercase(username);
+        password = Validator.normalize(password);
+        email = Validator.normalizeAndLowercase(email);
+        q1 = Validator.normalize(q1);
+        q2 = Validator.normalize(q2);
+        a1 = Validator.normalizeAndLowercase(a1);
+        a2 = Validator.normalizeAndLowercase(a2);
 
         try (Connection conn = DatabaseConfig.getDataSource().getConnection();
              PreparedStatement pstmt = conn.prepareStatement(

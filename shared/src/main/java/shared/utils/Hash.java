@@ -1,8 +1,11 @@
 package shared.utils;
 
 import java.util.UUID;
-public class hash { //mã hóa
-    public static String formula(String password, String salt) {//công thức mã hóa
+
+// MÃ HÓA MẬT KHẨU VÀ CÂU TRẢ LỜI XÁC NHẬN DANH TÍNH
+public class Hash {
+    public static String formula(String password, String salt) {
+        // Công thức mã hóa
         String combined = password + salt;
         long res = 7;
         for (int round = 0; round < 101; round++) {
@@ -14,7 +17,9 @@ public class hash { //mã hóa
         }
         return String.valueOf(res);
     }
-    public static String generateSalt() { //random 1 String ngẫu nhiên để làm rối loạn mã hóa
+
+    // Random 1 String ngẫu nhiên để làm rối loạn mã hóa
+    public static String generateSalt() {
         return UUID.randomUUID().toString();
     }
 }
