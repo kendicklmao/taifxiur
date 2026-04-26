@@ -23,9 +23,7 @@ public class Fashion extends Item {
         return status;
     }
 
-    public BigDecimal getMinIncrement() { //số tiền lớn hơn tối thiểu so với giá hiện tại là 100k
-        return new BigDecimal("100000");
-    }
+
 
     public boolean isValid() {
         return super.isValid();

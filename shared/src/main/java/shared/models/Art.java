@@ -28,9 +28,7 @@ public class Art extends Item { //tác phẩm nghệ thuật
         return yearCreated;
     }
 
-    public BigDecimal getMinIncrement() { //số tiền lớn hơn tối thiểu so với giá hiện tại là 10tr
-        return new BigDecimal("10000000");
-    }
+
 
     public boolean isValid() { //kiểm tra thông số có logic không?
         return super.isValid() && yearCreated >= 0;

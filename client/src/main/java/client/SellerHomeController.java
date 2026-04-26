@@ -64,6 +64,12 @@ public class SellerHomeController {
     @FXML
     private VBox customTimingPane;
     @FXML
+    private ChoiceBox<String> incrementTypeBox;
+    @FXML
+    private VBox customIncrementPane;
+    @FXML
+    private TextField customIncrementField;
+    @FXML
     private TilePane auctionGrid;
     @FXML
     private TextArea descField;
@@ -105,6 +111,15 @@ public class SellerHomeController {
         endHourSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 23, endTime.getHour()));
         endMinuteSpinner
                 .setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 59, endTime.getMinute()));
+
+        // Initialize increment type box
+        incrementTypeBox.getItems().addAll("Default (5%)", "Custom Amount");
+        incrementTypeBox.setValue("Default (5%)");
+        incrementTypeBox.setOnAction(e -> {
+            boolean isCustom = "Custom Amount".equals(incrementTypeBox.getValue());
+            customIncrementPane.setVisible(isCustom);
+            customIncrementPane.setManaged(isCustom);
+        });
 
         // Fetch seller's auctions on initialization
         fetchSellerAuctions();
@@ -326,6 +341,15 @@ public class SellerHomeController {
             data.put("category", categoryBox.getValue().name());
             data.put("username", ctx.getCurrentUser().getUsername());
             data.put("description", desc);
+            data.put("incrementType", incrementTypeBox.getValue());
+            if ("Custom Amount".equals(incrementTypeBox.getValue())) {
+                String customInc = customIncrementField.getText();
+                if (customInc == null || customInc.isEmpty()) {
+                    showAlert("Error", "Please enter custom increment amount!");
+                    return;
+                }
+                data.put("minIncrement", customInc);
+            }
 
             if (croppedImageBytes != null) {
                 String encodedImage = Base64.getEncoder().encodeToString(croppedImageBytes);

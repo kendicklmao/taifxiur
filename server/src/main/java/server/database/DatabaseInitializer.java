@@ -42,6 +42,9 @@ public class DatabaseInitializer {
             // Tạo bảng admin_action_logs
             createAdminActionLogsTable(stmt);
 
+            // Tạo bảng wallet_holds
+            createWalletHoldsTable(stmt);
+
             System.out.println("Database schema initialized successfully");
 
         } catch (SQLException e) {
@@ -119,8 +122,20 @@ public class DatabaseInitializer {
                     description TEXT,
                     category VARCHAR(100),
                     status VARCHAR(50) DEFAULT 'AVAILABLE',
-                    start_time TIMESTAMP,
-                    end_time TIMESTAMP,
+                    item_type VARCHAR(50),
+                    base_price DECIMAL(15, 2),
+                    current_price DECIMAL(15, 2),
+                    legit_check BOOLEAN DEFAULT FALSE,
+                    seller_name VARCHAR(255),
+                    brand VARCHAR(255),
+                    item_status VARCHAR(50),
+                    model_year INTEGER,
+                    km_travel INTEGER,
+                    artist VARCHAR(255),
+                    year_created INTEGER,
+                    is_original BOOLEAN,
+                    image_url TEXT,
+                    min_increment DECIMAL(15, 2),
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
@@ -214,5 +229,22 @@ public class DatabaseInitializer {
                 """;
         stmt.execute(sql);
         System.out.println("Admin action logs table created or already exists");
+    }
+
+    private static void createWalletHoldsTable(Statement stmt) throws SQLException {
+        String sql = """
+                CREATE TABLE IF NOT EXISTS wallet_holds (
+                    id SERIAL PRIMARY KEY,
+                    auction_id VARCHAR(36) NOT NULL,
+                    bidder_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                    amount DECIMAL(15, 2) NOT NULL,
+                    status VARCHAR(50) DEFAULT 'HELD',
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    UNIQUE(auction_id, bidder_id)
+                )
+                """;
+        stmt.execute(sql);
+        System.out.println("Wallet holds table created or already exists");
     }
 }

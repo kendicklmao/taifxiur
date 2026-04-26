@@ -334,11 +334,11 @@ public class AuctionService {
                 PreparedStatement pstmt = conn.prepareStatement(
                         "INSERT INTO items (seller_id, name, description, category, status, item_type, " +
                                 "base_price, current_price, legit_check, seller_name, " +
-                                "brand, item_status, model_year, km_travel, artist, year_created, is_original, image_url) "
+                                "brand, item_status, model_year, km_travel, artist, year_created, is_original, image_url, min_increment) "
                                 +
-                                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                         Statement.RETURN_GENERATED_KEYS)) {
-
+            
             int sellerId = getUserIdFromDatabase(seller.getUsername());
             pstmt.setInt(1, sellerId);
             pstmt.setString(2, item.getName());
@@ -376,6 +376,7 @@ public class AuctionService {
             pstmt.setNull(16, java.sql.Types.INTEGER); // year_created
             pstmt.setNull(17, java.sql.Types.BOOLEAN); // is_original
             pstmt.setString(18, item.getImageUrl()); // image_url
+            pstmt.setBigDecimal(19, item.getMinIncrement()); // min_increment
 
             // Set item-specific fields based on type
             if (item instanceof shared.models.Electronic electronic) {

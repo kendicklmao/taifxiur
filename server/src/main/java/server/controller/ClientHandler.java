@@ -73,8 +73,9 @@ public class ClientHandler implements Runnable {
                     sendMessage(gson.toJson(response));
                 }
             }
-        } catch (Exception e) {
-            System.out.println("Client disconnected: " + socket.getInetAddress());
+        } catch (Throwable e) {
+            System.err.println("💥 CRITICAL ERROR in ClientHandler (" + socket.getInetAddress() + "): " + e.getMessage());
+            e.printStackTrace();
         } finally {
             activeClients.remove(this);
             if (loggedInUsername != null) {
@@ -369,14 +370,25 @@ public class ClientHandler implements Runnable {
 
                     if (item != null) {
                         item.setImageUrl(imageUrl);
+                        
+                        // Handle minIncrement
+                        String incType = data.get("incrementType");
+                        BigDecimal minInc;
+                        if ("Custom Amount".equals(incType)) {
+                            minInc = new BigDecimal(data.get("minIncrement"));
+                        } else {
+                            // Default 5% of starting price
+                            minInc = price.multiply(new BigDecimal("0.05"));
+                        }
+                        item.setMinIncrement(minInc);
+                        
                         seller.addItem(item);
                     }
 
                     Auction auction = auctionService.createAuction(seller, item, price, start, end);
 
                     return new Response("SUCCESS", gson.toJson(auction));
-
-                } catch (Exception e) {
+                } catch (Throwable e) {
                     System.out.println("💥 ERROR CREATE AUCTION: " + e.getMessage());
                     e.printStackTrace();
                     return new Response("FAIL", "create auction failed: " + e.getMessage());

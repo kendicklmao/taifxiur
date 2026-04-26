@@ -83,8 +83,9 @@ public class AppContext {
                         listener.accept(message);
                     }
                 }
-            } catch (Exception e) {
-                System.out.println("Connection lost: " + e.getMessage());
+            } catch (Throwable e) {
+                System.err.println("💥 Connection lost or error in listener: " + e.getMessage());
+                e.printStackTrace();
                 // Reset connection state on error
                 socket = null;
                 out = null;

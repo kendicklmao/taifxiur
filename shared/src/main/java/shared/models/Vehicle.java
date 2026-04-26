@@ -28,9 +28,7 @@ public class Vehicle extends Item {//mặt hàng xe cộ
         return kmTravel;
     }
 
-    public BigDecimal getMinIncrement() { //số tiền lớn hơn tối thiểu so với giá hiện tại là 10tr
-        return new BigDecimal("10000000");
-    }
+
 
     public boolean isValid() {//kiểm tra thông số có logic không ?
         return super.isValid() && model >= 0 && kmTravel >= 0;

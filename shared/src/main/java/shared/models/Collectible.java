@@ -22,10 +22,6 @@ public class Collectible extends Item { //mặt hàng sưu tập
         return yearCreated;
     }
 
-    public BigDecimal getMinIncrement() { //số tiền lớn hơn tối thiểu so với giá hiện tại là 1tr
-        return new BigDecimal("1000000");
-    }
-
     public boolean isValid() { //kiểm tra thông số có logic không?
         return super.isValid() && yearCreated >= 0;
     }

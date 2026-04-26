@@ -30,11 +30,10 @@ public class UserService {
 
     // Khởi tạo người dùng mặc định trong cơ sở dữ liệu
     public UserService() {
-        initializeDefaultUsers();
     }
 
     // Khởi tạo người dùng mặc định trong cơ sở dữ liệu lần đầu chạy
-    private void initializeDefaultUsers() {
+    public synchronized void initializeDefaultUsers() {
         System.out.println("--- INITIALIZING DEFAULT USERS ---");
         boolean s1 = this.register("seller", "Admin@123", "seller@gmail.com", "q", "a", "q", "a", Role.SELLER);
         boolean b1 = this.register("bidder", "Admin@123", "bidder@gmail.com", "q", "a", "q", "a", Role.BIDDER);
@@ -142,7 +141,7 @@ public class UserService {
     }
 
     // Đăng nhập người dùng và xác thực
-    public User login(String username, String password) {
+    public synchronized User login(String username, String password) {
         if (username == null || password == null) {
             return null;
         }

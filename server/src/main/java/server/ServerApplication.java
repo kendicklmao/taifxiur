@@ -1,4 +1,5 @@
-package server;
+package server; 
+
 
 import server.controller.ClientHandler;
 import server.database.DatabaseConfig;
@@ -21,6 +22,8 @@ public class ServerApplication {
         // Khởi tạo connection pool và schema cơ sở dữ liệu
         try {
             DatabaseInitializer.initializeDatabase();
+            // Khởi tạo user mặc định
+            new server.service.UserService().initializeDefaultUsers();
             System.out.println("Database initialization completed");
         } catch (Exception e) {
             System.err.println("Failed to initialize database: " + e.getMessage());
