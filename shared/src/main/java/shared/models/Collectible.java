@@ -3,13 +3,12 @@ package shared.models;
 import shared.enums.Category;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 
 public class Collectible extends Item { //mặt hàng sưu tập
     private int yearCreated;
 
-    public Collectible(String name, String description, Seller seller, int yearCreated, LocalDateTime startTime, LocalDateTime endTime) {
-        super(null, name, description, null, null, null, seller, Category.COLLECTIBLES, startTime, endTime);
+    public Collectible(String name, String description, Seller seller, int yearCreated) {
+        super(null, name, description, null, null, null, seller, Category.COLLECTIBLES);
         this.yearCreated = yearCreated;
     }
 

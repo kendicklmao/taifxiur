@@ -4,14 +4,13 @@ import shared.enums.Category;
 import shared.enums.ItemStatus;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 
 public class Fashion extends Item {
     private final String brand; //hãng
     private final ItemStatus status; //trạng thái mặt hàng: new || like new || used
 
-    public Fashion(String name, String description, Seller seller, String brand, ItemStatus status, LocalDateTime startTime, LocalDateTime endTime) {
-        super(null, name, description, null, null, null, seller, Category.FASHIONS, startTime, endTime);
+    public Fashion(String name, String description, Seller seller, String brand, ItemStatus status) {
+        super(null, name, description, null, null, null, seller, Category.FASHIONS);
         this.brand = brand;
         this.status = status;
     }

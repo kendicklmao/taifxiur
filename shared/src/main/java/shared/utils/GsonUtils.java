@@ -102,41 +102,32 @@ public class GsonUtils {
             Category category = Category.valueOf(obj.get("category").getAsString());
             String name = obj.get("name").getAsString();
             String description = obj.get("description").getAsString();
-            LocalDateTime startTime = null;
-            if (obj.has("startTime") && !obj.get("startTime").isJsonNull()) {
-                startTime = context.deserialize(obj.get("startTime"), LocalDateTime.class);
-            }
-
-            LocalDateTime endTime = null;
-            if (obj.has("endTime") && !obj.get("endTime").isJsonNull()) {
-                endTime = context.deserialize(obj.get("endTime"), LocalDateTime.class);
-            }
             // seller is null
             switch (category) {
                 case COLLECTIBLES:
                     int yearCreated = obj.get("yearCreated").getAsInt();
-                    return new Collectible(name, description, null, yearCreated, startTime, endTime);
+                    return new Collectible(name, description, null, yearCreated);
                 case ELECTRONICS: {
                     String brand = obj.get("brand").getAsString();
                     ItemStatus status = ItemStatus.valueOf(obj.get("status").getAsString().toUpperCase());
-                    return new Electronic(name, description, null, brand, status, startTime, endTime);
+                    return new Electronic(name, description, null, brand, status);
                 }
                 case ARTS: {
                     String artist = obj.get("artist").getAsString();
                     int year = obj.get("yearCreated").getAsInt();
                     boolean original = obj.get("isOriginal").getAsBoolean();
-                    return new Art(name, description, null, artist, year, original, startTime, endTime);
+                    return new Art(name, description, null, artist, year, original);
                 }
                 case VEHICLES: {
                     String brand = obj.get("brand").getAsString();
                     int model = obj.get("model").getAsInt();
                     int km = obj.get("kmTravel").getAsInt();
-                    return new Vehicle(name, description, null, brand, model, km, startTime, endTime);
+                    return new Vehicle(name, description, null, brand, model, km);
                 }
                 case FASHIONS: {
                     String brand = obj.get("brand").getAsString();
                     ItemStatus status = ItemStatus.valueOf(obj.get("status").getAsString().toUpperCase());
-                    return new Fashion(name, description, null, brand, status, startTime, endTime);
+                    return new Fashion(name, description, null, brand, status);
                 }
                 default:
                     throw new JsonParseException("Unknown category: " + category);

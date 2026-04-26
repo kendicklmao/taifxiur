@@ -99,7 +99,8 @@ public class ClientHandler implements Runnable {
 
     private Response handleRequest(Request request) {
         String action = request.getAction();
-        if (action == null) return new Response("FAIL", "Invalid action");
+        if (action == null)
+            return new Response("FAIL", "Invalid action");
 
         switch (action) {
             case "LOGIN":
@@ -113,7 +114,8 @@ public class ClientHandler implements Runnable {
                     User loggedInUser = userService.login(user, pass);
                     if (loggedInUser != null) {
                         this.loggedInUsername = loggedInUser.getUsername(); // Track logged in username
-                        return new Response("SUCCESS", loggedInUser.getRole().toString() + "," + loggedInUser.getUsername());
+                        return new Response("SUCCESS",
+                                loggedInUser.getRole().toString() + "," + loggedInUser.getUsername());
                     } else {
                         return new Response("FAIL", "Invalid username or password");
                     }
@@ -138,7 +140,8 @@ public class ClientHandler implements Runnable {
                     return new Response("SUCCESS", "Registered successfully");
                 } else {
                     System.out.println("DEBUG: Registration failed for user: " + rUser);
-                    return new Response("FAIL", "Username is already taken or is invalid (check server logs for details)");
+                    return new Response("FAIL",
+                            "Username is already taken or is invalid (check server logs for details)");
                 }
 
             case "FORGOT_PASSWORD_INIT":
@@ -230,28 +233,33 @@ public class ClientHandler implements Runnable {
                     try {
                         boolean success = auctionService.placeBid(pAuctionId, bidder, amount);
                         if (success) {
-                            Response updateResponse = new Response("UPDATE_PRICE", "UPDATE: Auction " + pAuctionId + " just had a new price: " + pAmount);
+                            Response updateResponse = new Response("UPDATE_PRICE",
+                                    "UPDATE: Auction " + pAuctionId + " just had a new price: " + pAmount);
                             broadcast(gson.toJson(updateResponse));
                             return new Response("SUCCESS", "Bid placed successfully");
                         } else {
                             // Provide more detailed feedback to the client to aid debugging
                             server.service.WalletService ws = new server.service.WalletService();
-                                BigDecimal balance = ws.getWalletBalance(pUsername);
-                                // Log diagnostic info for debugging
-                                System.out.println("PLACE_BID debug -> user=" + pUsername + " requested=" + pAmount + " balance=" + balance);
-                                StringBuilder msg = new StringBuilder();
-                                if (balance == null) {
-                                    msg.append("Could not determine balance. ");
-                                } else {
-                                    msg.append("Balance: ").append(balance.toPlainString()).append(". ");
-                                }
+                            BigDecimal balance = ws.getWalletBalance(pUsername);
+                            // Log diagnostic info for debugging
+                            System.out.println("PLACE_BID debug -> user=" + pUsername + " requested=" + pAmount
+                                    + " balance=" + balance);
+                            StringBuilder msg = new StringBuilder();
+                            if (balance == null) {
+                                msg.append("Could not determine balance. ");
+                            } else {
+                                msg.append("Balance: ").append(balance.toPlainString()).append(". ");
+                            }
                             // Also include auction-level info if available
                             try {
                                 var auction = auctionService.getAuction(pAuctionId);
                                 if (auction != null) {
-                                    msg.append("CurrentPrice: ").append(auction.getCurrentPrice()).append(", MinIncrement: ").append(auction.getItem().getMinIncrement()).append('.');
+                                    msg.append("CurrentPrice: ").append(auction.getCurrentPrice())
+                                            .append(", MinIncrement: ").append(auction.getItem().getMinIncrement())
+                                            .append('.');
                                 }
-                            } catch (Exception ignored) {}
+                            } catch (Exception ignored) {
+                            }
 
                             // If balance insufficient, return that, otherwise general bid failure
                             if (balance == null || balance.compareTo(amount) < 0) {
@@ -336,33 +344,33 @@ public class ClientHandler implements Runnable {
                     Item item = null;
                     if (category.equals("COLLECTIBLES")) {
                         int year = Integer.parseInt(data.getOrDefault("yearField", "0"));
-                        item = new Collectible(name, desc, seller, year, startTime, endTime);
+                        item = new Collectible(name, desc, seller, year);
                     }
 
                     else if (category.equals("ELECTRONICS")) {
                         String brand = data.getOrDefault("brandField", "Default");
                         ItemStatus status = ItemStatus.valueOf(data.getOrDefault("statusField", "NEW").toUpperCase());
-                        item = new Electronic(name, desc, seller, brand, status, startTime, endTime);
+                        item = new Electronic(name, desc, seller, brand, status);
                     }
 
                     else if (category.equals("ARTS")) {
                         String artist = data.getOrDefault("artistField", "Unknown");
                         int year = Integer.parseInt(data.getOrDefault("yearField", "0"));
                         boolean original = Boolean.parseBoolean(data.getOrDefault("originalBox", "false"));
-                        item = new Art(name, desc, seller, artist, year, original, startTime, endTime);
+                        item = new Art(name, desc, seller, artist, year, original);
                     }
 
                     else if (category.equals("VEHICLES")) {
                         String brand = data.getOrDefault("brandField", "Unknown");
                         int model = Integer.parseInt(data.getOrDefault("modelField", "0"));
                         int km = Integer.parseInt(data.getOrDefault("kmField", "0"));
-                        item = new Vehicle(name, desc, seller, brand, model, km, startTime, endTime);
+                        item = new Vehicle(name, desc, seller, brand, model, km);
                     }
 
                     else if (category.equals("FASHIONS")) {
                         String brand = data.getOrDefault("brandField", "Brand");
                         ItemStatus status = ItemStatus.valueOf(data.getOrDefault("statusField", "NEW").toUpperCase());
-                        item = new Fashion(name, desc, seller, brand, status, startTime, endTime);
+                        item = new Fashion(name, desc, seller, brand, status);
                     }
 
                     if (item != null) {
@@ -449,7 +457,8 @@ public class ClientHandler implements Runnable {
             case "APPROVE_WITHDRAW_REQUEST":
                 String approveWithdrawId = request.getData().get("requestId");
                 String approveWithdrawAdmin = loggedInUsername;
-                String approveWithdrawResult = userService.approveWithdrawRequest(approveWithdrawId, approveWithdrawAdmin);
+                String approveWithdrawResult = userService.approveWithdrawRequest(approveWithdrawId,
+                        approveWithdrawAdmin);
                 if (approveWithdrawResult == null) {
                     return new Response("SUCCESS", "Withdraw request approved successfully");
                 } else {
@@ -481,7 +490,8 @@ public class ClientHandler implements Runnable {
                 BigDecimal withdrawAmount = new BigDecimal(request.getData().get("amount"));
                 String bankName = request.getData().get("bankName");
                 String accountNumber = request.getData().get("accountNumber");
-                String withdrawError = userService.createWithdrawRequest(withdrawUsername, withdrawAmount, bankName, accountNumber);
+                String withdrawError = userService.createWithdrawRequest(withdrawUsername, withdrawAmount, bankName,
+                        accountNumber);
                 if (withdrawError == null) {
                     return new Response("SUCCESS", "Withdraw request created successfully");
                 } else {

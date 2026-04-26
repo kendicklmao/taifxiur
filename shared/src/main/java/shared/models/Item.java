@@ -4,7 +4,6 @@ import shared.enums.Category;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 
 public abstract class Item implements Serializable {//lớp các mặt hàng
     private String id;
@@ -15,10 +14,8 @@ public abstract class Item implements Serializable {//lớp các mặt hàng
     private BigDecimal startingPrice;
     private BigDecimal minIncrement;
     private String imageUrl;
-    private LocalDateTime startTime;
-    private LocalDateTime endTime;
 
-    public Item(String id, String name, String description, BigDecimal startingPrice, BigDecimal minIncrement, String imageUrl, Seller seller, Category category, LocalDateTime startTime, LocalDateTime endTime) {
+    public Item(String id, String name, String description, BigDecimal startingPrice, BigDecimal minIncrement, String imageUrl, Seller seller, Category category) {
         this.id = id;
         this.name = name;
         this.description = description;
@@ -27,16 +24,12 @@ public abstract class Item implements Serializable {//lớp các mặt hàng
         this.imageUrl = imageUrl;
         this.seller = seller;
         this.category = category;
-        this.startTime = startTime;
-        this.endTime = endTime;
     }
 
     public Item() {
         // No-arg constructor for deserialization
         this.seller = null;
         this.category = null;
-        this.startTime = null;
-        this.endTime = null;
     }
 
     public String getId() {
@@ -97,22 +90,6 @@ public abstract class Item implements Serializable {//lớp các mặt hàng
 
     public void setImageUrl(String imageUrl) {
         this.imageUrl = imageUrl;
-    }
-
-    public LocalDateTime getStartTime() {
-        return startTime;
-    }
-
-    public void setStartTime(LocalDateTime startTime) {
-        this.startTime = startTime;
-    }
-
-    public LocalDateTime getEndTime() {
-        return endTime;
-    }
-
-    public void setEndTime(LocalDateTime endTime) {
-        this.endTime = endTime;
     }
 
     public boolean isValid() { //kiểm tra thông số có logic không ?

@@ -26,15 +26,17 @@ public class AuctionTest {
         bidder1 = new Bidder("bidder1", "Pass@123", "b1@mail.com", "q", "a", "q", "a");
         bidder2 = new Bidder("bidder2", "Pass@123", "b2@mail.com", "q", "a", "q", "a");
         item = new Electronic("Laptop", "Old laptop", seller, "Dell", ItemStatus.USED);
-
-        Instant start = Instant.now().minusSeconds(60);
         Instant end = Instant.now().plusSeconds(60);
+        Instant start = Instant.now().minusSeconds(60);
         auction = new Auction("auc123", item, new BigDecimal("1000"), seller, start, end);
 
         // Wait for it to be RUNNING
         int maxWait = 0;
         while (auction.getStatus() != AuctionStatus.RUNNING && maxWait < 20) {
-            try { Thread.sleep(100); } catch (InterruptedException e) {}
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+            }
             maxWait++;
         }
     }
@@ -68,12 +70,12 @@ public class AuctionTest {
     public void testAutoBidSelfBidding() {
         // Register auto-bid for bidder1
         auction.registerAutoBid(bidder1, new BigDecimal("5000000"));
-        
+
         // Initial price after auto-bid registration
         BigDecimal price1 = auction.getCurrentPrice();
         assertTrue(price1.compareTo(new BigDecimal("1000")) >= 0);
         assertEquals(bidder1, auction.getHighestBidder());
-        
+
         // Place manual bid as same bidder
         boolean success = auction.placeBid(bidder1, new BigDecimal("2000000"));
         assertTrue(success);
@@ -91,10 +93,10 @@ public class AuctionTest {
         // Bidder 1 max 2,000,000
         auction.registerAutoBid(bidder1, new BigDecimal("2000000"));
         assertEquals(bidder1, auction.getHighestBidder());
-        
+
         // Bidder 2 max 3,000,000
         auction.registerAutoBid(bidder2, new BigDecimal("3000000"));
-        
+
         assertEquals(bidder2, auction.getHighestBidder());
         // Price should be bidder1's max + increment = 2,100,000
         assertEquals(0, auction.getCurrentPrice().compareTo(new BigDecimal("2100000")));
