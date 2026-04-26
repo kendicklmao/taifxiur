@@ -4,7 +4,6 @@ import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.control.SpinnerValueFactory;
 import javafx.scene.layout.VBox;
-import javafx.scene.control.ToggleGroup;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.TilePane;
@@ -28,6 +27,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.HashMap;
@@ -60,8 +60,6 @@ public class SellerHomeController {
     @FXML private Spinner<Integer> startMinuteSpinner;
     @FXML private Spinner<Integer> endHourSpinner;
     @FXML private Spinner<Integer> endMinuteSpinner;
-    @FXML private RadioButton defaultTimingRadio;
-    @FXML private RadioButton customTimingRadio;
     @FXML private VBox customTimingPane;
     @FXML private TilePane auctionGrid;
     @FXML private TextArea descField;
@@ -95,16 +93,18 @@ public class SellerHomeController {
         categoryBox.getItems().addAll(Category.values());
         categoryBox.setOnAction(e -> updateForm());
 
-        ToggleGroup timingGroup = new ToggleGroup();
-        defaultTimingRadio.setToggleGroup(timingGroup);
-        customTimingRadio.setToggleGroup(timingGroup);
-        defaultTimingRadio.setSelected(true);
+        // Set default timing values
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime startTime = now.plusMinutes(5);
+        LocalDateTime endTime = startTime.plusMinutes(30);
 
-        // Initialize time spinners
-        startHourSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 23, 9));
-        startMinuteSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 59, 0));
-        endHourSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 23, 17));
-        endMinuteSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 59, 0));
+        startDatePicker.setValue(startTime.toLocalDate());
+        startHourSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 23, startTime.getHour()));
+        startMinuteSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 59, startTime.getMinute()));
+
+        endDatePicker.setValue(endTime.toLocalDate());
+        endHourSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 23, endTime.getHour()));
+        endMinuteSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 59, endTime.getMinute()));
 
         // Fetch seller's auctions on initialization
         fetchSellerAuctions();
@@ -199,13 +199,6 @@ public class SellerHomeController {
         }
     }
 
-    @FXML
-    private void handleTimingTypeChange() {
-        boolean isCustom = customTimingRadio.isSelected();
-        customTimingPane.setVisible(isCustom);
-        customTimingPane.setManaged(isCustom);
-    }
-
     // ================= DYNAMIC FORM =================
     private void updateForm() {
         dynamicForm.getChildren().clear();
@@ -298,36 +291,31 @@ public class SellerHomeController {
             Instant startTime;
             Instant endTime;
 
-            if (defaultTimingRadio.isSelected()) {
-                startTime = Instant.now();
-                endTime = startTime.plusSeconds(3600);
-            } else {
-                LocalDate startDate = startDatePicker.getValue();
-                LocalDate endDate = endDatePicker.getValue();
+            LocalDate startDate = startDatePicker.getValue();
+            LocalDate endDate = endDatePicker.getValue();
 
-                if (startDate == null || endDate == null) {
-                    showAlert("Error", "Missing date information!");
-                    return;
-                }
+            if (startDate == null || endDate == null) {
+                showAlert("Error", "Missing date information!");
+                return;
+            }
 
-                int startHour = startHourSpinner.getValue();
-                int startMinute = startMinuteSpinner.getValue();
-                int endHour = endHourSpinner.getValue();
-                int endMinute = endMinuteSpinner.getValue();
+            int startHour = startHourSpinner.getValue();
+            int startMinute = startMinuteSpinner.getValue();
+            int endHour = endHourSpinner.getValue();
+            int endMinute = endMinuteSpinner.getValue();
 
-                startTime = startDate.atTime(startHour, startMinute).atZone(ZoneId.systemDefault()).toInstant();
-                endTime = endDate.atTime(endHour, endMinute).atZone(ZoneId.systemDefault()).toInstant();
+            startTime = startDate.atTime(startHour, startMinute).atZone(ZoneId.systemDefault()).toInstant();
+            endTime = endDate.atTime(endHour, endMinute).atZone(ZoneId.systemDefault()).toInstant();
 
-                if (startTime.isAfter(endTime)) {
-                    showAlert("Error", "Start time must be before end time!");
-                    return;
-                }
+            if (startTime.isAfter(endTime)) {
+                showAlert("Error", "Start time must be before end time!");
+                return;
+            }
 
-                Instant minStartTime = Instant.now().plusSeconds(60);
-                if (startTime.isBefore(minStartTime)) {
-                    showAlert("Error", "Start time must be at least 1 minute from now!");
-                    return;
-                }
+            Instant minStartTime = Instant.now().plusSeconds(60);
+            if (startTime.isBefore(minStartTime)) {
+                showAlert("Error", "Start time must be at least 1 minute from now!");
+                return;
             }
 
             Map<String, String> data = new HashMap<>();
@@ -384,14 +372,22 @@ public class SellerHomeController {
                 descField.clear();
                 startDatePicker.setValue(null);
                 endDatePicker.setValue(null);
-                startHourSpinner.getValueFactory().setValue(9);
-                startMinuteSpinner.getValueFactory().setValue(0);
-                endHourSpinner.getValueFactory().setValue(17);
-                endMinuteSpinner.getValueFactory().setValue(0);
+
+                // Set default timing values for next auction
+                LocalDateTime now = LocalDateTime.now();
+                LocalDateTime nextStartTime = now.plusMinutes(5);
+                LocalDateTime nextEndTime = nextStartTime.plusMinutes(5);
+
+                startDatePicker.setValue(nextStartTime.toLocalDate());
+                startHourSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 23, nextStartTime.getHour()));
+                startMinuteSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 59, nextStartTime.getMinute()));
+
+                endDatePicker.setValue(nextEndTime.toLocalDate());
+                endHourSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 23, nextEndTime.getHour()));
+                endMinuteSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 59, nextEndTime.getMinute()));
+
                 categoryBox.setValue(null);
                 dynamicForm.getChildren().clear();
-                defaultTimingRadio.setSelected(true);
-                handleTimingTypeChange();
                 itemImageView.setImage(null);
                 selectedImageFile = null;
                 croppedImageBytes = null;

@@ -61,14 +61,10 @@
                         <!-- Auction Timing -->
                         <VBox spacing="8">
                             <Label text="Auction Timing" styleClass="form-section-title"/>
-                            <HBox spacing="10" alignment="CENTER_LEFT">
-                                <RadioButton fx:id="defaultTimingRadio" text="Default (1 hour from now)" onAction="#handleTimingTypeChange"/>
-                                <RadioButton fx:id="customTimingRadio" text="Custom Timing" onAction="#handleTimingTypeChange"/>
-                            </HBox>
                         </VBox>
 
                         <!-- Custom Timing Pane -->
-                        <VBox fx:id="customTimingPane" spacing="12" visible="false" managed="false">
+                        <VBox fx:id="customTimingPane" spacing="12" visible="true" managed="true">
                             <HBox spacing="20">
                                 <VBox spacing="6" HBox.hgrow="ALWAYS">
                                     <Label text="Start Date" styleClass="form-label-register"/>
