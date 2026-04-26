@@ -22,7 +22,7 @@ public class Validator {
     public static boolean isValidUsername(String username) {
         if (username == null) return false;
         username = normalizeAndLowercase(username);
-        return username.length() >= 6 && !username.contains(" ") && username.matches("^[a-zA-Z0-9_]+$");
+        return username.length() >= 3 && !username.contains(" ") && username.matches("^[a-zA-Z0-9_]+$");
     }
 
     // Kiểm tra format mật khẩu

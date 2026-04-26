@@ -11,31 +11,35 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
+import java.util.function.Predicate;
 
-public class Auction { //1 phiên giao dịch
-    private static final long EXTEND_THRESHOLD = 10; //số giây còn lại để kéo dài giao dịch
-    private static final long EXTEND_TIME = 20; //số giây cộng thêm khi kéo dài giao dịch
+// Phiên đấu giá
+public class Auction {
+    private static final long EXTEND_THRESHOLD = 10; // Số giây còn lại để kéo dài phiên đấu giá
+    private static final long EXTEND_TIME = 20; // Số giây cộng thêm khi kéo dài phiên đấu giá
     private static final ScheduledExecutorService globalScheduler = Executors.newScheduledThreadPool(4);
-    private final String id;//mã phiên giao dịch
-    private final Item item;// mặt hàng giao dịch
-    private final BigDecimal startPrice;//giá khởi điểm
-    private final Seller seller;//người bán
-    private final Instant startTime;//thời gian bắt đầu
-    private final List<BidTransaction> bidHistory = new ArrayList<>(); //lịch sử đặt giá
-    private final Object bidLock = new Object(); //thread safe
+    private final String id; // Mã phiên đấu giá
+    private final Item item; // Mặt hàng đấu giá
+    private final BigDecimal startPrice; // Giá khởi điểm
+    private final Seller seller; // Người bán
+    private final Instant startTime; // Thời gian bắt đầu
+    private final List<BidTransaction> bidHistory = new ArrayList<>(); // Lịch sử đặt giá
+    private final Object bidLock = new Object(); // Lock cho việc đặt giá và đấu giá tự động
     private final PriorityQueue<AutoBid> autoBids = new PriorityQueue<>((a, b) -> {
         int cmp = b.getMaxBid().compareTo(a.getMaxBid()); // maxBid cao hơn sẽ thắng
         if (cmp != 0) {
             return cmp;
         }
-        return a.getTimeStamp().compareTo(b.getTimeStamp()); // đăng ký sớm hơn sẽ thắng
+        return a.getTimeStamp().compareTo(b.getTimeStamp()); // Đăng ký sớm hơn sẽ thắng
     });
-    private BigDecimal currentPrice;//giá hiện tại
-    private Bidder highestBidder;//người thắng phiên
-    private Instant endTime;//thời gian kết thúc
-    private AuctionStatus status;//trạng thái phiên giao dịch
-    private ScheduledFuture<?> finishTask; //kết thúc giao dịch
-    private transient java.util.function.Consumer<Auction> finishCallback;
+    private BigDecimal currentPrice; // Giá hiện tại
+    private Bidder highestBidder; // Người thắng phiên
+    private Instant endTime; // Thời gian kết thúc
+    private AuctionStatus status; // Trạng thái phiên đấu giá
+    private ScheduledFuture<?> finishTask; // Kết thúc phiên đấu giá
+    private transient Consumer<Auction> finishCallback;
+    private transient Predicate<String> banChecker;
 
     public Auction(String id, Item item, BigDecimal startPrice, Seller seller, Instant startTime, Instant endTime) {
         if (id == null || id.isBlank())
@@ -62,23 +66,35 @@ public class Auction { //1 phiên giao dịch
         scheduleFinish();
     }
 
-    public void setFinishCallback(java.util.function.Consumer<Auction> cb) {
+    public void setFinishCallback(Consumer<Auction> cb) {
         this.finishCallback = cb;
     }
 
-    public void AutoBidService() {//hệ thống đấu giá tự động
+    public void setBanChecker(Predicate<String> checker) {
+        this.banChecker = checker;
+    }
+
+    // Hệ thống đấu giá tự động
+    public void AutoBidService() {
         synchronized (bidLock) {
             if (autoBids.isEmpty() || status != AuctionStatus.RUNNING) {
                 return;
             }
             AutoBid highest = autoBids.poll();
-            AutoBid second = autoBids.peek();
             
+            // Check if highest bidder is banned
+            if (banChecker != null && banChecker.test(highest.getBidder().getUsername())) {
+                System.out.println("DEBUG AUTOBID: User " + highest.getBidder().getUsername() + " is banned. Removing autobid.");
+                return; // Just skip this autobid cycle
+            }
+
+            AutoBid second = autoBids.peek();
+
             BigDecimal increment = item.getMinIncrement();
             BigDecimal newPrice;
 
             if (highest.getBidder().equals(highestBidder)) {
-                // Highest is already winning. Only outbid second auto-bid if it exists.
+                // Nếu người có bid cao nhất đã thắng thì outbid bid cao thứ 2 nếu có
                 if (second != null) {
                     newPrice = second.getMaxBid().add(increment);
                     if (newPrice.compareTo(highest.getMaxBid()) > 0) {
@@ -90,7 +106,7 @@ public class Auction { //1 phiên giao dịch
                     }
                 }
             } else {
-                // Someone else is winning. Highest auto-bid needs to outbid them.
+                // Người khác đang thắng. Người có bid cao nhất cần outbid họ.
                 BigDecimal minToOutbid = currentPrice.add(increment);
                 if (second != null) {
                     newPrice = second.getMaxBid().add(increment);
@@ -115,7 +131,8 @@ public class Auction { //1 phiên giao dịch
         }
     }
 
-    public void registerAutoBid(Bidder bidder, BigDecimal maxBid) {//đăng kí đấu giá tự động
+    // Đăng kí đấu giá tự động
+    public void registerAutoBid(Bidder bidder, BigDecimal maxBid) {
         synchronized (bidLock) {
             if (bidder == null || maxBid == null) {
                 throw new IllegalArgumentException();
@@ -134,39 +151,43 @@ public class Auction { //1 phiên giao dịch
         }
     }
 
-    private void scheduleStart() {//bắt đầu phiên giao dịch
+    // Bắt đầu phiên giao dịch
+    private void scheduleStart() {
         long delay = startTime.getEpochSecond() - Instant.now().getEpochSecond();
-        if (delay < 0) delay = 0;
+        if (delay < 0)
+            delay = 0;
         globalScheduler.schedule(() -> {
-                    synchronized (bidLock) {
-                        if (status == AuctionStatus.OPEN) {
-                            status = AuctionStatus.RUNNING;
-                        }
-                    }
+            synchronized (bidLock) {
+                if (status == AuctionStatus.OPEN) {
+                    status = AuctionStatus.RUNNING;
                 }
-                , delay, TimeUnit.SECONDS);
+            }
+        }, delay, TimeUnit.SECONDS);
     }
 
-    private void scheduleFinish() {// kết thúc phiên giao dịch
+    // Kết thúc phiên giao dịch
+    private void scheduleFinish() {
         long delay = endTime.getEpochSecond() - Instant.now().getEpochSecond();
-        if (delay < 0) delay = 0;
+        if (delay < 0)
+            delay = 0;
         finishTask = globalScheduler.schedule(() -> {
-                    synchronized (bidLock) {
-                                if (status == AuctionStatus.RUNNING && !Instant.now().isBefore(endTime)) {
-                                            status = AuctionStatus.FINISHED;
-                                            // Notify listener about auction finish
-                                            try {
-                                                if (finishCallback != null) {
-                                                    finishCallback.accept(this);
-                                                }
-                                            } catch (Exception ignored) {}
-                                        }
+            synchronized (bidLock) {
+                if (status == AuctionStatus.RUNNING && !Instant.now().isBefore(endTime)) {
+                    status = AuctionStatus.FINISHED;
+                    // Thông báo cho người thắng phiên đấu giá
+                    try {
+                        if (finishCallback != null) {
+                            finishCallback.accept(this);
+                        }
+                    } catch (Exception ignored) {
                     }
                 }
-                , delay, TimeUnit.SECONDS);
+            }
+        }, delay, TimeUnit.SECONDS);
     }
 
-    public void itemPaid(Bidder bidder) {//bidder thắng trả tiền
+    // Bidder thắng trả tiền
+    public void itemPaid(Bidder bidder) {
         synchronized (bidLock) {
             if (status != AuctionStatus.FINISHED) {
                 throw new IllegalStateException();
@@ -184,7 +205,8 @@ public class Auction { //1 phiên giao dịch
         }
     }
 
-    public boolean placeBid(Bidder bidder, BigDecimal amount) {//đặt giá
+    // Đặt giá
+    public boolean placeBid(Bidder bidder, BigDecimal amount) {
         synchronized (bidLock) {
             if (bidder == null || amount == null)
                 throw new IllegalArgumentException();
@@ -207,7 +229,8 @@ public class Auction { //1 phiên giao dịch
         }
     }
 
-    private void extendIfNeeded() {//kéo dài phiên giao dịch
+    // Kéo dài phiên đấu giá nếu cần
+    private void extendIfNeeded() {
         synchronized (bidLock) {
             long remaining = endTime.getEpochSecond() - Instant.now().getEpochSecond();
             if (remaining <= EXTEND_THRESHOLD) {
@@ -260,10 +283,12 @@ public class Auction { //1 phiên giao dịch
     public BigDecimal getStartPrice() {
         return startPrice;
     }
-    public Instant getStartTime(){
+
+    public Instant getStartTime() {
         return startTime;
     }
-    public Instant getEndTime(){
+
+    public Instant getEndTime() {
         return endTime;
     }
 }

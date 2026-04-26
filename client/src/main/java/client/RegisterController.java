@@ -53,7 +53,7 @@ public class RegisterController {
             if (!newVal) {
                 String username = usernameField.getText().trim();
                 if (!username.isEmpty() && !Validator.isValidUsername(username)) {
-                    usernameError.setText("Username must be 6+ characters, contain only letters, numbers, and underscores (no spaces)");
+                    usernameError.setText("Username must be 3+ characters, contain only letters, numbers, and underscores (no spaces)");
                     usernameField.getStyleClass().add("error-field");
                 } else {
                     usernameError.setText("");
@@ -168,7 +168,7 @@ public class RegisterController {
         emailError.setText("");
 
         if (!Validator.isValidUsername(usernameField.getText())) {
-            usernameError.setText("Username must be 6+ characters, contain only letters, numbers, and underscores (no spaces)");
+            usernameError.setText("Username must be 3+ characters, contain only letters, numbers, and underscores (no spaces)");
             isValid = false;
         }
 

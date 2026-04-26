@@ -25,6 +25,7 @@ import server.controller.ClientHandler;
 public class AuctionService {
     private final ConcurrentHashMap<String, Auction> auctions = new ConcurrentHashMap<>();
     private static final WalletService walletService = new WalletService();
+    private static final UserService userService = new UserService();
     private static final ExecutorService asyncExecutor = Executors.newFixedThreadPool(2);
     // Cache for user ID lookups to avoid repeated DB queries
     private static final Map<String, Integer> userIdCache = new ConcurrentHashMap<>();
@@ -60,6 +61,7 @@ public class AuctionService {
         // Register finish callback so the service finalizes payment automatically when
         // auction finishes
         auction.setFinishCallback(a -> finalizeAuction(a));
+        auction.setBanChecker(username -> userService.isUserBanned(username));
         auctions.put(id, auction);
 
         // Store item in database with pricing information

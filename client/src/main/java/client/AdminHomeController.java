@@ -23,12 +23,13 @@ public class AdminHomeController {
     @FXML private ListView<AdminActionLog> adminActionLogsList;
     @FXML private ListView<Map<String, String>> depositRequestsList;
     @FXML private ListView<Map<String, String>> withdrawRequestsList;
-    @FXML private TextField usernameField;
+    @FXML private ComboBox<String> usernameField;
     @FXML private TextArea userStatusArea;
     @FXML private Label welcomeLabel;
 
     private final AppContext ctx = AppContext.getInstance();
     private final Gson gson = GsonUtils.createGson();
+    private java.util.List<String> allUsernames = new java.util.ArrayList<>();
 
     @FXML
     public void initialize() {
@@ -41,6 +42,23 @@ public class AdminHomeController {
         refreshUsers();
         refreshAdminActionLogs();
         refreshWalletRequests();
+
+        usernameField.getEditor().textProperty().addListener((obs, oldText, newText) -> {
+            // Ngăn việc listener chạy khi ta clear text sau khi BAN/UNBAN, hoặc khi setValue(null)
+            if (usernameField.getSelectionModel().getSelectedItem() != null && 
+                usernameField.getSelectionModel().getSelectedItem().equals(newText)) {
+                return; // Nếu text giống y chang selected item thì không cần filter
+            }
+            if (newText == null || newText.isEmpty()) {
+                usernameField.setItems(javafx.collections.FXCollections.observableArrayList(allUsernames));
+            } else {
+                java.util.List<String> filteredList = allUsernames.stream()
+                        .filter(s -> s.toLowerCase().contains(newText.toLowerCase()))
+                        .collect(java.util.stream.Collectors.toList());
+                usernameField.setItems(javafx.collections.FXCollections.observableArrayList(filteredList));
+                usernameField.show();
+            }
+        });
     }
 
     private void setupAuctionListCell() {
@@ -156,6 +174,13 @@ public class AdminHomeController {
                         }
                     });
                     allUsersList.getItems().setAll(users);
+                    
+                    java.util.List<String> usernames = java.util.Arrays.stream(users)
+                        .map(User::getUsername)
+                        .collect(java.util.stream.Collectors.toList());
+                    allUsernames = usernames;
+                    usernameField.setItems(javafx.collections.FXCollections.observableArrayList(allUsernames));
+                    
                     allUsersList.refresh();
                 });
             }
@@ -200,7 +225,7 @@ public class AdminHomeController {
 
     @FXML
     public void handleBanUser() {
-        String username = usernameField.getText().trim();
+        String username = usernameField.getEditor().getText() != null ? usernameField.getEditor().getText().trim() : "";
         if (username.isEmpty()) {
             showAlert("Error", "Please enter a username");
             return;
@@ -216,7 +241,8 @@ public class AdminHomeController {
                 showAlert("Success", "User " + username + " has been banned!");
                 userStatusArea.appendText("\n✓ Banned user: " + username);
                 refreshUsers();
-                usernameField.clear();
+                usernameField.setValue(null);
+                usernameField.getEditor().clear();
             } else {
                 showAlert("Error", response.getMessage());
             }
@@ -227,7 +253,7 @@ public class AdminHomeController {
 
     @FXML
     public void handleUnbanUser() {
-        String username = usernameField.getText().trim();
+        String username = usernameField.getEditor().getText() != null ? usernameField.getEditor().getText().trim() : "";
         if (username.isEmpty()) {
             showAlert("Error", "Please enter a username");
             return;
@@ -243,7 +269,8 @@ public class AdminHomeController {
                 showAlert("Success", "User " + username + " has been unbanned!");
                 userStatusArea.appendText("\n✓ Unbanned user: " + username);
                 refreshUsers();
-                usernameField.clear();
+                usernameField.setValue(null);
+                usernameField.getEditor().clear();
             } else {
                 showAlert("Error", response.getMessage());
             }

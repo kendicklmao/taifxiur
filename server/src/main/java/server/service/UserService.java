@@ -37,10 +37,12 @@ public class UserService {
     private void initializeDefaultUsers() {
         this.register("seller", "Admin@123", "seller@gmail.com", "q", "a", "q", "a", Role.SELLER);
         this.register("bidder", "Admin@123", "bidder@gmail.com", "q", "a", "q", "a", Role.BIDDER);
-        this.register("admin1", "Admin@123", "admin@gmail.com", "q", "a", "q", "a", Role.ADMIN);
         this.register("bidder1", "Admin@123", "bidder1@gmail.com", "q", "a", "q", "a", Role.BIDDER);
+        this.register("admin", "Admin@123", "supernigga@gmail.com", "q", "a", "q", "a", Role.ADMIN);
+        this.register("admin1", "Admin@123", "admin1@gmail.com", "q", "a", "q", "a", Role.ADMIN);
         ensureWalletForUsername("seller");
         ensureWalletForUsername("bidder");
+        ensureWalletForUsername("admin");
         ensureWalletForUsername("admin1");
         ensureWalletForUsername("bidder1");
     }
@@ -206,6 +208,20 @@ public class UserService {
             pstmt.executeUpdate();
         } catch (SQLException e) {
             System.err.println("Error logging admin login: " + e.getMessage());
+        }
+    }
+
+    public boolean isUserBanned(String username) {
+        if (username == null) return false;
+        username = Validator.normalizeAndLowercase(username);
+        try (Connection conn = DatabaseConfig.getDataSource().getConnection();
+                PreparedStatement pstmt = conn.prepareStatement("SELECT is_banned FROM users WHERE username = ?")) {
+            pstmt.setString(1, username);
+            ResultSet rs = pstmt.executeQuery();
+            return rs.next() && rs.getBoolean("is_banned");
+        } catch (SQLException e) {
+            System.err.println("Error checking if user is banned: " + e.getMessage());
+            return false;
         }
     }
 

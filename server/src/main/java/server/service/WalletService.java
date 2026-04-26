@@ -594,6 +594,17 @@ public class WalletService {
                     conn.rollback();
                     return "User not found";
                 }
+
+                // Check if bidder is banned
+                try (PreparedStatement checkBanned = conn.prepareStatement("SELECT is_banned FROM users WHERE id = ?")) {
+                    checkBanned.setInt(1, bidderId);
+                    ResultSet rsBanned = checkBanned.executeQuery();
+                    if (rsBanned.next() && rsBanned.getBoolean("is_banned")) {
+                        conn.rollback();
+                        return "Bidder is banned. Payment blocked.";
+                    }
+                }
+
                 ensureWalletExists(conn, bidderId);
                 ensureWalletExists(conn, sellerId);
 
