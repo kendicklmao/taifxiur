@@ -137,7 +137,8 @@ public class ClientHandler implements Runnable {
                 if (isRegistered) {
                     return new Response("SUCCESS", "Registered successfully");
                 } else {
-                    return new Response("FAIL", "Username is already taken or is invalid");
+                    System.out.println("DEBUG: Registration failed for user: " + rUser);
+                    return new Response("FAIL", "Username is already taken or is invalid (check server logs for details)");
                 }
 
             case "FORGOT_PASSWORD_INIT":
@@ -397,20 +398,20 @@ public class ClientHandler implements Runnable {
 
             case "BAN_USER":
                 String banUsername = request.getData().get("username");
-                boolean banSuccess = userService.banUser(banUsername, loggedInUsername);
-                if (banSuccess) {
+                String banError = userService.banUser(banUsername, loggedInUsername);
+                if (banError == null) {
                     return new Response("SUCCESS", "User banned successfully");
                 } else {
-                    return new Response("FAIL", "Failed to ban user");
+                    return new Response("FAIL", banError);
                 }
 
             case "UNBAN_USER":
                 String unbanUsername = request.getData().get("username");
-                boolean unbanSuccess = userService.unbanUser(unbanUsername, loggedInUsername);
-                if (unbanSuccess) {
+                String unbanError = userService.unbanUser(unbanUsername, loggedInUsername);
+                if (unbanError == null) {
                     return new Response("SUCCESS", "User unbanned successfully");
                 } else {
-                    return new Response("FAIL", "Failed to unban user");
+                    return new Response("FAIL", unbanError);
                 }
 
             case "GET_ADMIN_ACTION_LOGS":
