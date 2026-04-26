@@ -6,33 +6,60 @@ import shared.utils.Validator;
 
 public abstract class User {
     private final int id;
+    private final Wallet wallet;
     private String hashedPassword; // Mật khẩu đã mã hóa
-    private String passwordSalt; // String ngẫu nhiên làm rối loạn mã hóa cho mật khẩu
-    private final String answerSalt1;  // String ngẫu nhiên làm rối loạn mã hóa cho câu trả lời xác nhận danh tính 1
-    private final String answerSalt2; // String ngẫu nhiên làm rối loạn mã hóa cho câu trả lời xác nhận danh tính 2
+    private String passwordSalt; // Salt cho mật khẩu
     private final String username; // Tên tài khoản
     private String email; // Email
     private boolean isBanned;// Bị chặn hay không?
     private final Role role; // Loại tài khoản
     private final String securityQuestion1; // Câu hỏi xác nhận danh tính 1
-    private final String securityAnswer1; // Câu trả lời xác nhận danh tính 1
+    private String securityAnswer1; // Câu trả lời xác nhận danh tính 1 (hashed)
+    private String answerSalt1; // Salt cho câu trả lời 1
     private final String securityQuestion2;// Câu hỏi xác nhận danh tính 2
-    private final String securityAnswer2; // Câu trả lời xác nhận danh tính 2
+    private String securityAnswer2; // Câu trả lời xác nhận danh tính 2 (hashed)
+    private String answerSalt2; // Salt cho câu trả lời 2
 
-    public User(int id, String username, String password, String email, Role role, String q1, String a1, String q2, String a2) {
+    // Constructor dành cho việc ĐĂNG KÝ MỚI (Sẽ tự tạo Salt và Hash)
+    public User(int id, String username, String password, String email, Role role, String q1, String a1, String q2,
+            String a2) {
         this.id = id;
         this.username = Validator.normalizeAndLowercase(username);
         this.email = Validator.normalizeAndLowercase(email);
         this.role = role;
         this.isBanned = false;
+        this.wallet = new Wallet();
+        
+        // Tạo Salt mới
+        this.passwordSalt = Hash.generateSalt();
         this.answerSalt1 = Hash.generateSalt();
         this.answerSalt2 = Hash.generateSalt();
+
+        // Hash dữ liệu
+        this.hashedPassword = Hash.formula(Validator.normalize(password), passwordSalt);
         this.securityQuestion1 = Validator.normalize(q1);
         this.securityAnswer1 = Hash.formula(Validator.normalizeAndLowercase(a1), answerSalt1);
         this.securityQuestion2 = Validator.normalize(q2);
         this.securityAnswer2 = Hash.formula(Validator.normalizeAndLowercase(a2), answerSalt2);
-        this.passwordSalt = Hash.generateSalt();
-        this.hashedPassword = Hash.formula(Validator.normalize(password), passwordSalt);
+    }
+
+    // Constructor dành cho việc LOAD TỪ DATABASE (Nhận trực tiếp Hash và Salt đã lưu)
+    public User(int id, String username, String hashedPassword, String passwordSalt, String email, Role role, 
+                boolean isBanned, String q1, String hashedA1, String saltA1, String q2, String hashedA2, String saltA2) {
+        this.id = id;
+        this.username = username;
+        this.hashedPassword = hashedPassword;
+        this.passwordSalt = passwordSalt;
+        this.email = email;
+        this.role = role;
+        this.isBanned = isBanned;
+        this.wallet = new Wallet();
+        this.securityQuestion1 = q1;
+        this.securityAnswer1 = hashedA1;
+        this.answerSalt1 = saltA1;
+        this.securityQuestion2 = q2;
+        this.securityAnswer2 = hashedA2;
+        this.answerSalt2 = saltA2;
     }
 
     public int getId() {
@@ -53,6 +80,34 @@ public abstract class User {
 
     public Role getRole() {
         return role;
+    }
+
+    public Wallet getWallet() {
+        return wallet;
+    }
+
+    public String getHashedPassword() {
+        return hashedPassword;
+    }
+
+    public String getPasswordSalt() {
+        return passwordSalt;
+    }
+
+    public String getAnswerSalt1() {
+        return answerSalt1;
+    }
+
+    public String getAnswerSalt2() {
+        return answerSalt2;
+    }
+
+    public String getSecurityAnswer1() {
+        return securityAnswer1;
+    }
+
+    public String getSecurityAnswer2() {
+        return securityAnswer2;
     }
 
     public String getSecurityQuestion1() {
@@ -78,6 +133,7 @@ public abstract class User {
         return true;
     }
 
+    // Thay đổi email
     public boolean setEmail(String email) {
         email = Validator.normalizeAndLowercase(email);
         if (!Validator.isValidEmail(email)) {
@@ -116,9 +172,13 @@ public abstract class User {
 
     // Đổi mật khẩu nếu nhớ mật khẩu cũ
     public boolean changePassword(String oldPassword, String newPassword) {
-        if (!checkPassword(oldPassword)) return false;
+        if (!checkPassword(oldPassword)) {
+            return false;
+        }
         newPassword = Validator.normalize(newPassword);
-        if (!Validator.isValidPassword(newPassword)) return false;
+        if (!Validator.isValidPassword(newPassword)) {
+            return false;
+        }
         this.passwordSalt = Hash.generateSalt();
         this.hashedPassword = Hash.formula(newPassword, passwordSalt);
         return true;

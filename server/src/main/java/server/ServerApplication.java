@@ -12,13 +12,13 @@ public class ServerApplication {
     private static final int PORT = 54321;
 
     public static void main(String[] args) {
-        // Set Java networking preferences for better IPv4/IPv6 compatibility
+        // Đặt Java networking preferences để có IPv4/IPv6 tương thích hơn
         System.setProperty("java.net.preferIPv4Stack", "false");
         System.setProperty("java.net.preferIPv6Addresses", "false");
 
         System.out.println("Initializing...");
 
-        // Initialize database connection pool and schema
+        // Khởi tạo connection pool và schema cơ sở dữ liệu
         try {
             DatabaseInitializer.initializeDatabase();
             System.out.println("Database initialization completed");
@@ -40,7 +40,7 @@ public class ServerApplication {
         } catch (IOException e) {
             System.err.println("Error starting server: " + e.getMessage());
         } finally {
-            // Close database connection pool on shutdown
+            // Đóng connection pool khi server shutdown
             DatabaseConfig.closeDataSource();
         }
     }

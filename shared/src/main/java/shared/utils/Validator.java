@@ -20,14 +20,18 @@ public class Validator {
 
     // Kiểm tra format tên tài khoản
     public static boolean isValidUsername(String username) {
-        if (username == null) return false;
+        if (username == null) {
+            return false;
+        }
         username = normalizeAndLowercase(username);
         return username.length() >= 3 && !username.contains(" ") && username.matches("^[a-zA-Z0-9_]+$");
     }
 
     // Kiểm tra format mật khẩu
     public static boolean isValidPassword(String password) {
-        if (password == null) return false;
+        if (password == null) {
+            return false;
+        }
         password = normalize(password);
         return password.length() >= 6 && !password.contains(" ") &&
                 password.matches(".*[A-Z].*") &&
@@ -38,7 +42,9 @@ public class Validator {
 
     // Kiểm tra format email
     public static boolean isValidEmail(String email) {
-        if (email == null) return false;
+        if (email == null) {
+            return false;
+        }
         email = normalizeAndLowercase(email);
         return !email.contains(" ") &&
                 email.matches("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$");

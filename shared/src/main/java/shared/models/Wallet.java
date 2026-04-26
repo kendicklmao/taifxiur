@@ -2,17 +2,20 @@ package shared.models;
 
 import java.math.BigDecimal;
 
+// Ví tiền
 public class Wallet {
-    private BigDecimal balance = BigDecimal.ZERO;//số dư
+    private BigDecimal balance = BigDecimal.ZERO; // Số dư
 
-    public synchronized void deposit(BigDecimal amount) {//nạp tiền
+    // Nạp tiền
+    public synchronized void deposit(BigDecimal amount) {
         if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
             throw new IllegalArgumentException();
         }
         balance = balance.add(amount);
     }
 
-    public synchronized boolean withdraw(BigDecimal amount) {//rút tiền
+    // Rút tiền
+    public synchronized boolean withdraw(BigDecimal amount) {
         if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
             throw new IllegalArgumentException();
         }
@@ -23,7 +26,8 @@ public class Wallet {
         return true;
     }
 
-    public boolean transfer(BigDecimal amount, Seller other) {//chuyển tiền
+    // Chuyển tiền
+    public boolean transfer(BigDecimal amount, Seller other) {
         if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
             throw new IllegalArgumentException();
         }
@@ -42,6 +46,7 @@ public class Wallet {
         }
     }
 
+    // Lấy số dư
     public BigDecimal getBalance() {
         return balance;
     }

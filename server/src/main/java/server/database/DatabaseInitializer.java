@@ -4,45 +4,42 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
 
-/**
- * Database schema initialization for Supabase
- */
+// Khởi tạo cơ sở dữ liệu
 public class DatabaseInitializer {
 
     public static void initializeDatabase() throws Exception {
         try (Connection conn = DatabaseConfig.getDataSource().getConnection();
              Statement stmt = conn.createStatement()) {
-
             System.out.println("Initializing database schema...");
 
-            // Create users table
+            // Tạo bảng users
             createUsersTable(stmt);
 
-            // Create wallet table
+            // Tạo bảng wallets
             createWalletTable(stmt);
 
-            // Create auction table
+            // Tạo bảng auctions
             createAuctionTable(stmt);
 
-            // Create items table
+            // Tạo bảng items
             createItemsTable(stmt);
 
-            // Create bids table
+            // Tạo bảng bids
             createBidsTable(stmt);
 
-            // Create auto_bids table
+            // Tạo bảng auto_bids
             createAutoBidsTable(stmt);
 
-            // Create deposit_requests table
+            // Tạo bảng deposit_requests
             createDepositRequestsTable(stmt);
 
-            // Create withdraw_requests table
+            // Tạo bảng withdraw_requests
             createWithdrawRequestsTable(stmt);
 
-            // Create admin_logs table
+            // Tạo bảng admin_logs
             createAdminLogsTable(stmt);
 
-            // Create admin_action_logs table
+            // Tạo bảng admin_action_logs
             createAdminActionLogsTable(stmt);
 
             System.out.println("Database schema initialized successfully");
@@ -60,13 +57,16 @@ public class DatabaseInitializer {
                     id SERIAL PRIMARY KEY,
                     username VARCHAR(255) UNIQUE NOT NULL,
                     password VARCHAR(255) NOT NULL,
+                    password_salt VARCHAR(255) NOT NULL,
                     email VARCHAR(255) UNIQUE NOT NULL,
                     role VARCHAR(50) NOT NULL,
                     is_banned BOOLEAN DEFAULT FALSE,
                     question_1 TEXT,
                     answer_1 TEXT,
+                    answer_salt_1 VARCHAR(255),
                     question_2 TEXT,
                     answer_2 TEXT,
+                    answer_salt_2 VARCHAR(255),
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )

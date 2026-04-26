@@ -2,10 +2,10 @@ package shared.utils;
 
 import java.util.UUID;
 
-// MÃ HÓA MẬT KHẨU VÀ CÂU TRẢ LỜI XÁC NHẬN DANH TÍNH
+// Mã hóa mật khẩu và câu trả lời xác nhận danh tính
 public class Hash {
+    // Công thức mã hóa
     public static String formula(String password, String salt) {
-        // Công thức mã hóa
         String combined = password + salt;
         long res = 7;
         for (int round = 0; round < 101; round++) {
@@ -18,7 +18,7 @@ public class Hash {
         return String.valueOf(res);
     }
 
-    // Random 1 String ngẫu nhiên để làm rối loạn mã hóa
+    // Tạo 1 string ngẫu nhiên để làm rối loạn mã hóa
     public static String generateSalt() {
         return UUID.randomUUID().toString();
     }

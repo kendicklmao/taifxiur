@@ -35,11 +35,17 @@ public class UserService {
 
     // Khởi tạo người dùng mặc định trong cơ sở dữ liệu lần đầu chạy
     private void initializeDefaultUsers() {
-        this.register("seller", "Admin@123", "seller@gmail.com", "q", "a", "q", "a", Role.SELLER);
-        this.register("bidder", "Admin@123", "bidder@gmail.com", "q", "a", "q", "a", Role.BIDDER);
-        this.register("bidder1", "Admin@123", "bidder1@gmail.com", "q", "a", "q", "a", Role.BIDDER);
-        this.register("admin", "Admin@123", "supernigga@gmail.com", "q", "a", "q", "a", Role.ADMIN);
-        this.register("admin1", "Admin@123", "admin1@gmail.com", "q", "a", "q", "a", Role.ADMIN);
+        System.out.println("--- INITIALIZING DEFAULT USERS ---");
+        boolean s1 = this.register("seller", "Admin@123", "seller@gmail.com", "q", "a", "q", "a", Role.SELLER);
+        boolean b1 = this.register("bidder", "Admin@123", "bidder@gmail.com", "q", "a", "q", "a", Role.BIDDER);
+        boolean b2 = this.register("bidder1", "Admin@123", "bidder1@gmail.com", "q", "a", "q", "a", Role.BIDDER);
+        boolean a1 = this.register("admin", "Admin@123", "supernigga@gmail.com", "q", "a", "q", "a", Role.ADMIN);
+        boolean a2 = this.register("admin1", "Admin@123", "admin1@gmail.com", "q", "a", "q", "a", Role.ADMIN);
+
+        System.out.println("Seller registration: " + (s1 ? "SUCCESS" : "FAILED (Exists?)"));
+        System.out.println("Bidder registration: " + (b1 ? "SUCCESS" : "FAILED (Exists?)"));
+        System.out.println("Admin registration: " + (a1 ? "SUCCESS" : "FAILED (Exists?)"));
+
         ensureWalletForUsername("seller");
         ensureWalletForUsername("bidder");
         ensureWalletForUsername("admin");
@@ -88,17 +94,30 @@ public class UserService {
 
         try (Connection conn = DatabaseConfig.getDataSource().getConnection();
                 PreparedStatement pstmt = conn.prepareStatement(
-                        "INSERT INTO users (username, password, email, role, question_1, answer_1, question_2, answer_2) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                        "INSERT INTO users (username, password, password_salt, email, role, question_1, answer_1, answer_salt_1, question_2, answer_2, answer_salt_2) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                         Statement.RETURN_GENERATED_KEYS)) {
 
+            // Tạo đối tượng User tạm thời để băm mật khẩu và tạo Salt
+            User tempUser;
+            if (role == Role.BIDDER) {
+                tempUser = new Bidder(username, password, email, q1, a1, q2, a2);
+            } else if (role == Role.SELLER) {
+                tempUser = new Seller(username, password, email, q1, a1, q2, a2);
+            } else {
+                tempUser = new Admin(username, password, email, q1, a1, q2, a2);
+            }
+
             pstmt.setString(1, username);
-            pstmt.setString(2, password);
-            pstmt.setString(3, email);
-            pstmt.setString(4, role.name());
-            pstmt.setString(5, q1);
-            pstmt.setString(6, a1);
-            pstmt.setString(7, q2);
-            pstmt.setString(8, a2);
+            pstmt.setString(2, tempUser.getHashedPassword());
+            pstmt.setString(3, tempUser.getPasswordSalt());
+            pstmt.setString(4, email);
+            pstmt.setString(5, role.name());
+            pstmt.setString(6, q1);
+            pstmt.setString(7, tempUser.getSecurityAnswer1());
+            pstmt.setString(8, tempUser.getAnswerSalt1());
+            pstmt.setString(9, q2);
+            pstmt.setString(10, tempUser.getSecurityAnswer2());
+            pstmt.setString(11, tempUser.getAnswerSalt2());
 
             int affectedRows = pstmt.executeUpdate();
             if (affectedRows > 0) {
@@ -143,7 +162,7 @@ public class UserService {
 
         try (Connection conn = DatabaseConfig.getDataSource().getConnection();
                 PreparedStatement pstmt = conn.prepareStatement(
-                        "SELECT id, password, role, is_banned FROM users WHERE username = ?")) {
+                        "SELECT id, password, password_salt, role, is_banned FROM users WHERE username = ?")) {
 
             pstmt.setString(1, username);
             ResultSet rs = pstmt.executeQuery();
@@ -152,7 +171,8 @@ public class UserService {
                 return null;
             }
 
-            String storedPassword = rs.getString("password");
+            String storedHash = rs.getString("password");
+            String storedSalt = rs.getString("password_salt");
             boolean isBanned = rs.getBoolean("is_banned");
             String roleStr = rs.getString("role");
             int userId = rs.getInt("id");
@@ -161,7 +181,9 @@ public class UserService {
                 return null;
             }
 
-            if (storedPassword.equals(password)) {
+            // Kiểm tra mật khẩu bằng cách băm thử với Salt đã lưu
+            String inputHash = shared.utils.Hash.formula(password, storedSalt);
+            if (storedHash.equals(inputHash)) {
                 if (loggedIn.putIfAbsent(username, true) != null) {
                     throw new UserAlreadyLoggedInException(
                             "User " + username + " is already logged in from another device");
@@ -212,7 +234,8 @@ public class UserService {
     }
 
     public boolean isUserBanned(String username) {
-        if (username == null) return false;
+        if (username == null)
+            return false;
         username = Validator.normalizeAndLowercase(username);
         try (Connection conn = DatabaseConfig.getDataSource().getConnection();
                 PreparedStatement pstmt = conn.prepareStatement("SELECT is_banned FROM users WHERE username = ?")) {
@@ -229,7 +252,7 @@ public class UserService {
     private User getUserFromDatabase(String username) {
         try (Connection conn = DatabaseConfig.getDataSource().getConnection();
                 PreparedStatement pstmt = conn.prepareStatement(
-                        "SELECT id, username, password, email, role, is_banned, question_1, answer_1, question_2, answer_2 FROM users WHERE username = ?")) {
+                        "SELECT * FROM users WHERE username = ?")) {
 
             pstmt.setString(1, username);
             ResultSet rs = pstmt.executeQuery();
@@ -238,20 +261,26 @@ public class UserService {
                 int id = rs.getInt("id");
                 String role = rs.getString("role");
                 String email = rs.getString("email");
-                String password = rs.getString("password");
+                String hashedPassword = rs.getString("password");
+                String passwordSalt = rs.getString("password_salt");
                 String q1 = rs.getString("question_1");
-                String a1 = rs.getString("answer_1");
+                String hashedA1 = rs.getString("answer_1");
+                String saltA1 = rs.getString("answer_salt_1");
                 String q2 = rs.getString("question_2");
-                String a2 = rs.getString("answer_2");
+                String hashedA2 = rs.getString("answer_2");
+                String saltA2 = rs.getString("answer_salt_2");
                 boolean isBanned = rs.getBoolean("is_banned");
 
                 User user = null;
                 if ("BIDDER".equals(role)) {
-                    user = new Bidder(id, username, password, email, q1, a1, q2, a2);
+                    user = new Bidder(id, username, hashedPassword, passwordSalt, email, isBanned, q1, hashedA1, saltA1,
+                            q2, hashedA2, saltA2);
                 } else if ("SELLER".equals(role)) {
-                    user = new Seller(id, username, password, email, q1, a1, q2, a2);
+                    user = new Seller(id, username, hashedPassword, passwordSalt, email, isBanned, q1, hashedA1, saltA1,
+                            q2, hashedA2, saltA2);
                 } else if ("ADMIN".equals(role)) {
-                    user = new Admin(id, username, password, email, q1, a1, q2, a2);
+                    user = new Admin(id, username, hashedPassword, passwordSalt, email, isBanned, q1, hashedA1, saltA1,
+                            q2, hashedA2, saltA2);
                 }
 
                 if (user != null && isBanned) {

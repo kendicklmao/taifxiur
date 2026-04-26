@@ -63,7 +63,7 @@ public class DatabaseConfig {
 
         // Build JDBC URL - DNS resolution is handled by the PostgreSQL driver which supports IPv4 and IPv6
         String jdbcUrl = String.format(
-            "jdbc:postgresql://%s:%d/%s?sslmode=%s&tcpKeepAlives=true&loggerLevel=OFF",
+            "jdbc:postgresql://%s:%d/%s?sslmode=%s&tcpKeepAlives=true&prepareThreshold=0&loggerLevel=OFF",
             host, port, dbName, sslmode
         );
 
