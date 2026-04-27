@@ -299,18 +299,20 @@ public class AuctionService {
             // Store bid in database
             try (Connection conn = DatabaseConfig.getDataSource().getConnection();
                     PreparedStatement pstmt = conn.prepareStatement(
-                            "INSERT INTO bids (auction_id, bidder_id, bid_amount) VALUES ((SELECT id FROM auctions WHERE id = ?), ?, ?)")) {
+                            "INSERT INTO bids (auction_id, bidder_id, bid_amount, bid_time) VALUES (?, ?, ?, CURRENT_TIMESTAMP)")) {
 
                 pstmt.setString(1, auctionId);
                 pstmt.setInt(2, getUserIdFromDatabase(bidder.getUsername()));
                 pstmt.setBigDecimal(3, amount);
 
-                pstmt.executeUpdate();
+                int result = pstmt.executeUpdate();
+                System.out.println("Bid inserted: " + result + " rows affected");
 
                 // Update current auction price
                 updateAuctionPrice(auctionId, amount);
             } catch (SQLException e) {
                 System.err.println("Error storing bid: " + e.getMessage());
+                e.printStackTrace();
             }
         }
 
@@ -342,15 +344,17 @@ public class AuctionService {
         // Store in database
         try (Connection conn = DatabaseConfig.getDataSource().getConnection();
                 PreparedStatement pstmt = conn.prepareStatement(
-                        "INSERT INTO auto_bids (auction_id, bidder_id, max_bid_amount) VALUES ((SELECT id FROM auctions WHERE id = ?), ?, ?)")) {
+                        "INSERT INTO auto_bids (auction_id, bidder_id, max_bid_amount, created_at) VALUES (?, ?, ?, CURRENT_TIMESTAMP)")) {
 
             pstmt.setString(1, auctionId);
             pstmt.setInt(2, getUserIdFromDatabase(bidder.getUsername()));
             pstmt.setBigDecimal(3, maxBid);
 
-            pstmt.executeUpdate();
+            int result = pstmt.executeUpdate();
+            System.out.println("Auto-bid inserted: " + result + " rows affected");
         } catch (SQLException e) {
             System.err.println("Error registering autobid: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 

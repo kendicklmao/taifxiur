@@ -44,11 +44,7 @@ public class AdminHomeController {
         refreshWalletRequests();
 
         usernameField.getEditor().textProperty().addListener((obs, oldText, newText) -> {
-            // Ngăn việc listener chạy khi ta clear text sau khi BAN/UNBAN, hoặc khi setValue(null)
-            if (usernameField.getSelectionModel().getSelectedItem() != null && 
-                usernameField.getSelectionModel().getSelectedItem().equals(newText)) {
-                return; // Nếu text giống y chang selected item thì không cần filter
-            }
+            // Filter dropdown items dựa trên text nhập vào
             if (newText == null || newText.isEmpty()) {
                 usernameField.setItems(javafx.collections.FXCollections.observableArrayList(allUsernames));
             } else {
@@ -162,8 +158,8 @@ public class AdminHomeController {
             if ("SUCCESS".equals(response.getStatus())) {
                 User[] users = gson.fromJson(response.getMessage(), User[].class);
                 Platform.runLater(() -> {
+                    // ...existing code...
                     allUsersList.getItems().clear();
-                    allUsersList.setCellFactory(null); // Reset cell factory to force refresh
                     allUsersList.setCellFactory(lv -> new ListCell<>() {
                         @Override
                         protected void updateItem(User item, boolean empty) {
@@ -178,10 +174,12 @@ public class AdminHomeController {
                     });
                     allUsersList.getItems().setAll(users);
                     
+                    // Cập nhật dropdown list (bao gồm tất cả users)
                     java.util.List<String> usernames = java.util.Arrays.stream(users)
                         .map(User::getUsername)
                         .collect(java.util.stream.Collectors.toList());
-                    allUsernames = usernames;
+                    allUsernames.clear();
+                    allUsernames.addAll(usernames);
                     usernameField.setItems(javafx.collections.FXCollections.observableArrayList(allUsernames));
                     
                     allUsersList.refresh();
@@ -243,9 +241,14 @@ public class AdminHomeController {
             if ("SUCCESS".equals(response.getStatus())) {
                 showAlert("Success", "User " + username + " has been banned!");
                 userStatusArea.appendText("\n✓ Banned user: " + username);
-                refreshUsers();
+                // Cập nhật dropdown list ngay lập tức
+                allUsernames.remove(username);
+                usernameField.setItems(javafx.collections.FXCollections.observableArrayList(allUsernames));
+                // Clear dropdown field
                 usernameField.setValue(null);
                 usernameField.getEditor().clear();
+                // Refresh danh sách user từ server
+                refreshUsers();
             } else {
                 showAlert("Error", response.getMessage());
             }
@@ -271,9 +274,16 @@ public class AdminHomeController {
             if ("SUCCESS".equals(response.getStatus())) {
                 showAlert("Success", "User " + username + " has been unbanned!");
                 userStatusArea.appendText("\n✓ Unbanned user: " + username);
-                refreshUsers();
+                // Cập nhật dropdown list - thêm lại user vào list
+                if (!allUsernames.contains(username)) {
+                    allUsernames.add(username);
+                }
+                usernameField.setItems(javafx.collections.FXCollections.observableArrayList(allUsernames));
+                // Clear dropdown field
                 usernameField.setValue(null);
                 usernameField.getEditor().clear();
+                // Refresh danh sách user từ server
+                refreshUsers();
             } else {
                 showAlert("Error", response.getMessage());
             }
