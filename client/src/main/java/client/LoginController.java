@@ -31,7 +31,7 @@ public class LoginController {
             data.put("password", passwordField.getText());
 
             Request req = new Request("LOGIN", data);
-            Response res = ctx.sendRequestAndWait(req, 5);
+            Response res = ctx.sendRequestAndWait(req, 15);
 
             if ("SUCCESS".equals(res.getStatus())) {
                 String[] info = res.getMessage().split(",");

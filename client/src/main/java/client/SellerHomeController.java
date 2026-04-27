@@ -374,7 +374,17 @@ public class SellerHomeController {
                     showAlert("Error", "Please enter custom increment amount!");
                     return;
                 }
-                data.put("minIncrement", customInc);
+                try {
+                    BigDecimal inc = new BigDecimal(customInc);
+                    if (inc.compareTo(BigDecimal.ZERO) <= 0) {
+                        showAlert("Error", "Minimum increment must be greater than 0!");
+                        return;
+                    }
+                    data.put("minIncrement", customInc);
+                } catch (NumberFormatException e) {
+                    showAlert("Error", "Custom increment must be a valid number!");
+                    return;
+                }
             }
 
             if (croppedImageBytes != null) {
@@ -411,7 +421,7 @@ public class SellerHomeController {
 
             Request req = new Request("CREATE_AUCTION", data);
 
-            Response response = ctx.sendRequestAndWait(req, 10);
+            Response response = ctx.sendRequestAndWait(req, 15);
 
             System.out.println("MESSAGE = " + response.getMessage());
             if ("SUCCESS".equals(response.getStatus())) {
@@ -475,7 +485,7 @@ public class SellerHomeController {
             Map<String, String> data = new HashMap<>();
             data.put("username", ctx.getCurrentUser().getUsername());
             Request req = new Request("LOGOUT", data);
-            ctx.sendRequestAndWait(req, 5);
+            ctx.sendRequestAndWait(req, 15);
         } catch (Exception e) {
             // Ignore, proceed with logout
         }
@@ -506,7 +516,7 @@ public class SellerHomeController {
             Map<String, String> data = new HashMap<>();
             data.put("username", ctx.getCurrentUser().getUsername());
             Request req = new Request("GET_SELLER_AUCTIONS", data);
-            Response response = ctx.sendRequestAndWait(req, 5);
+            Response response = ctx.sendRequestAndWait(req, 15);
             if ("SUCCESS".equals(response.getStatus())) {
                 List<Auction> auctions = gson.fromJson(response.getMessage(), new TypeToken<List<Auction>>() {
                 }.getType());
@@ -521,7 +531,7 @@ public class SellerHomeController {
         try {
             Map<String, String> data = new HashMap<>();
             data.put("username", ctx.getCurrentUser().getUsername());
-            Response response = ctx.sendRequestAndWait(new Request("GET_WALLET_BALANCE", data), 5);
+            Response response = ctx.sendRequestAndWait(new Request("GET_WALLET_BALANCE", data), 15);
             if ("SUCCESS".equals(response.getStatus())) {
                 Platform.runLater(() -> walletBalanceLabel.setText("Balance: $" + response.getMessage()));
             } else {
@@ -598,7 +608,7 @@ public class SellerHomeController {
                     data.put("amount", amount.toPlainString());
                     data.put("bankName", bankName.trim());
                     data.put("accountNumber", accountNumber.trim());
-                    Response response = ctx.sendRequestAndWait(new Request("CREATE_WITHDRAW_REQUEST", data), 5);
+                    Response response = ctx.sendRequestAndWait(new Request("CREATE_WITHDRAW_REQUEST", data), 15);
                     if ("SUCCESS".equals(response.getStatus())) {
                         showAlert("Success", response.getMessage());
                     } else {

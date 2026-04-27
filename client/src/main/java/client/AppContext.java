@@ -51,40 +51,56 @@ public class AppContext {
         selectedAuction = a;
     }
     public void connect() throws Exception {
+        System.out.println("DEBUG CLIENT: Connecting to server...");
         // Always disconnect first to ensure clean state
         disconnect();
 
         socket = new Socket("localhost", 54321);
+        socket.setTcpNoDelay(true); // Disable Nagle's algorithm for faster small packets
         out = new PrintWriter(socket.getOutputStream(), true);
         in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
         
+        System.out.println("DEBUG CLIENT: Connected. Starting listener thread...");
         startListenerThread();
     }
     
     private void startListenerThread() {
-        if (listenerThread != null && listenerThread.isAlive()) return;
+        if (listenerThread != null && listenerThread.isAlive()) {
+            System.out.println("DEBUG CLIENT: Listener thread already running.");
+            return;
+        }
         
+        final BufferedReader currentIn = this.in;
         listenerThread = new Thread(() -> {
+            System.out.println("DEBUG CLIENT: Listener thread started.");
             try {
                 String line;
-                while ((line = in.readLine()) != null) {
+                while (currentIn != null && (line = currentIn.readLine()) != null) {
                     final String message = line;
+                    System.out.println("DEBUG CLIENT: Received from server: " + message);
                     try {
                         Response res = gson.fromJson(message, Response.class);
-                        if (res.getRequestId() != null && pendingRequests.containsKey(res.getRequestId())) {
-                            pendingRequests.get(res.getRequestId()).complete(res);
-                            pendingRequests.remove(res.getRequestId());
+                        if (res.getRequestId() != null) {
+                            CompletableFuture<Response> future = pendingRequests.get(res.getRequestId());
+                            if (future != null) {
+                                System.out.println("DEBUG CLIENT: Completing future for request " + res.getRequestId());
+                                future.complete(res);
+                                pendingRequests.remove(res.getRequestId());
+                            } else {
+                                System.out.println("DEBUG CLIENT: No pending request found for ID " + res.getRequestId());
+                            }
                         }
                     } catch (Exception e) {
-                        // Not a Response or no requestId, normal broadcast
+                        System.out.println("DEBUG CLIENT: Message is not a standard Response or has no ID: " + e.getMessage());
                     }
                     
                     for (Consumer<String> listener : messageListeners) {
                         listener.accept(message);
                     }
                 }
+                System.out.println("DEBUG CLIENT: Listener thread reached end of stream.");
             } catch (Throwable e) {
-                System.err.println("💥 Connection lost or error in listener: " + e.getMessage());
+                System.err.println("💥 DEBUG CLIENT: Connection lost or error in listener: " + e.getMessage());
                 e.printStackTrace();
                 // Reset connection state on error
                 socket = null;

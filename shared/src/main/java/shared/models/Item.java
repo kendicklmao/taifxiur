@@ -81,7 +81,11 @@ public abstract class Item implements Serializable {//lớp các mặt hàng
     }
 
     public void setMinIncrement(BigDecimal minIncrement) {
-        this.minIncrement = minIncrement;
+        if (minIncrement != null && minIncrement.compareTo(BigDecimal.ZERO) <= 0) {
+            this.minIncrement = new BigDecimal("1000"); // Default to 1000 if invalid
+        } else {
+            this.minIncrement = minIncrement;
+        }
     }
 
     public String getImageUrl() {
@@ -94,6 +98,7 @@ public abstract class Item implements Serializable {//lớp các mặt hàng
 
     public boolean isValid() { //kiểm tra thông số có logic không ?
         return name != null && name.length() >= 1 && !name.isBlank() &&
-               description != null && description.length() >= 1 && !description.isBlank();
+               description != null && description.length() >= 1 && !description.isBlank() &&
+               (minIncrement == null || minIncrement.compareTo(BigDecimal.ZERO) > 0);
     }
 }

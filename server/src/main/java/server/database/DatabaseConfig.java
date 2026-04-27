@@ -64,7 +64,7 @@ public class DatabaseConfig {
 
         // Build JDBC URL - DNS resolution is handled by the PostgreSQL driver which supports IPv4 and IPv6
         String jdbcUrl = String.format(
-            "jdbc:postgresql://%s:%d/%s?sslmode=%s&tcpKeepAlives=true&prepareThreshold=0&loggerLevel=OFF",
+            "jdbc:postgresql://%s:%d/%s?sslmode=%s&tcpKeepAlives=true&prepareThreshold=0&preferQueryMode=simple&loggerLevel=OFF",
             host, port, dbName, sslmode
         );
 
@@ -75,11 +75,13 @@ public class DatabaseConfig {
         config.setJdbcUrl(jdbcUrl);
         config.setUsername(user);
         config.setPassword(password);
-        config.setMaximumPoolSize(10);
-        config.setMinimumIdle(5);
+        config.setMaximumPoolSize(5); // Reduced to avoid hitting Supabase limits
+        config.setMinimumIdle(2);
         config.setConnectionTimeout(30000);
-        config.setIdleTimeout(600000);
-        config.setMaxLifetime(1800000);
+        config.setIdleTimeout(60000);
+        config.setMaxLifetime(600000);
+        config.setKeepaliveTime(30000);
+        config.setInitializationFailTimeout(0); // Don't fail immediately, try to recover
         config.setAutoCommit(true);
 
         try {

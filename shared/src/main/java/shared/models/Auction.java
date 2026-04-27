@@ -52,8 +52,7 @@ public class Auction {
             throw new IllegalArgumentException("Auction seller is null");
         if (startTime == null || endTime == null || endTime.isBefore(startTime))
             throw new IllegalArgumentException("Invalid auction dates: start=" + startTime + ", end=" + endTime);
-        if (startTime.isBefore(Instant.now()))
-            throw new IllegalArgumentException("Start time must be after current time: " + startTime);
+
         this.id = id;
         this.item = item;
         this.startPrice = startPrice;
@@ -137,14 +136,14 @@ public class Auction {
             if (bidder == null || maxBid == null) {
                 throw new IllegalArgumentException();
             }
-            if (maxBid.compareTo(currentPrice.add(item.getMinIncrement())) <= 0) {
-                throw new IllegalArgumentException();
+            if (maxBid.compareTo(currentPrice.add(item.getMinIncrement())) < 0) {
+                throw new IllegalArgumentException("Bid amount must be at least current price + minimum increment");
             }
             if (bidder.isBanned()) {
                 throw new IllegalArgumentException();
             }
-            if (status != AuctionStatus.RUNNING) {
-                throw new IllegalArgumentException();
+            if (status != AuctionStatus.RUNNING && status != AuctionStatus.OPEN) {
+                throw new IllegalArgumentException("Auction is not in a biddable state");
             }
             autoBids.add(new AutoBid(bidder, maxBid));
             AutoBidService();
@@ -213,12 +212,12 @@ public class Auction {
             if (bidder.isBanned())
                 throw new IllegalStateException("User is banned");
             if (status != AuctionStatus.RUNNING)
-                throw new IllegalStateException("Auction is not running");
+                throw new IllegalStateException("Auction is not running. Current status: " + status);
             if (Instant.now().isAfter(endTime)) {
                 status = AuctionStatus.FINISHED;
                 return false;
             }
-            if (amount.compareTo(currentPrice.add(item.getMinIncrement())) <= 0)
+            if (amount.compareTo(currentPrice.add(item.getMinIncrement())) < 0)
                 return false;
             currentPrice = amount;
             highestBidder = bidder;
@@ -226,6 +225,19 @@ public class Auction {
             AutoBidService();
             extendIfNeeded();
             return true;
+        }
+    }
+
+    /**
+     * Restore a bid from history without triggering business logic/checks
+     */
+    public void restoreBid(Bidder bidder, BigDecimal amount, Instant timestamp) {
+        synchronized (bidLock) {
+            if (currentPrice == null || amount.compareTo(currentPrice) > 0) {
+                currentPrice = amount;
+                highestBidder = bidder;
+            }
+            bidHistory.add(new BidTransaction(bidder, amount, timestamp));
         }
     }
 

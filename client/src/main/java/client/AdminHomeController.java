@@ -126,7 +126,7 @@ public class AdminHomeController {
     public void refreshAdminActionLogs() {
         try {
             Request req = new Request("GET_ADMIN_ACTION_LOGS", new HashMap<>());
-            Response response = ctx.sendRequestAndWait(req, 5);
+            Response response = ctx.sendRequestAndWait(req, 15);
             if ("SUCCESS".equals(response.getStatus())) {
                 AdminActionLog[] logs = gson.fromJson(response.getMessage(), AdminActionLog[].class);
                 Platform.runLater(() -> adminActionLogsList.getItems().setAll(logs));
@@ -140,7 +140,7 @@ public class AdminHomeController {
     public void refreshAuctions() {
         try {
             Request req = new Request("GET_AUCTIONS", new HashMap<>());
-            Response response = ctx.sendRequestAndWait(req, 5);
+            Response response = ctx.sendRequestAndWait(req, 15);
             if ("SUCCESS".equals(response.getStatus())) {
                 Auction[] auctions = gson.fromJson(response.getMessage(), Auction[].class);
                 Platform.runLater(() -> allAuctionsList.getItems().setAll(auctions));
@@ -154,7 +154,7 @@ public class AdminHomeController {
     public void refreshUsers() {
         try {
             Request req = new Request("GET_ALL_USERS", new HashMap<>());
-            Response response = ctx.sendRequestAndWait(req, 5);
+            Response response = ctx.sendRequestAndWait(req, 15);
             if ("SUCCESS".equals(response.getStatus())) {
                 User[] users = gson.fromJson(response.getMessage(), User[].class);
                 Platform.runLater(() -> {
@@ -199,7 +199,7 @@ public class AdminHomeController {
     @FXML
     public void refreshDepositRequests() {
         try {
-            Response response = ctx.sendRequestAndWait(new Request("GET_PENDING_DEPOSIT_REQUESTS", new HashMap<>()), 5);
+            Response response = ctx.sendRequestAndWait(new Request("GET_PENDING_DEPOSIT_REQUESTS", new HashMap<>()), 15);
             if ("SUCCESS".equals(response.getStatus())) {
                 Type listType = new TypeToken<List<Map<String, String>>>() {}.getType();
                 List<Map<String, String>> requests = gson.fromJson(response.getMessage(), listType);
@@ -213,7 +213,7 @@ public class AdminHomeController {
     @FXML
     public void refreshWithdrawRequests() {
         try {
-            Response response = ctx.sendRequestAndWait(new Request("GET_PENDING_WITHDRAW_REQUESTS", new HashMap<>()), 5);
+            Response response = ctx.sendRequestAndWait(new Request("GET_PENDING_WITHDRAW_REQUESTS", new HashMap<>()), 15);
             if ("SUCCESS".equals(response.getStatus())) {
                 Type listType = new TypeToken<List<Map<String, String>>>() {}.getType();
                 List<Map<String, String>> requests = gson.fromJson(response.getMessage(), listType);
@@ -236,7 +236,7 @@ public class AdminHomeController {
             Map<String, String> data = new HashMap<>();
             data.put("username", username);
             Request req = new Request("BAN_USER", data);
-            Response response = ctx.sendRequestAndWait(req, 5);
+            Response response = ctx.sendRequestAndWait(req, 15);
 
             if ("SUCCESS".equals(response.getStatus())) {
                 showAlert("Success", "User " + username + " has been banned!");
@@ -269,7 +269,7 @@ public class AdminHomeController {
             Map<String, String> data = new HashMap<>();
             data.put("username", username);
             Request req = new Request("UNBAN_USER", data);
-            Response response = ctx.sendRequestAndWait(req, 5);
+            Response response = ctx.sendRequestAndWait(req, 15);
 
             if ("SUCCESS".equals(response.getStatus())) {
                 showAlert("Success", "User " + username + " has been unbanned!");
@@ -340,7 +340,7 @@ public class AdminHomeController {
         try {
             Map<String, String> data = new HashMap<>();
             data.put("requestId", requestItem.get("id"));
-            Response response = ctx.sendRequestAndWait(new Request(action, data), 5);
+            Response response = ctx.sendRequestAndWait(new Request(action, data), 15);
 
             if ("SUCCESS".equals(response.getStatus())) {
                 showAlert("Success", response.getMessage());

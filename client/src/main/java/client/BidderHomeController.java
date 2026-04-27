@@ -80,7 +80,7 @@ public class BidderHomeController {
         try {
             Map<String, String> data = new HashMap<>();
             data.put("username", ctx.getCurrentUser().getUsername());
-            Response response = ctx.sendRequestAndWait(new Request("GET_WALLET_BALANCE", data), 5);
+            Response response = ctx.sendRequestAndWait(new Request("GET_WALLET_BALANCE", data), 15);
             if ("SUCCESS".equals(response.getStatus())) {
                 Platform.runLater(() -> walletBalanceLabel.setText("Balance: $" + response.getMessage()));
             } else {
@@ -189,7 +189,7 @@ public class BidderHomeController {
     private void refreshAuctions() {
         try {
             Request req = new Request("GET_AUCTIONS", new HashMap<>());
-            Response response = ctx.sendRequestAndWait(req, 5);
+            Response response = ctx.sendRequestAndWait(req, 15);
             if ("SUCCESS".equals(response.getStatus())) {
                 List<Auction> auctions = gson.fromJson(response.getMessage(), new TypeToken<List<Auction>>() {
                 }.getType());
@@ -275,7 +275,7 @@ public class BidderHomeController {
                     data.put("amount", amount.toPlainString());
                     data.put("bankName", bankName.trim());
                     data.put("accountNumber", accountNumber.trim());
-                    Response response = ctx.sendRequestAndWait(new Request("CREATE_DEPOSIT_REQUEST", data), 5);
+                    Response response = ctx.sendRequestAndWait(new Request("CREATE_DEPOSIT_REQUEST", data), 15);
                     if ("SUCCESS".equals(response.getStatus())) {
                         showAlert("Success", response.getMessage());
                     } else {
@@ -354,7 +354,7 @@ public class BidderHomeController {
                     data.put("amount", amount.toPlainString());
                     data.put("bankName", bankName.trim());
                     data.put("accountNumber", accountNumber.trim());
-                    Response response = ctx.sendRequestAndWait(new Request("CREATE_WITHDRAW_REQUEST", data), 5);
+                    Response response = ctx.sendRequestAndWait(new Request("CREATE_WITHDRAW_REQUEST", data), 15);
                     if ("SUCCESS".equals(response.getStatus())) {
                         showAlert("Success", response.getMessage());
                     } else {
@@ -374,7 +374,7 @@ public class BidderHomeController {
             Map<String, String> data = new HashMap<>();
             data.put("username", ctx.getCurrentUser().getUsername());
             Request req = new Request("LOGOUT", data);
-            ctx.sendRequestAndWait(req, 5);
+            ctx.sendRequestAndWait(req, 15);
         } catch (Exception e) {
             // Ignore, proceed with logout
         }
@@ -391,8 +391,11 @@ public class BidderHomeController {
 
     private void showBidOptionsDialog(Auction auction) {
         // Check if auction is running
-        if (!"RUNNING".equals(auction.getStatus().toString())) {
-            showAlert("Error", "This auction is not currently running. Status: " + auction.getStatus());
+        // Check if auction is running or upcoming
+        String status = auction.getStatus().toString();
+        if (!"RUNNING".equals(status)) {
+            String msg = "OPEN".equals(status) ? "This auction has not started yet." : "This auction has already finished.";
+            showAlert("Error", msg + " Status: " + status);
             return;
         }
 
@@ -483,7 +486,7 @@ public class BidderHomeController {
             data.put("username", ctx.getCurrentUser().getUsername());
 
             Request req = new Request("PLACE_BID", data);
-            Response response = ctx.sendRequestAndWait(req, 5); // Wait for server response
+            Response response = ctx.sendRequestAndWait(req, 15); // Wait for server response
 
             if ("SUCCESS".equals(response.getStatus())) {
                 // Immediately refresh auctions to show the updated price
@@ -505,7 +508,7 @@ public class BidderHomeController {
             data.put("username", ctx.getCurrentUser().getUsername());
 
             Request req = new Request("REGISTER_AUTOBID", data);
-            Response response = ctx.sendRequestAndWait(req, 5); // Wait for server response
+            Response response = ctx.sendRequestAndWait(req, 15); // Wait for server response
 
             if ("SUCCESS".equals(response.getStatus())) {
                 showAlert("Success", "Auto-bid registered successfully!");

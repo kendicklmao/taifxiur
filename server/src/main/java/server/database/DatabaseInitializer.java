@@ -96,7 +96,7 @@ public class DatabaseInitializer {
     private static void createAuctionTable(Statement stmt) throws SQLException {
         String sql = """
                 CREATE TABLE IF NOT EXISTS auctions (
-                    id SERIAL PRIMARY KEY,
+                    id VARCHAR(36) PRIMARY KEY,
                     item_id INTEGER NOT NULL,
                     seller_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
                     start_price DECIMAL(15, 2) NOT NULL,
@@ -148,7 +148,7 @@ public class DatabaseInitializer {
         String sql = """
                 CREATE TABLE IF NOT EXISTS bids (
                     id SERIAL PRIMARY KEY,
-                    auction_id INTEGER NOT NULL REFERENCES auctions(id) ON DELETE CASCADE,
+                    auction_id VARCHAR(36) NOT NULL REFERENCES auctions(id) ON DELETE CASCADE,
                     bidder_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
                     bid_amount DECIMAL(15, 2) NOT NULL,
                     bid_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -162,7 +162,7 @@ public class DatabaseInitializer {
         String sql = """
                 CREATE TABLE IF NOT EXISTS auto_bids (
                     id SERIAL PRIMARY KEY,
-                    auction_id INTEGER NOT NULL REFERENCES auctions(id) ON DELETE CASCADE,
+                    auction_id VARCHAR(36) NOT NULL REFERENCES auctions(id) ON DELETE CASCADE,
                     bidder_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
                     max_bid_amount DECIMAL(15, 2) NOT NULL,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP

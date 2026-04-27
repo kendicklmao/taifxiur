@@ -142,12 +142,15 @@ public class UserService {
 
     // Đăng nhập người dùng và xác thực
     public synchronized User login(String username, String password) {
+        System.out.println("DEBUG LOGIN: Start for user " + username);
         if (username == null || password == null) {
+            System.out.println("DEBUG LOGIN: Null username or password");
             return null;
         }
         username = Validator.normalizeAndLowercase(username);
         password = Validator.normalize(password);
 
+        System.out.println("DEBUG LOGIN: Normalized user: " + username);
         Instant now = Instant.now();
         if (lockUntil.containsKey(username)) {
             Instant unlockTime = lockUntil.get(username);
@@ -159,16 +162,20 @@ public class UserService {
             }
         }
 
+        System.out.println("DEBUG LOGIN: Getting connection and preparing statement...");
         try (Connection conn = DatabaseConfig.getDataSource().getConnection();
                 PreparedStatement pstmt = conn.prepareStatement(
                         "SELECT id, password, password_salt, role, is_banned FROM users WHERE username = ?")) {
 
             pstmt.setString(1, username);
+            System.out.println("DEBUG LOGIN: Executing query...");
             ResultSet rs = pstmt.executeQuery();
 
             if (!rs.next()) {
+                System.out.println("DEBUG LOGIN: User not found in DB: " + username);
                 return null;
             }
+            System.out.println("DEBUG LOGIN: User found in DB. Verifying password...");
 
             String storedHash = rs.getString("password");
             String storedSalt = rs.getString("password_salt");
@@ -183,7 +190,9 @@ public class UserService {
             // Kiểm tra mật khẩu bằng cách băm thử với Salt đã lưu
             String inputHash = shared.utils.Hash.formula(password, storedSalt);
             if (storedHash.equals(inputHash)) {
+                System.out.println("DEBUG LOGIN: Password correct for " + username);
                 if (loggedIn.putIfAbsent(username, true) != null) {
+                    System.out.println("DEBUG LOGIN: User already logged in!");
                     throw new UserAlreadyLoggedInException(
                             "User " + username + " is already logged in from another device");
                 }
@@ -194,7 +203,10 @@ public class UserService {
                     logAdminLogin(userId, "SUCCESS");
                 }
 
-                return getUserFromDatabase(username);
+                System.out.println("DEBUG LOGIN: Fetching user details...");
+                User result = getUserFromDatabase(username);
+                System.out.println("DEBUG LOGIN: Login successful for " + username);
+                return result;
             } else {
                 int attempts = failedAttempts.getOrDefault(username, 0) + 1;
                 failedAttempts.put(username, attempts);

@@ -6,6 +6,7 @@ import shared.enums.ItemStatus;
 import shared.models.*;
 
 import java.lang.reflect.Type;
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -102,36 +103,43 @@ public class GsonUtils {
             Category category = Category.valueOf(obj.get("category").getAsString());
             String name = obj.get("name").getAsString();
             String description = obj.get("description").getAsString();
-            // seller is null
-            switch (category) {
-                case COLLECTIBLES:
+            
+            BigDecimal minIncrement = obj.has("minIncrement") ? obj.get("minIncrement").getAsBigDecimal() : BigDecimal.ZERO;
+            String imageUrl = obj.has("imageUrl") ? obj.get("imageUrl").getAsString() : null;
+            
+            Item item = switch (category) {
+                case COLLECTIBLES -> {
                     int yearCreated = obj.get("yearCreated").getAsInt();
-                    return new Collectible(name, description, null, yearCreated);
-                case ELECTRONICS: {
+                    yield new Collectible(name, description, null, yearCreated);
+                }
+                case ELECTRONICS -> {
                     String brand = obj.get("brand").getAsString();
                     ItemStatus status = ItemStatus.valueOf(obj.get("status").getAsString().toUpperCase());
-                    return new Electronic(name, description, null, brand, status);
+                    yield new Electronic(name, description, null, brand, status);
                 }
-                case ARTS: {
+                case ARTS -> {
                     String artist = obj.get("artist").getAsString();
                     int year = obj.get("yearCreated").getAsInt();
                     boolean original = obj.get("isOriginal").getAsBoolean();
-                    return new Art(name, description, null, artist, year, original);
+                    yield new Art(name, description, null, artist, year, original);
                 }
-                case VEHICLES: {
+                case VEHICLES -> {
                     String brand = obj.get("brand").getAsString();
                     int model = obj.get("model").getAsInt();
                     int km = obj.get("kmTravel").getAsInt();
-                    return new Vehicle(name, description, null, brand, model, km);
+                    yield new Vehicle(name, description, null, brand, model, km);
                 }
-                case FASHIONS: {
+                case FASHIONS -> {
                     String brand = obj.get("brand").getAsString();
                     ItemStatus status = ItemStatus.valueOf(obj.get("status").getAsString().toUpperCase());
-                    return new Fashion(name, description, null, brand, status);
+                    yield new Fashion(name, description, null, brand, status);
                 }
-                default:
-                    throw new JsonParseException("Unknown category: " + category);
-            }
+                default -> throw new JsonParseException("Unknown category: " + category);
+            };
+            
+            item.setMinIncrement(minIncrement);
+            item.setImageUrl(imageUrl);
+            return item;
         }
     }
 

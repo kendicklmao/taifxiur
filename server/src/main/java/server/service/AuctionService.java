@@ -101,6 +101,9 @@ public class AuctionService {
 
                     // Load and restore bid history
                     loadBidHistoryForAuction(conn, auction, userService);
+                    
+                    // Load and restore auto-bids
+                    loadAutoBidsForAuction(conn, auction, userService);
 
                     auctions.put(auctionId, auction);
                     System.out.println("✓ Loaded auction: " + auctionId + " (status: " + statusStr + ")");
@@ -122,7 +125,7 @@ public class AuctionService {
     private Item loadItemFromDatabase(Connection conn, int itemId) {
         try (PreparedStatement pstmt = conn.prepareStatement(
                 "SELECT name, description, category, item_type, image_url, base_price, " +
-                "brand, item_status, model_year, km_travel, artist, year_created, is_original, seller_id " +
+                "brand, item_status, model_year, km_travel, artist, year_created, is_original, seller_id, min_increment " +
                 "FROM items WHERE id = ?")) {
 
             pstmt.setInt(1, itemId);
@@ -134,6 +137,7 @@ public class AuctionService {
                 String category = rs.getString("category");
                 int sellerId = rs.getInt("seller_id");
                 String imageUrl = rs.getString("image_url");
+                BigDecimal minIncrement = rs.getBigDecimal("min_increment");
 
                 UserService userService = new UserService();
                 User sellerUser = userService.getUser(getUsernameFromId(conn, sellerId));
@@ -168,6 +172,12 @@ public class AuctionService {
 
                 if (item != null) {
                     item.setImageUrl(imageUrl);
+                    if (minIncrement != null) {
+                        item.setMinIncrement(minIncrement);
+                    } else {
+                        // Default fallback if min_increment is missing
+                        item.setMinIncrement(new BigDecimal("10000")); // e.g. 10k VND
+                    }
                 }
                 return item;
             }
@@ -211,13 +221,39 @@ public class AuctionService {
                 User bidderUser = userService.getUser(bidderUsername);
 
                 if (bidderUser instanceof Bidder) {
-                    auction.placeBid((Bidder) bidderUser, bidAmount);
+                    auction.restoreBid((Bidder) bidderUser, bidAmount, rs.getTimestamp("bid_time").toInstant());
                 }
             }
         } catch (SQLException e) {
             System.err.println("Error loading bid history: " + e.getMessage());
         }
-     }
+    }
+
+    /**
+     * Load auto-bids for an auction
+     */
+    private void loadAutoBidsForAuction(Connection conn, Auction auction, UserService userService) {
+        try (PreparedStatement pstmt = conn.prepareStatement(
+                "SELECT ab.bidder_id, ab.max_bid_amount FROM auto_bids ab " +
+                "WHERE ab.auction_id = ?")) {
+
+            pstmt.setString(1, auction.getId());
+            ResultSet rs = pstmt.executeQuery();
+
+            while (rs.next()) {
+                int bidderId = rs.getInt("bidder_id");
+                BigDecimal maxBid = rs.getBigDecimal("max_bid_amount");
+                String bidderUsername = getUsernameFromId(conn, bidderId);
+                User bidderUser = userService.getUser(bidderUsername);
+
+                if (bidderUser instanceof Bidder) {
+                    auction.registerAutoBid((Bidder) bidderUser, maxBid);
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("Error loading auto-bids: " + e.getMessage());
+        }
+    }
      /**
       * Create auction and store in database
       */
@@ -525,9 +561,9 @@ public class AuctionService {
                 PreparedStatement pstmt = conn.prepareStatement(
                         "INSERT INTO items (seller_id, name, description, category, status, item_type, " +
                                 "base_price, current_price, legit_check, seller_name, " +
-                                "brand, item_status, model_year, km_travel, artist, year_created, is_original, image_url) "
+                                "brand, item_status, model_year, km_travel, artist, year_created, is_original, image_url, min_increment) "
                                 +
-                                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                         Statement.RETURN_GENERATED_KEYS)) {
             
             int sellerId = getUserIdFromDatabase(seller.getUsername());
@@ -567,6 +603,7 @@ public class AuctionService {
             pstmt.setNull(16, java.sql.Types.INTEGER); // year_created
             pstmt.setNull(17, java.sql.Types.BOOLEAN); // is_original
             pstmt.setString(18, item.getImageUrl()); // image_url
+            pstmt.setBigDecimal(19, item.getMinIncrement()); // min_increment
 
             // Set item-specific fields based on type
             if (item instanceof shared.models.Electronic electronic) {
