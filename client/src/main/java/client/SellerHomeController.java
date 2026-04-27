@@ -133,24 +133,45 @@ public class SellerHomeController {
     }
 
     private void updateAuctionGrid(List<Auction> auctions) {
-        Map<String, VBox> existingAuctionCards = auctionGrid.getChildren().stream()
-                .map(node -> (VBox) node)
-                .collect(Collectors.toMap(node -> (String) node.getUserData(), node -> node));
+        // Build a safe map of existing cards keyed by their auction id (userData)
+        Map<String, VBox> existingAuctionCards = new java.util.HashMap<>();
+        for (var node : auctionGrid.getChildren()) {
+            if (node instanceof VBox) {
+                Object ud = node.getUserData();
+                if (ud != null) {
+                    existingAuctionCards.put(ud.toString(), (VBox) node);
+                }
+            }
+        }
 
+        // Iterate incoming auctions and update existing cards or add new ones
         for (Auction auction : auctions) {
-            if (existingAuctionCards.containsKey(auction.getId())) {
-                // Update existing card
-                // You can update specific labels here if needed, e.g., price
-                existingAuctionCards.remove(auction.getId());
+            String id = auction.getId();
+            if (existingAuctionCards.containsKey(id)) {
+                // Update existing card with latest data
+                VBox card = existingAuctionCards.get(id);
+                Object priceObj = card.getProperties().get("priceLabel");
+                if (priceObj instanceof Label) {
+                    ((Label) priceObj).setText("Current Price: " + auction.getCurrentPrice());
+                }
+                Object statusObj = card.getProperties().get("statusLabel");
+                if (statusObj instanceof Label) {
+                    ((Label) statusObj).setText("Status: " + auction.getStatus());
+                }
+                Object endsObj = card.getProperties().get("endsLabel");
+                if (endsObj instanceof Label) {
+                    ((Label) endsObj).setText("Ends: " + formatTime(auction.getEndTime()));
+                }
+                existingAuctionCards.remove(id);
             } else {
                 // Add new card
                 VBox card = createAuctionCard(auction);
-                card.setUserData(auction.getId());
+                card.setUserData(id);
                 auctionGrid.getChildren().add(card);
             }
         }
 
-        // Remove old cards
+        // Remove cards for auctions that no longer exist
         auctionGrid.getChildren().removeAll(existingAuctionCards.values());
     }
 
@@ -173,6 +194,11 @@ public class SellerHomeController {
         endsAtLabel.getStyleClass().add("item-ends-in");
         VBox itemDetails = new VBox(5, nameLabel, priceLabel, statusLabel, startsAtLabel, endsAtLabel);
         card.getChildren().addAll(imageView, itemDetails);
+
+        // Store labels in properties for easy updating
+        card.getProperties().put("priceLabel", priceLabel);
+        card.getProperties().put("statusLabel", statusLabel);
+        card.getProperties().put("endsLabel", endsAtLabel);
 
         if (auction.getItem().getImageUrl() != null && !auction.getItem().getImageUrl().isEmpty()) {
             imageView.setImage(new Image(auction.getItem().getImageUrl(), 150, 150, true, true));

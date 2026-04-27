@@ -6,6 +6,7 @@ import shared.models.Auction;
 import shared.models.Bidder;
 import shared.models.Item;
 import shared.models.Seller;
+import shared.models.User;
 
 import java.math.BigDecimal;
 import java.sql.*;
@@ -30,10 +31,197 @@ public class AuctionService {
     // Cache for user ID lookups to avoid repeated DB queries
     private static final Map<String, Integer> userIdCache = new ConcurrentHashMap<>();
 
+    public AuctionService() {
+        // Load auctions from database on startup
+        initializeAuctionsFromDatabase();
+    }
+
     /**
-     * Create auction and store in database
+     * Load all auctions from database on server startup
      */
-    public Auction createAuction(Seller seller, Item item, BigDecimal startPrice, Instant startTime, Instant endTime) {
+    private void initializeAuctionsFromDatabase() {
+        System.out.println("Loading auctions from database...");
+        try (Connection conn = DatabaseConfig.getDataSource().getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(
+                     "SELECT a.id, a.item_id, a.seller_id, a.start_price, a.current_price, a.status, " +
+                     "a.start_time, a.end_time, a.winner_id " +
+                     "FROM auctions a")) {
+
+            UserService userService = new UserService();
+            while (rs.next()) {
+                try {
+                    String auctionId = rs.getString("id");
+                    int itemId = rs.getInt("item_id");
+                    int sellerId = rs.getInt("seller_id");
+                    BigDecimal startPrice = rs.getBigDecimal("start_price");
+                    BigDecimal currentPrice = rs.getBigDecimal("current_price");
+                    String statusStr = rs.getString("status");
+                    Instant startTime = rs.getTimestamp("start_time").toInstant();
+                    Instant endTime = rs.getTimestamp("end_time").toInstant();
+                    Integer winnerId = rs.getObject("winner_id") != null ? rs.getInt("winner_id") : null;
+
+                    // Load item
+                    Item item = loadItemFromDatabase(conn, itemId);
+                    if (item == null) {
+                        System.err.println("Could not load item " + itemId + " for auction " + auctionId);
+                        continue;
+                    }
+
+                    // Load seller
+                    User seller = userService.getUser(getUsernameFromId(conn, sellerId));
+                    if (seller == null || !(seller instanceof Seller)) {
+                        System.err.println("Could not load seller for auction " + auctionId);
+                        continue;
+                    }
+
+                    // Create auction and restore state
+                    Auction auction = new Auction(auctionId, item, startPrice, (Seller) seller, startTime, endTime);
+                    auction.setFinishCallback(a -> finalizeAuction(a));
+
+                    // Restore current price if different from start price
+                    if (currentPrice != null && currentPrice.compareTo(startPrice) > 0) {
+                        try {
+                            java.lang.reflect.Field priceField = Auction.class.getDeclaredField("currentPrice");
+                            priceField.setAccessible(true);
+                            priceField.set(auction, currentPrice);
+                        } catch (Exception e) {
+                            System.err.println("Could not restore current price for auction: " + e.getMessage());
+                        }
+                    }
+
+                    // Restore status
+                    try {
+                        java.lang.reflect.Field statusField = Auction.class.getDeclaredField("status");
+                        statusField.setAccessible(true);
+                        statusField.set(auction, AuctionStatus.valueOf(statusStr));
+                    } catch (Exception e) {
+                        System.err.println("Could not restore status for auction: " + e.getMessage());
+                    }
+
+                    // Load and restore bid history
+                    loadBidHistoryForAuction(conn, auction, userService);
+
+                    auctions.put(auctionId, auction);
+                    System.out.println("✓ Loaded auction: " + auctionId + " (status: " + statusStr + ")");
+                } catch (Exception e) {
+                    System.err.println("Error loading auction from database: " + e.getMessage());
+                    e.printStackTrace();
+                }
+            }
+            System.out.println("✓ Auction loading complete. Total auctions loaded: " + auctions.size());
+        } catch (SQLException e) {
+            System.err.println("Error initializing auctions from database: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Load item from database by ID
+     */
+    private Item loadItemFromDatabase(Connection conn, int itemId) {
+        try (PreparedStatement pstmt = conn.prepareStatement(
+                "SELECT name, description, category, item_type, image_url, base_price, " +
+                "brand, item_status, model_year, km_travel, artist, year_created, is_original, seller_id " +
+                "FROM items WHERE id = ?")) {
+
+            pstmt.setInt(1, itemId);
+            ResultSet rs = pstmt.executeQuery();
+
+            if (rs.next()) {
+                String name = rs.getString("name");
+                String description = rs.getString("description");
+                String category = rs.getString("category");
+                int sellerId = rs.getInt("seller_id");
+                String imageUrl = rs.getString("image_url");
+
+                UserService userService = new UserService();
+                User sellerUser = userService.getUser(getUsernameFromId(conn, sellerId));
+                if (!(sellerUser instanceof Seller)) return null;
+                Seller seller = (Seller) sellerUser;
+
+                Item item = null;
+                if ("ELECTRONICS".equals(category)) {
+                    String brand = rs.getString("brand");
+                    String statusStr = rs.getString("item_status");
+                    shared.enums.ItemStatus itemStatus = shared.enums.ItemStatus.valueOf(statusStr != null ? statusStr : "NEW");
+                    item = new shared.models.Electronic(name, description, seller, brand, itemStatus);
+                } else if ("VEHICLES".equals(category)) {
+                    String brand = rs.getString("brand");
+                    int model = rs.getInt("model_year");
+                    int km = rs.getInt("km_travel");
+                    item = new shared.models.Vehicle(name, description, seller, brand, model, km);
+                } else if ("ARTS".equals(category)) {
+                    String artist = rs.getString("artist");
+                    int year = rs.getInt("year_created");
+                    boolean isOriginal = rs.getBoolean("is_original");
+                    item = new shared.models.Art(name, description, seller, artist, year, isOriginal);
+                } else if ("FASHIONS".equals(category)) {
+                    String brand = rs.getString("brand");
+                    String statusStr = rs.getString("item_status");
+                    shared.enums.ItemStatus itemStatus = shared.enums.ItemStatus.valueOf(statusStr != null ? statusStr : "NEW");
+                    item = new shared.models.Fashion(name, description, seller, brand, itemStatus);
+                } else if ("COLLECTIBLES".equals(category)) {
+                    int year = rs.getInt("year_created");
+                    item = new shared.models.Collectible(name, description, seller, year);
+                }
+
+                if (item != null) {
+                    item.setImageUrl(imageUrl);
+                }
+                return item;
+            }
+        } catch (SQLException e) {
+            System.err.println("Error loading item from database: " + e.getMessage());
+        }
+        return null;
+    }
+
+    /**
+     * Get username from user ID
+     */
+    private String getUsernameFromId(Connection conn, int userId) {
+        try (PreparedStatement pstmt = conn.prepareStatement("SELECT username FROM users WHERE id = ?")) {
+            pstmt.setInt(1, userId);
+            ResultSet rs = pstmt.executeQuery();
+            if (rs.next()) {
+                return rs.getString("username");
+            }
+        } catch (SQLException e) {
+            System.err.println("Error fetching username from ID: " + e.getMessage());
+        }
+        return null;
+    }
+
+    /**
+     * Load bid history for an auction
+     */
+    private void loadBidHistoryForAuction(Connection conn, Auction auction, UserService userService) {
+        try (PreparedStatement pstmt = conn.prepareStatement(
+                "SELECT b.bidder_id, b.bid_amount, b.bid_time FROM bids b " +
+                "WHERE b.auction_id = ? ORDER BY b.bid_time ASC")) {
+
+            pstmt.setString(1, auction.getId());
+            ResultSet rs = pstmt.executeQuery();
+
+            while (rs.next()) {
+                int bidderId = rs.getInt("bidder_id");
+                BigDecimal bidAmount = rs.getBigDecimal("bid_amount");
+                String bidderUsername = getUsernameFromId(conn, bidderId);
+                User bidderUser = userService.getUser(bidderUsername);
+
+                if (bidderUser instanceof Bidder) {
+                    auction.placeBid((Bidder) bidderUser, bidAmount);
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("Error loading bid history: " + e.getMessage());
+        }
+     }
+     /**
+      * Create auction and store in database
+      */
+     public Auction createAuction(Seller seller, Item item, BigDecimal startPrice, Instant startTime, Instant endTime) {
         if (seller == null)
             throw new IllegalArgumentException("Seller is null");
         if (seller.isBanned())
@@ -45,11 +233,10 @@ public class AuctionService {
         if (!item.isValid()) {
             throw new IllegalArgumentException("Item is invalid");
         }
-        // Ensure auction start time is at least 1 minute in the future from now.
+        // Ensure auction start time is valid (must be after current time)
         Instant now = Instant.now();
         if (startTime == null || startTime.isBefore(now)) {
-            // If caller did not provide a start time or provided a time too soon,
-            // set the auction to start 1 minute from now.
+            startTime = now;
         }
         // Ensure endTime is after startTime
         if (endTime == null || !endTime.isAfter(startTime)) {
@@ -334,9 +521,9 @@ public class AuctionService {
                 PreparedStatement pstmt = conn.prepareStatement(
                         "INSERT INTO items (seller_id, name, description, category, status, item_type, " +
                                 "base_price, current_price, legit_check, seller_name, " +
-                                "brand, item_status, model_year, km_travel, artist, year_created, is_original, image_url, min_increment) "
+                                "brand, item_status, model_year, km_travel, artist, year_created, is_original, image_url) "
                                 +
-                                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                         Statement.RETURN_GENERATED_KEYS)) {
             
             int sellerId = getUserIdFromDatabase(seller.getUsername());
@@ -376,7 +563,6 @@ public class AuctionService {
             pstmt.setNull(16, java.sql.Types.INTEGER); // year_created
             pstmt.setNull(17, java.sql.Types.BOOLEAN); // is_original
             pstmt.setString(18, item.getImageUrl()); // image_url
-            pstmt.setBigDecimal(19, item.getMinIncrement()); // min_increment
 
             // Set item-specific fields based on type
             if (item instanceof shared.models.Electronic electronic) {
@@ -407,7 +593,6 @@ public class AuctionService {
             }
         } catch (SQLException e) {
             System.err.println("Error saving item to database: " + e.getMessage());
-            e.printStackTrace();
         }
         return -1;
     }
