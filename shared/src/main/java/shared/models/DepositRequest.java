@@ -6,10 +6,10 @@ import java.math.BigDecimal;
 import java.util.UUID;
 
 public class DepositRequest {
-    private final String id;//mã số yêu cầu
-    private Bidder bidder;//
-    private BigDecimal amount;
-    private RequestStatus status;
+    private final String id; // Mã số yêu cầu
+    private Bidder bidder; // Người đấu giá
+    private BigDecimal amount; // Số tiền yêu cầu nạp
+    private RequestStatus status; // Trạng thái yêu cầu
 
     public DepositRequest(Bidder bidder, BigDecimal amount) {
         if (bidder == null || amount == null) {
@@ -23,15 +23,19 @@ public class DepositRequest {
         this.amount = amount;
         this.status = RequestStatus.PENDING;
     }
+
     public String getId(){
         return id;
     }
+
     public Bidder getBidder() {
         return bidder;
     }
+
     public BigDecimal getAmount() {
         return amount;
     }
+    
     public RequestStatus getStatus() {
         return status;
     }

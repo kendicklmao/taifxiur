@@ -4,9 +4,9 @@ import java.math.BigDecimal;
 import java.time.Instant;
 
 public class AutoBid implements Comparable<AutoBid> {
-    private final Bidder bidder;//người đấu giá
-    private final BigDecimal maxBid;//số tiền lớn nhất muốn đấu giá
-    private final Instant timeStamp;//thời gian
+    private final Bidder bidder; // Người đấu giá
+    private final BigDecimal maxBid; // Số tiền lớn nhất muốn đấu giá
+    private final Instant timeStamp; // Thời gian
 
     public AutoBid(Bidder bidder, BigDecimal maxBid) {
         this.bidder = bidder;
@@ -29,7 +29,9 @@ public class AutoBid implements Comparable<AutoBid> {
     @Override
     public int compareTo(AutoBid other) {
         int cmp = other.getMaxBid().compareTo(this.getMaxBid());
-        if (cmp != 0) return cmp;
+        if (cmp != 0) {
+            return cmp;
+        }
         return this.getTimeStamp().compareTo(other.getTimeStamp());
     }
 }

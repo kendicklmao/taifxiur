@@ -1,7 +1,8 @@
 package shared.enums;
 
-public enum RequestStatus {//trạng thái của yêu cầu
-    PENDING,
-    APPROVED,
-    REJECTED
+// Trạng thái của yêu cầu
+public enum RequestStatus {
+    PENDING,    // Chờ xử lý
+    APPROVED,   // Đã duyệt
+    REJECTED    // Đã từ chối
 }

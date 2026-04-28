@@ -5,12 +5,13 @@ import shared.enums.Category;
 import java.io.Serializable;
 import java.math.BigDecimal;
 
-public abstract class Item implements Serializable {//lớp các mặt hàng
+// Lớp các mặt hàng
+public abstract class Item implements Serializable {
     private String id;
-    private String name; //tên mặt hàng
-    private String description; //mô tả mặt hàng
-    private transient Seller seller; //người bán
-    private Category category; //loại mặt hàng
+    private String name; // Tên mặt hàng
+    private String description; // Mô tả mặt hàng
+    private transient Seller seller; // Người bán
+    private Category category; // Loại mặt hàng
     private BigDecimal startingPrice;
     private BigDecimal minIncrement;
     private String imageUrl;
@@ -26,8 +27,8 @@ public abstract class Item implements Serializable {//lớp các mặt hàng
         this.category = category;
     }
 
+    // No-arg constructor
     public Item() {
-        // No-arg constructor for deserialization
         this.seller = null;
         this.category = null;
     }
@@ -82,7 +83,7 @@ public abstract class Item implements Serializable {//lớp các mặt hàng
 
     public void setMinIncrement(BigDecimal minIncrement) {
         if (minIncrement != null && minIncrement.compareTo(BigDecimal.ZERO) <= 0) {
-            this.minIncrement = new BigDecimal("1000"); // Default to 1000 if invalid
+            this.minIncrement = new BigDecimal("1000"); // Mặc định 1000 nếu số không hợp lệ
         } else {
             this.minIncrement = minIncrement;
         }
@@ -96,7 +97,8 @@ public abstract class Item implements Serializable {//lớp các mặt hàng
         this.imageUrl = imageUrl;
     }
 
-    public boolean isValid() { //kiểm tra thông số có logic không ?
+    // Kiểm tra thông số có logic không?
+    public boolean isValid() {
         return name != null && name.length() >= 1 && !name.isBlank() &&
                description != null && description.length() >= 1 && !description.isBlank() &&
                (minIncrement == null || minIncrement.compareTo(BigDecimal.ZERO) > 0);

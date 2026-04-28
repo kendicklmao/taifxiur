@@ -35,16 +35,11 @@ public class UserService {
     // Khởi tạo người dùng mặc định trong cơ sở dữ liệu lần đầu chạy
     public synchronized void initializeDefaultUsers() {
         System.out.println("--- INITIALIZING DEFAULT USERS ---");
-        boolean s1 = this.register("seller", "Admin@123", "seller@gmail.com", "q", "a", "q", "a", Role.SELLER);
-        boolean b1 = this.register("bidder", "Admin@123", "bidder@gmail.com", "q", "a", "q", "a", Role.BIDDER);
-        boolean b2 = this.register("bidder1", "Admin@123", "bidder1@gmail.com", "q", "a", "q", "a", Role.BIDDER);
-        boolean a1 = this.register("admin", "Admin@123", "supernigga@gmail.com", "q", "a", "q", "a", Role.ADMIN);
-        boolean a2 = this.register("admin1", "Admin@123", "admin1@gmail.com", "q", "a", "q", "a", Role.ADMIN);
-
-        System.out.println("Seller registration: " + (s1 ? "SUCCESS" : "FAILED (Exists?)"));
-        System.out.println("Bidder registration: " + (b1 ? "SUCCESS" : "FAILED (Exists?)"));
-        System.out.println("Admin registration: " + (a1 ? "SUCCESS" : "FAILED (Exists?)"));
-
+        this.register("seller", "Admin@123", "seller@gmail.com", "q", "a", "q", "a", Role.SELLER);
+        this.register("bidder", "Admin@123", "bidder@gmail.com", "q", "a", "q", "a", Role.BIDDER);
+        this.register("bidder1", "Admin@123", "bidder1@gmail.com", "q", "a", "q", "a", Role.BIDDER);
+        this.register("admin", "Admin@123", "supernigga@gmail.com", "q", "a", "q", "a", Role.ADMIN);
+        this.register("admin1", "Admin@123", "admin1@gmail.com", "q", "a", "q", "a", Role.ADMIN);
         ensureWalletForUsername("seller");
         ensureWalletForUsername("bidder");
         ensureWalletForUsername("admin");
@@ -245,11 +240,12 @@ public class UserService {
     }
 
     public boolean isUserBanned(String username) {
-        if (username == null)
+        if (username == null) {
             return false;
+        }
         username = Validator.normalizeAndLowercase(username);
         try (Connection conn = DatabaseConfig.getDataSource().getConnection();
-                PreparedStatement pstmt = conn.prepareStatement("SELECT is_banned FROM users WHERE username = ?")) {
+            PreparedStatement pstmt = conn.prepareStatement("SELECT is_banned FROM users WHERE username = ?")) {
             pstmt.setString(1, username);
             ResultSet rs = pstmt.executeQuery();
             return rs.next() && rs.getBoolean("is_banned");
@@ -262,8 +258,7 @@ public class UserService {
     // Lấy thông tin người dùng từ cơ sở dữ liệu theo tên người dùng
     private User getUserFromDatabase(String username) {
         try (Connection conn = DatabaseConfig.getDataSource().getConnection();
-                PreparedStatement pstmt = conn.prepareStatement(
-                        "SELECT * FROM users WHERE username = ?")) {
+            PreparedStatement pstmt = conn.prepareStatement("SELECT * FROM users WHERE username = ?")) {
 
             pstmt.setString(1, username);
             ResultSet rs = pstmt.executeQuery();
@@ -284,14 +279,11 @@ public class UserService {
 
                 User user = null;
                 if ("BIDDER".equals(role)) {
-                    user = new Bidder(id, username, hashedPassword, passwordSalt, email, isBanned, q1, hashedA1, saltA1,
-                            q2, hashedA2, saltA2);
+                    user = new Bidder(id, username, hashedPassword, passwordSalt, email, isBanned, q1, hashedA1, saltA1, q2, hashedA2, saltA2);
                 } else if ("SELLER".equals(role)) {
-                    user = new Seller(id, username, hashedPassword, passwordSalt, email, isBanned, q1, hashedA1, saltA1,
-                            q2, hashedA2, saltA2);
+                    user = new Seller(id, username, hashedPassword, passwordSalt, email, isBanned, q1, hashedA1, saltA1, q2, hashedA2, saltA2);
                 } else if ("ADMIN".equals(role)) {
-                    user = new Admin(id, username, hashedPassword, passwordSalt, email, isBanned, q1, hashedA1, saltA1,
-                            q2, hashedA2, saltA2);
+                    user = new Admin(id, username, hashedPassword, passwordSalt, email, isBanned, q1, hashedA1, saltA1, q2, hashedA2, saltA2);
                 }
 
                 if (user != null && isBanned) {
@@ -307,14 +299,20 @@ public class UserService {
         return null;
     }
 
+    // Lấy thông tin người dùng theo tên người dùng
+    public User getUser(String username) {
+        return getUserFromDatabase(username);
+    }
+
     // Kiểm tra xem email đã tồn tại chưa
     public boolean emailExists(String email) {
-        if (email == null)
+        if (email == null) {
             return false;
+        }
         email = Validator.normalizeAndLowercase(email);
 
         try (Connection conn = DatabaseConfig.getDataSource().getConnection();
-                PreparedStatement pstmt = conn.prepareStatement("SELECT 1 FROM users WHERE email = ?")) {
+            PreparedStatement pstmt = conn.prepareStatement("SELECT 1 FROM users WHERE email = ?")) {
 
             pstmt.setString(1, email);
             ResultSet rs = pstmt.executeQuery();
@@ -327,12 +325,13 @@ public class UserService {
 
     // Kiểm tra xem người dùng có tồn tại không
     public boolean exists(String username) {
-        if (username == null)
+        if (username == null) {
             return false;
+        }
         username = Validator.normalizeAndLowercase(username);
 
         try (Connection conn = DatabaseConfig.getDataSource().getConnection();
-                PreparedStatement pstmt = conn.prepareStatement("SELECT 1 FROM users WHERE username = ?")) {
+            PreparedStatement pstmt = conn.prepareStatement("SELECT 1 FROM users WHERE username = ?")) {
 
             pstmt.setString(1, username);
             ResultSet rs = pstmt.executeQuery();
@@ -345,12 +344,13 @@ public class UserService {
 
     // Kiểm tra xem người dùng có bị cấm không
     public boolean isBanned(String username) {
-        if (username == null)
+        if (username == null) {
             return false;
+        }
         username = Validator.normalizeAndLowercase(username);
 
         try (Connection conn = DatabaseConfig.getDataSource().getConnection();
-                PreparedStatement pstmt = conn.prepareStatement("SELECT is_banned FROM users WHERE username = ?")) {
+            PreparedStatement pstmt = conn.prepareStatement("SELECT is_banned FROM users WHERE username = ?")) {
 
             pstmt.setString(1, username);
             ResultSet rs = pstmt.executeQuery();
@@ -362,11 +362,6 @@ public class UserService {
             System.err.println("Error checking if user is banned: " + e.getMessage());
             return false;
         }
-    }
-
-    // Lấy thông tin người dùng theo tên người dùng
-    public User getUser(String username) {
-        return getUserFromDatabase(username);
     }
 
     // Lấy câu trả lời bảo mật cho tên người dùng/email
@@ -623,8 +618,7 @@ public class UserService {
         }
     }
 
-    // Bỏ cấm người dùng - trả về null nếu thành công, thông báo lỗi nếu không thành
-    // công
+    // Bỏ cấm người dùng - trả về null nếu thành công, thông báo lỗi nếu không thành công
     public String unbanUser(String username, String adminUsername) {
         username = Validator.normalizeAndLowercase(username);
         User admin = getUserFromDatabase(adminUsername);

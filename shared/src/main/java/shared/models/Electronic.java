@@ -3,11 +3,9 @@ package shared.models;
 import shared.enums.Category;
 import shared.enums.ItemStatus;
 
-import java.math.BigDecimal;
-
-public class Electronic extends Item { //mặt hàng điện tử
-    private final String brand; //hãng
-    private final ItemStatus status;//trạng thái mặt hàng: new || like new || used
+public class Electronic extends Item { // Mặt hàng điện tử
+    private final String brand; // Hãng
+    private final ItemStatus status; // Trạng thái mặt hàng (New, Like New, Used)
 
     public Electronic(String name, String description, Seller seller, String brand, ItemStatus status) {
         super(null, name, description, null, null, null, seller, Category.ELECTRONICS);
@@ -22,8 +20,6 @@ public class Electronic extends Item { //mặt hàng điện tử
     public ItemStatus getStatus() {
         return status;
     }
-
-
 
     public boolean isValid() {
         return super.isValid();

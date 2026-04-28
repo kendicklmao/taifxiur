@@ -3,10 +3,11 @@ package shared.models;
 import java.math.BigDecimal;
 import java.time.Instant;
 
-public class BidTransaction { //1 lần đặt giá
-    private final Bidder bidder; //người đấu giá
-    private final BigDecimal amount;//giá trị người đấu giá đặt
-    private final Instant time; //đặt giá tại thời điểm?
+// Lần đặt giá
+public class BidTransaction {
+    private final Bidder bidder; // Người đấu giá
+    private final BigDecimal amount; // Giá trị người đấu giá đặt
+    private final Instant time; // Đặt giá tại thời điểm
 
     public BidTransaction(Bidder bidder, BigDecimal amount, Instant time) {
         this.bidder = bidder;

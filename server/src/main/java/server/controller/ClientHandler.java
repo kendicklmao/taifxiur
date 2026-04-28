@@ -38,13 +38,13 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public class ClientHandler implements Runnable {
     private static final List<ClientHandler> activeClients = new CopyOnWriteArrayList<>();
 
-    private final Socket socket;
-    private final Gson gson = GsonUtils.createGson();
     private static final AuctionService auctionService = new AuctionService();
     private static final StorageService storageService = new StorageService();
-    private PrintWriter out;
-
     private static final UserService userService = new UserService();
+
+    private final Socket socket;
+    private final Gson gson = GsonUtils.createGson();
+    private PrintWriter out;
     private String loggedInUsername;
 
     public ClientHandler(Socket socket) {
@@ -78,7 +78,7 @@ public class ClientHandler implements Runnable {
                 }
             }
         } catch (Throwable e) {
-            System.err.println("💥 CRITICAL ERROR in ClientHandler (" + socket.getInetAddress() + "): " + e.getMessage());
+            System.err.println("CRITICAL ERROR in ClientHandler (" + socket.getInetAddress() + "): " + e.getMessage());
             e.printStackTrace();
         } finally {
             activeClients.remove(this);

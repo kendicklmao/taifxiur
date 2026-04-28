@@ -28,17 +28,15 @@ public class AuctionService {
     private static final WalletService walletService = new WalletService();
     private static final UserService userService = new UserService();
     private static final ExecutorService asyncExecutor = Executors.newFixedThreadPool(2);
-    // Cache for user ID lookups to avoid repeated DB queries
+    // Cache để tránh lặp lại query DB
     private static final Map<String, Integer> userIdCache = new ConcurrentHashMap<>();
 
     public AuctionService() {
-        // Load auctions from database on startup
+        // Tải tất cả các phiên đấu giá từ cơ sở dữ liệu khi server khởi động
         initializeAuctionsFromDatabase();
     }
 
-    /**
-     * Load all auctions from database on server startup
-     */
+    // Tải tất cả các phiên đấu giá từ cơ sở dữ liệu khi server khởi động
     private void initializeAuctionsFromDatabase() {
         System.out.println("Loading auctions from database...");
         try (Connection conn = DatabaseConfig.getDataSource().getConnection();
@@ -106,7 +104,7 @@ public class AuctionService {
                     loadAutoBidsForAuction(conn, auction, userService);
 
                     auctions.put(auctionId, auction);
-                    System.out.println("✓ Loaded auction: " + auctionId + " (status: " + statusStr + ")");
+                    System.out.println("Loaded auction: " + auctionId + " (status: " + statusStr + ")");
                 } catch (Exception e) {
                     System.err.println("Error loading auction from database: " + e.getMessage());
                     e.printStackTrace();
@@ -119,9 +117,7 @@ public class AuctionService {
         }
     }
 
-    /**
-     * Load item from database by ID
-     */
+    // Tải item từ database
     private Item loadItemFromDatabase(Connection conn, int itemId) {
         try (PreparedStatement pstmt = conn.prepareStatement(
                 "SELECT name, description, category, item_type, image_url, base_price, " +
@@ -175,8 +171,8 @@ public class AuctionService {
                     if (minIncrement != null) {
                         item.setMinIncrement(minIncrement);
                     } else {
-                        // Default fallback if min_increment is missing
-                        item.setMinIncrement(new BigDecimal("10000")); // e.g. 10k VND
+                        // Mặc định nếu min_increment bị thiếu
+                        item.setMinIncrement(new BigDecimal("10000"));
                     }
                 }
                 return item;
@@ -187,9 +183,7 @@ public class AuctionService {
         return null;
     }
 
-    /**
-     * Get username from user ID
-     */
+    // Tải username từ user ID
     private String getUsernameFromId(Connection conn, int userId) {
         try (PreparedStatement pstmt = conn.prepareStatement("SELECT username FROM users WHERE id = ?")) {
             pstmt.setInt(1, userId);
@@ -203,9 +197,7 @@ public class AuctionService {
         return null;
     }
 
-    /**
-     * Load bid history for an auction
-     */
+    // Load lịch sử đấu giá cho một phiên đấu giá
     private void loadBidHistoryForAuction(Connection conn, Auction auction, UserService userService) {
         try (PreparedStatement pstmt = conn.prepareStatement(
                 "SELECT b.bidder_id, b.bid_amount, b.bid_time FROM bids b " +
@@ -229,9 +221,7 @@ public class AuctionService {
         }
     }
 
-    /**
-     * Load auto-bids for an auction
-     */
+    // Tải auto-bids cho một phiên đấu giá
     private void loadAutoBidsForAuction(Connection conn, Auction auction, UserService userService) {
         try (PreparedStatement pstmt = conn.prepareStatement(
                 "SELECT ab.bidder_id, ab.max_bid_amount FROM auto_bids ab " +
@@ -254,10 +244,9 @@ public class AuctionService {
             System.err.println("Error loading auto-bids: " + e.getMessage());
         }
     }
-     /**
-      * Create auction and store in database
-      */
-     public Auction createAuction(Seller seller, Item item, BigDecimal startPrice, Instant startTime, Instant endTime) {
+
+    // Tạo phiên đấu giá và lưu vào database
+    public Auction createAuction(Seller seller, Item item, BigDecimal startPrice, Instant startTime, Instant endTime) {
         if (seller == null)
             throw new IllegalArgumentException("Seller is null");
         if (seller.isBanned())
@@ -269,28 +258,27 @@ public class AuctionService {
         if (!item.isValid()) {
             throw new IllegalArgumentException("Item is invalid");
         }
-        // Ensure auction start time is valid (must be after current time)
+        // Đảm bảo thời gian bắt đầu đấu giá hợp lệ
         Instant now = Instant.now();
         if (startTime == null || startTime.isBefore(now)) {
             startTime = now;
         }
-        // Ensure endTime is after startTime
+        // Đảm bảo thời gian kết thúc đấu giá hợp lệ
         if (endTime == null || !endTime.isAfter(startTime)) {
             throw new IllegalArgumentException("endTime must be after startTime and cannot be null");
         }
 
         String id = UUID.randomUUID().toString();
         Auction auction = new Auction(id, item, startPrice, seller, startTime, endTime);
-        // Register finish callback so the service finalizes payment automatically when
-        // auction finishes
+        // Đăng ký finish callback để service có thể tự động thanh toán khi phiên đấu giá kết thúc
         auction.setFinishCallback(a -> finalizeAuction(a));
         auction.setBanChecker(username -> userService.isUserBanned(username));
         auctions.put(id, auction);
 
-        // Store item in database with pricing information
+        // Lưu item vào database
         int itemId = saveItemToDatabase(item, seller, startPrice);
 
-        // Store auction in database
+        // Lưu auction vào database
         try (Connection conn = DatabaseConfig.getDataSource().getConnection();
                 PreparedStatement pstmt = conn.prepareStatement(
                         "INSERT INTO auctions (id, item_id, seller_id, start_price, current_price, status, start_time, end_time) VALUES (?, ?, ?, ?, ?, ?, ?, ?)")) {
@@ -313,9 +301,7 @@ public class AuctionService {
         return auction;
     }
 
-    /**
-     * Place a bid and store in database
-     */
+    // Đặt giá và lưu vào database
     public boolean placeBid(String auctionId, Bidder bidder, BigDecimal amount) {
         if (auctionId == null || bidder == null || amount == null)
             throw new IllegalArgumentException();
@@ -323,16 +309,16 @@ public class AuctionService {
         if (auction == null) {
             throw new IllegalArgumentException();
         }
-        // Ensure bidder has enough total balance (no hold system)
+        // Đảm bảo bidder có đủ số dư (không có hệ thống hold)
         BigDecimal balance = walletService.getWalletBalance(bidder.getUsername());
         if (balance == null || balance.compareTo(amount) < 0) {
-            return false; // insufficient funds
+            return false; // Số dư không đủ
         }
 
         boolean success = auction.placeBid(bidder, amount);
 
         if (success) {
-            // Store bid in database
+            // Lưu bid vào database
             try (Connection conn = DatabaseConfig.getDataSource().getConnection();
                     PreparedStatement pstmt = conn.prepareStatement(
                             "INSERT INTO bids (auction_id, bidder_id, bid_amount, bid_time) VALUES (?, ?, ?, CURRENT_TIMESTAMP)")) {
@@ -344,7 +330,7 @@ public class AuctionService {
                 int result = pstmt.executeUpdate();
                 System.out.println("Bid inserted: " + result + " rows affected");
 
-                // Update current auction price
+                // Cập nhật giá hiện tại của phiên đấu giá
                 updateAuctionPrice(auctionId, amount);
             } catch (SQLException e) {
                 System.err.println("Error storing bid: " + e.getMessage());
@@ -355,18 +341,14 @@ public class AuctionService {
         return success;
     }
 
-    /**
-     * Get auction by ID
-     */
+    // Lấy phiên đấu giá theo ID
     public Auction getAuction(String id) {
         if (id == null)
             return null;
         return auctions.get(id);
     }
 
-    /**
-     * Register autobid and store in database
-     */
+    // Đăng ký autobid và lưu vào database
     public void registerAutoBid(String auctionId, Bidder bidder, BigDecimal maxBid) {
         if (auctionId == null || bidder == null || maxBid == null) {
             throw new IllegalArgumentException();
@@ -377,7 +359,7 @@ public class AuctionService {
         }
         auction.registerAutoBid(bidder, maxBid);
 
-        // Store in database
+        // Lưu vào database
         try (Connection conn = DatabaseConfig.getDataSource().getConnection();
                 PreparedStatement pstmt = conn.prepareStatement(
                         "INSERT INTO auto_bids (auction_id, bidder_id, max_bid_amount, created_at) VALUES (?, ?, ?, CURRENT_TIMESTAMP)")) {
@@ -394,9 +376,7 @@ public class AuctionService {
         }
     }
 
-    /**
-     * Get auctions by status
-     */
+    // Lấy phiên đấu giá theo trạng thái
     public List<Auction> getAuctionsByStatus(AuctionStatus status) {
         List<Auction> allAuctions = new ArrayList<>();
         for (Auction a : auctions.values()) {
@@ -407,11 +387,7 @@ public class AuctionService {
         return allAuctions;
     }
 
-    /**
-     * Get all auctions and update status if needed (NO blocking DB operations
-     * here!)
-     * Payment finalization is handled by finalizeAuction() callback
-     */
+    // Lấy tất cả phiên đấu giá và cập nhật trạng thái nếu cần
     public List<Auction> getAllAuctions() {
         Instant now = Instant.now();
         for (Auction auction : auctions.values()) {
@@ -428,9 +404,6 @@ public class AuctionService {
                     java.lang.reflect.Field statusField = Auction.class.getDeclaredField("status");
                     statusField.setAccessible(true);
                     statusField.set(auction, AuctionStatus.FINISHED);
-                    // Finalization will be handled by the Auction scheduler callback
-                    // (finalizeAuction)
-                    // Don't do blocking DB operations here!
                 } catch (Exception ignored) {
                 }
             }
@@ -438,14 +411,11 @@ public class AuctionService {
         return new ArrayList<>(auctions.values());
     }
 
-    /**
-     * Finalize auction payment when auction finishes. Called by
-     * Auction.finishCallback.
-     * Works for both manual bids and auto-bids since both set a highestBidder.
-     * Runs ASYNCHRONOUSLY in background thread pool to prevent blocking!
-     */
+    // Thanh toán tiền đấu giá khi phiên đấu giá kết thúc. Được gọi bởi Auction.finishCallback.
+    // Hoạt động cho cả bid thủ công và bid tự động vì cả hai đều đặt highestBidder.
+    // Chạy ASYNCHRONOUSLY trong background thread pool để tránh bị block!
     private void finalizeAuction(Auction auction) {
-        // Submit to async executor - don't block the scheduler thread
+        // Gửi đến async executor - không chặn thread scheduler
         asyncExecutor.execute(() -> {
             if (auction == null)
                 return;
@@ -459,7 +429,7 @@ public class AuctionService {
                     String finalizeError = walletService.finalizePaymentForWinner(auctionId, winnerUsername,
                             sellerUsername, price);
                     if (finalizeError == null) {
-                        // update auction status in DB to PAID
+                        // Cập nhật trạng thái phiên đấu giá trong database thành PAID
                         try (Connection conn = DatabaseConfig.getDataSource().getConnection();
                                 PreparedStatement pstmt = conn
                                         .prepareStatement("UPDATE auctions SET status = ? WHERE id = ?")) {
@@ -469,7 +439,7 @@ public class AuctionService {
                         } catch (SQLException e) {
                             System.err.println("Error updating auction status to PAID: " + e.getMessage());
                         }
-                        // Notify clients
+                        // Thông báo cho client
                         try {
                             Gson gson = GsonUtils.createGson();
                             Response resp = new Response("AUCTION_FINISHED", auction.getId());
@@ -477,11 +447,10 @@ public class AuctionService {
                         } catch (Exception ignored) {
                         }
                     } else {
-                        System.err.println(
-                                "Failed to finalize payment for auction " + auction.getId() + ": " + finalizeError);
+                        System.err.println("Không thể thanh toán tiền cho phiên đấu giá " + auction.getId() + ": " + finalizeError);
                     }
                 } else {
-                    // No winner: just update auction status to FINISHED in DB
+                    // Không có người thắng: chỉ cập nhật trạng thái phiên đấu giá thành FINISHED trong DB
                     try (Connection conn = DatabaseConfig.getDataSource().getConnection();
                             PreparedStatement pstmt = conn
                                     .prepareStatement("UPDATE auctions SET status = ? WHERE id = ?")) {
@@ -505,9 +474,7 @@ public class AuctionService {
         });
     }
 
-    /**
-     * Mark item as paid
-     */
+    // Đánh dấu vật phẩm là đã thanh toán
     public void itemPaid(String auctionId, Bidder bidder) {
         if (auctionId == null || bidder == null) {
             throw new IllegalArgumentException();
@@ -519,15 +486,13 @@ public class AuctionService {
         auction.itemPaid(bidder);
     }
 
-    /**
-     * Get auctions by seller
-     */
+    // Lấy phiên đấu giá theo TÊN người bán
     public List<Auction> getAuctionsBySeller(String sellerUsername) {
         List<Auction> sellerAuctions = new ArrayList<>();
         Instant now = Instant.now();
         for (Auction auction : auctions.values()) {
             if (auction.getSeller() != null && auction.getSeller().getUsername().equals(sellerUsername)) {
-                // Update status if needed
+                // Cập nhật status nếu cần
                 if (auction.getStatus() == AuctionStatus.OPEN && !now.isBefore(auction.getStartTime())
                         && now.isBefore(auction.getEndTime())) {
                     try {
@@ -541,9 +506,8 @@ public class AuctionService {
                         java.lang.reflect.Field statusField = Auction.class.getDeclaredField("status");
                         statusField.setAccessible(true);
                         statusField.set(auction, AuctionStatus.FINISHED);
-                        // Finalization will be handled by the Auction scheduler callback
-                        // (finalizeAuction)
-                        // Don't do blocking DB operations here!
+                        // Việc hoàn tất thanh toán sẽ được xử lý bởi callback của bộ lập lịch Auction (finalizeAuction)
+                        // Không thực hiện các thao tác DB chặn luồng ở đây!
                     } catch (Exception ignored) {
                     }
                 }
@@ -553,9 +517,7 @@ public class AuctionService {
         return sellerAuctions;
     }
 
-    /**
-     * Helper method to save item to database with pricing information
-     */
+    // Phương thức trợ giúp để lưu mặt hàng vào cơ sở dữ liệu với thông tin giá cả
     private int saveItemToDatabase(Item item, Seller seller, BigDecimal startPrice) {
         try (Connection conn = DatabaseConfig.getDataSource().getConnection();
                 PreparedStatement pstmt = conn.prepareStatement(
