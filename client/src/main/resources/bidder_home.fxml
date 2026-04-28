@@ -38,6 +38,12 @@
                 <Label text="Double-click an auction to place your bid" styleClass="dashboard-section-subtitle"/>
             </VBox>
 
+            <!-- Search and Sort Controls -->
+            <HBox spacing="10" alignment="CENTER_LEFT" style="-fx-padding: 0 0 10 0;">
+                <TextField fx:id="searchField" promptText="Search by item name..." HBox.hgrow="ALWAYS" styleClass="text-field"/>
+                <ComboBox fx:id="sortComboBox" promptText="Sort by..."/>
+            </HBox>
+
             <ScrollPane fitToWidth="true" style="-fx-background-color: transparent;">
                 <TilePane fx:id="auctionGrid" hgap="15" vgap="15" style="-fx-padding: 10;"/>
             </ScrollPane>
