@@ -8,16 +8,22 @@ import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
 import javafx.collections.transformation.SortedList;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.TilePane;
 import javafx.scene.layout.VBox;
+import javafx.stage.Modality;
+import javafx.stage.Stage;
 import shared.models.Auction;
 import shared.network.Request;
 import shared.network.Response;
 import shared.utils.GsonUtils;
 
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -387,40 +393,67 @@ public class BidderHomeController {
     }
 
     private void showBidOptionsDialog(Auction auction) {
-        String status = auction.getStatus().toString();
-        if (!"RUNNING".equals(status)) {
-            String msg = "OPEN".equals(status) ? "This auction has not started yet." : "This auction has already finished.";
-            showAlert("Error", msg + " Status: " + status);
-            return;
-        }
-
         Dialog<String> dialog = new Dialog<>();
-        dialog.setTitle("Bid Options");
-        dialog.setHeaderText("Choose bidding method for: " + auction.getItem().getName());
+        dialog.setTitle("Auction Options");
+        dialog.setHeaderText("Choose an action for: " + auction.getItem().getName());
 
+        // Create buttons
         ButtonType placeBidType = new ButtonType("Place Bid", ButtonBar.ButtonData.YES);
         ButtonType autoBidType = new ButtonType("Auto Bid", ButtonBar.ButtonData.NO);
+        ButtonType viewChartType = new ButtonType("View Chart", ButtonBar.ButtonData.HELP_2);
         ButtonType cancelType = new ButtonType("Cancel", ButtonBar.ButtonData.CANCEL_CLOSE);
 
-        dialog.getDialogPane().getButtonTypes().addAll(placeBidType, autoBidType, cancelType);
+        // Add buttons based on auction status
+        dialog.getDialogPane().getButtonTypes().add(viewChartType);
+        if ("RUNNING".equals(auction.getStatus().toString())) {
+            dialog.getDialogPane().getButtonTypes().addAll(placeBidType, autoBidType);
+        }
+        dialog.getDialogPane().getButtonTypes().add(cancelType);
+
 
         dialog.setResultConverter(dialogButton -> {
-            if (dialogButton == placeBidType) {
-                return "PLACE_BID";
-            } else if (dialogButton == autoBidType) {
-                return "AUTO_BID";
-            }
+            if (dialogButton == placeBidType) return "PLACE_BID";
+            if (dialogButton == autoBidType) return "AUTO_BID";
+            if (dialogButton == viewChartType) return "VIEW_CHART";
             return null;
         });
 
         dialog.showAndWait().ifPresent(result -> {
-            if ("PLACE_BID".equals(result)) {
-                showBidAmountDialog(auction, false);
-            } else if ("AUTO_BID".equals(result)) {
-                showBidAmountDialog(auction, true);
+            if (result == null) return;
+            switch (result) {
+                case "PLACE_BID":
+                    showBidAmountDialog(auction, false);
+                    break;
+                case "AUTO_BID":
+                    showBidAmountDialog(auction, true);
+                    break;
+                case "VIEW_CHART":
+                    showPriceChart(auction);
+                    break;
             }
         });
     }
+
+    private void showPriceChart(Auction auction) {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/auction_chart.fxml"));
+            Parent root = loader.load();
+
+            AuctionChartController controller = loader.getController();
+            controller.populateChart(auction);
+
+            Stage stage = new Stage();
+            stage.setTitle("Price Chart");
+            stage.initModality(Modality.APPLICATION_MODAL);
+            stage.setScene(new Scene(root));
+            stage.showAndWait();
+
+        } catch (IOException e) {
+            e.printStackTrace();
+            showAlert("Error", "Could not load the price chart view.");
+        }
+    }
+
 
     private void showBidAmountDialog(Auction auction, boolean isAutoBid) {
         Dialog<String> dialog = new Dialog<>();
