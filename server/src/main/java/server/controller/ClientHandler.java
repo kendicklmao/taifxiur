@@ -378,11 +378,15 @@ public class ClientHandler implements Runnable {
                         // Handle minIncrement
                         String incType = data.get("incrementType");
                         BigDecimal minInc;
+                        BigDecimal defaultMinInc = price.multiply(new BigDecimal("0.05"));
                         if ("Custom Amount".equals(incType)) {
                             minInc = new BigDecimal(data.get("minIncrement"));
+                            if (minInc.compareTo(defaultMinInc) < 0) {
+                                return new Response("FAIL", "Custom increment must be greater than or equal to default minimum increment: " + defaultMinInc.toPlainString());
+                            }
                         } else {
                             // Default 5% of starting price
-                            minInc = price.multiply(new BigDecimal("0.05"));
+                            minInc = defaultMinInc;
                         }
                         item.setMinIncrement(minInc);
                         

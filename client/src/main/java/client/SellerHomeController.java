@@ -313,9 +313,22 @@ public class SellerHomeController {
             String name = itemNameField.getText();
             String price = startPriceField.getText();
             String desc = descField.getText();
+            BigDecimal startingPrice;
 
             if (name.isEmpty()) {
                 showAlert("Error", "Missing information!");
+                return;
+            }
+
+            try {
+                startingPrice = new BigDecimal(price);
+            } catch (NumberFormatException e) {
+                showAlert("Error", "Starting price must be a valid number!");
+                return;
+            }
+
+            if (startingPrice.compareTo(BigDecimal.ZERO) <= 0) {
+                showAlert("Error", "Starting price must be greater than 0!");
                 return;
             }
 
@@ -378,6 +391,11 @@ public class SellerHomeController {
                     BigDecimal inc = new BigDecimal(customInc);
                     if (inc.compareTo(BigDecimal.ZERO) <= 0) {
                         showAlert("Error", "Minimum increment must be greater than 0!");
+                        return;
+                    }
+                    BigDecimal defaultMinIncrement = startingPrice.multiply(new BigDecimal("0.05"));
+                    if (inc.compareTo(defaultMinIncrement) < 0) {
+                        showAlert("Error", "Custom increment must be greater than or equal to default minimum increment: " + defaultMinIncrement.toPlainString());
                         return;
                     }
                     data.put("minIncrement", customInc);
