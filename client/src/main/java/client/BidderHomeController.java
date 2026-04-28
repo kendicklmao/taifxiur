@@ -511,6 +511,8 @@ public class BidderHomeController {
             Response response = ctx.sendRequestAndWait(req, 15); // Wait for server response
 
             if ("SUCCESS".equals(response.getStatus())) {
+                // Immediately refresh auctions to show the updated price after auto-bid
+                refreshAuctions();
                 showAlert("Success", "Auto-bid registered successfully!");
             } else {
                 showAlert("Error", response.getMessage());
