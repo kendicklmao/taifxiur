@@ -3,30 +3,39 @@ package client;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import javafx.application.Platform;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+import javafx.collections.transformation.FilteredList;
+import javafx.collections.transformation.SortedList;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-import javafx.scene.layout.VBox;
 import javafx.scene.layout.TilePane;
+import javafx.scene.layout.VBox;
+import javafx.stage.Modality;
+import javafx.stage.Stage;
 import shared.models.Auction;
 import shared.network.Request;
 import shared.network.Response;
 import shared.utils.GsonUtils;
 
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
-import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
 
 public class BidderHomeController {
     @FXML
@@ -35,9 +44,16 @@ public class BidderHomeController {
     private Label welcomeLabel;
     @FXML
     private Label walletBalanceLabel;
+    @FXML
+    private TextField searchField;
+    @FXML
+    private ComboBox<String> sortComboBox;
+
     private final AppContext ctx = AppContext.getInstance();
     private final Gson gson = GsonUtils.createGson();
     private Consumer<String> messageListener;
+    private final ObservableList<Auction> allAuctions = FXCollections.observableArrayList();
+
     private static final List<String> BANK_NAMES = Arrays.asList(
             "Vietcombank", "Techcombank", "BIDV", "Agribank", "VPBank",
             "MBBank", "ACB", "Sacombank", "Eximbank", "HDBank",
@@ -48,18 +64,56 @@ public class BidderHomeController {
     public void initialize() {
         welcomeLabel.setText("Welcome " + ctx.getCurrentUser().getUsername());
 
+        // Setup sorting options
+        sortComboBox.getItems().addAll("Name (A-Z)", "Price (Low to High)");
+
+        // 1. Wrap the ObservableList in a FilteredList (initially display all data).
+        FilteredList<Auction> filteredData = new FilteredList<>(allAuctions, p -> true);
+
+        // 2. Set the filter Predicate whenever the filter changes.
+        searchField.textProperty().addListener((observable, oldValue, newValue) -> {
+            filteredData.setPredicate(auction -> {
+                if (newValue == null || newValue.isEmpty()) {
+                    return true; // Display all auctions if search field is empty.
+                }
+                String lowerCaseFilter = newValue.toLowerCase();
+                // Filter matches item name.
+                return auction.getItem().getName().toLowerCase().contains(lowerCaseFilter);
+            });
+        });
+
+        // 3. Wrap the FilteredList in a SortedList.
+        SortedList<Auction> sortedData = new SortedList<>(filteredData);
+
+        // 4. Bind the SortedList comparator to the ComboBox selection.
+        sortComboBox.valueProperty().addListener((observable, oldValue, newValue) -> {
+            if (newValue == null) {
+                sortedData.setComparator(null);
+                return;
+            }
+            switch (newValue) {
+                case "Name (A-Z)":
+                    sortedData.setComparator(Comparator.comparing(a -> a.getItem().getName()));
+                    break;
+                case "Price (Low to High)":
+                    sortedData.setComparator(Comparator.comparing(Auction::getCurrentPrice));
+                    break;
+                default:
+                    sortedData.setComparator(null);
+                    break;
+            }
+        });
+
+        // 5. Add a listener to the SortedList to update the UI whenever it changes.
+        sortedData.addListener((javafx.collections.ListChangeListener<Auction>) c -> updateAuctionGrid(sortedData));
+
         messageListener = line -> {
             try {
                 Response res = gson.fromJson(line, Response.class);
-                // Only react to explicit update notifications from server.
-                // Avoid treating every generic SUCCESS as an auctions list to prevent
-                // duplicate/overlapping UI updates that cause flicker.
                 if ("UPDATE_PRICE".equals(res.getStatus()) || "AUCTION_UPDATED".equals(res.getStatus())
                         || "AUCTION_FINISHED".equals(res.getStatus())) {
                     Platform.runLater(this::refreshAuctions);
                 }
-                // Other response types (including SUCCESS from direct requests) are
-                // handled by the request sender (sendRequestAndWait), so ignore them here.
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -92,53 +146,10 @@ public class BidderHomeController {
     }
 
     private void updateAuctionGrid(List<Auction> auctions) {
-        // Build a safe map of existing cards keyed by their auction id (userData)
-        Map<String, VBox> existingAuctionCards = new java.util.HashMap<>();
-        for (var node : auctionGrid.getChildren()) {
-            if (node instanceof VBox) {
-                Object ud = node.getUserData();
-                if (ud != null) {
-                    existingAuctionCards.put(ud.toString(), (VBox) node);
-                }
-            }
-        }
-
-        // Iterate incoming auctions and update existing cards or add new ones
+        auctionGrid.getChildren().clear();
         for (Auction auction : auctions) {
-            String id = auction.getId();
-            if (existingAuctionCards.containsKey(id)) {
-                VBox card = existingAuctionCards.get(id);
-                // Update labels stored in card properties (if present)
-                Object priceObj = card.getProperties().get("priceLabel");
-                if (priceObj instanceof Label) {
-                    ((Label) priceObj).setText("Current Bid: " + auction.getCurrentPrice() + " VND");
-                }
-                Object statusObj = card.getProperties().get("statusLabel");
-                if (statusObj instanceof Label) {
-                    ((Label) statusObj).setText(auction.getStatus().toString());
-                }
-                Object endsObj = card.getProperties().get("endsInLabel");
-                if (endsObj instanceof Label) {
-                    ((Label) endsObj).setText("Ends: " + formatEndTime(auction.getEndTime()));
-                }
-                // Remove from map so remaining entries are those to delete
-                existingAuctionCards.remove(id);
-                // Update click handler to use the latest auction object so status is current
-                card.setOnMouseClicked(event -> {
-                    if (event.getClickCount() == 2) {
-                        showBidOptionsDialog(auction);
-                    }
-                });
-            } else {
-                VBox card = createAuctionCard(auction);
-                card.setUserData(id);
-                auctionGrid.getChildren().add(card);
-            }
-        }
-
-        // Remove cards for auctions that no longer exist
-        for (VBox oldCard : existingAuctionCards.values()) {
-            auctionGrid.getChildren().remove(oldCard);
+            VBox card = createAuctionCard(auction);
+            auctionGrid.getChildren().add(card);
         }
     }
 
@@ -171,12 +182,6 @@ public class BidderHomeController {
         startsAtLabel.setText("Starts: " + formatEndTime(auction.getStartTime()));
         endsInLabel.setText("Ends: " + formatEndTime(auction.getEndTime()));
 
-        // Store references to important labels so we can update them without recreating
-        // nodes
-        card.getProperties().put("priceLabel", priceLabel);
-        card.getProperties().put("statusLabel", statusLabel);
-        card.getProperties().put("endsInLabel", endsInLabel);
-
         card.setOnMouseClicked(event -> {
             if (event.getClickCount() == 2) {
                 showBidOptionsDialog(auction);
@@ -193,15 +198,13 @@ public class BidderHomeController {
             if ("SUCCESS".equals(response.getStatus())) {
                 List<Auction> auctions = gson.fromJson(response.getMessage(), new TypeToken<List<Auction>>() {
                 }.getType());
-                Platform.runLater(() -> updateAuctionGrid(auctions));
+                Platform.runLater(() -> {
+                    allAuctions.setAll(auctions);
+                });
             }
         } catch (Exception e) {
             System.out.println("Failed to refresh auctions: " + e.getMessage());
         }
-    }
-
-    public void handleBid() {
-        // This method is no longer used - double-click on auction instead
     }
 
     @FXML
@@ -390,43 +393,67 @@ public class BidderHomeController {
     }
 
     private void showBidOptionsDialog(Auction auction) {
-        // Check if auction is running
-        // Check if auction is running or upcoming
-        String status = auction.getStatus().toString();
-        if (!"RUNNING".equals(status)) {
-            String msg = "OPEN".equals(status) ? "This auction has not started yet." : "This auction has already finished.";
-            showAlert("Error", msg + " Status: " + status);
-            return;
-        }
-
         Dialog<String> dialog = new Dialog<>();
-        dialog.setTitle("Bid Options");
-        dialog.setHeaderText("Choose bidding method for: " + auction.getItem().getName());
+        dialog.setTitle("Auction Options");
+        dialog.setHeaderText("Choose an action for: " + auction.getItem().getName());
 
         // Create buttons
         ButtonType placeBidType = new ButtonType("Place Bid", ButtonBar.ButtonData.YES);
         ButtonType autoBidType = new ButtonType("Auto Bid", ButtonBar.ButtonData.NO);
+        ButtonType viewChartType = new ButtonType("View Chart", ButtonBar.ButtonData.HELP_2);
         ButtonType cancelType = new ButtonType("Cancel", ButtonBar.ButtonData.CANCEL_CLOSE);
 
-        dialog.getDialogPane().getButtonTypes().addAll(placeBidType, autoBidType, cancelType);
+        // Add buttons based on auction status
+        dialog.getDialogPane().getButtonTypes().add(viewChartType);
+        if ("RUNNING".equals(auction.getStatus().toString())) {
+            dialog.getDialogPane().getButtonTypes().addAll(placeBidType, autoBidType);
+        }
+        dialog.getDialogPane().getButtonTypes().add(cancelType);
+
 
         dialog.setResultConverter(dialogButton -> {
-            if (dialogButton == placeBidType) {
-                return "PLACE_BID";
-            } else if (dialogButton == autoBidType) {
-                return "AUTO_BID";
-            }
+            if (dialogButton == placeBidType) return "PLACE_BID";
+            if (dialogButton == autoBidType) return "AUTO_BID";
+            if (dialogButton == viewChartType) return "VIEW_CHART";
             return null;
         });
 
         dialog.showAndWait().ifPresent(result -> {
-            if ("PLACE_BID".equals(result)) {
-                showBidAmountDialog(auction, false);
-            } else if ("AUTO_BID".equals(result)) {
-                showBidAmountDialog(auction, true);
+            if (result == null) return;
+            switch (result) {
+                case "PLACE_BID":
+                    showBidAmountDialog(auction, false);
+                    break;
+                case "AUTO_BID":
+                    showBidAmountDialog(auction, true);
+                    break;
+                case "VIEW_CHART":
+                    showPriceChart(auction);
+                    break;
             }
         });
     }
+
+    private void showPriceChart(Auction auction) {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/auction_chart.fxml"));
+            Parent root = loader.load();
+
+            AuctionChartController controller = loader.getController();
+            controller.populateChart(auction);
+
+            Stage stage = new Stage();
+            stage.setTitle("Price Chart");
+            stage.initModality(Modality.APPLICATION_MODAL);
+            stage.setScene(new Scene(root));
+            stage.showAndWait();
+
+        } catch (IOException e) {
+            e.printStackTrace();
+            showAlert("Error", "Could not load the price chart view.");
+        }
+    }
+
 
     private void showBidAmountDialog(Auction auction, boolean isAutoBid) {
         Dialog<String> dialog = new Dialog<>();
@@ -486,10 +513,9 @@ public class BidderHomeController {
             data.put("username", ctx.getCurrentUser().getUsername());
 
             Request req = new Request("PLACE_BID", data);
-            Response response = ctx.sendRequestAndWait(req, 15); // Wait for server response
+            Response response = ctx.sendRequestAndWait(req, 15);
 
             if ("SUCCESS".equals(response.getStatus())) {
-                // Immediately refresh auctions to show the updated price
                 refreshAuctions();
                 showAlert("Success", "Bid placed successfully!");
             } else {
@@ -508,9 +534,10 @@ public class BidderHomeController {
             data.put("username", ctx.getCurrentUser().getUsername());
 
             Request req = new Request("REGISTER_AUTOBID", data);
-            Response response = ctx.sendRequestAndWait(req, 15); // Wait for server response
+            Response response = ctx.sendRequestAndWait(req, 15);
 
             if ("SUCCESS".equals(response.getStatus())) {
+                refreshAuctions();
                 showAlert("Success", "Auto-bid registered successfully!");
             } else {
                 showAlert("Error", response.getMessage());
@@ -520,9 +547,6 @@ public class BidderHomeController {
         }
     }
 
-    /**
-     * Format end time as readable date and time
-     */
     private String formatEndTime(Instant endTime) {
         if (endTime == null) {
             return "Unknown";
