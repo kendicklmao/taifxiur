@@ -79,23 +79,11 @@ public class AuctionService {
 
                     // Restore current price if different from start price
                     if (currentPrice != null && currentPrice.compareTo(startPrice) > 0) {
-                        try {
-                            java.lang.reflect.Field priceField = Auction.class.getDeclaredField("currentPrice");
-                            priceField.setAccessible(true);
-                            priceField.set(auction, currentPrice);
-                        } catch (Exception e) {
-                            System.err.println("Could not restore current price for auction: " + e.getMessage());
-                        }
+                        auction.setCurrentPriceForDBRestore(currentPrice);
                     }
 
                     // Restore status
-                    try {
-                        java.lang.reflect.Field statusField = Auction.class.getDeclaredField("status");
-                        statusField.setAccessible(true);
-                        statusField.set(auction, AuctionStatus.valueOf(statusStr));
-                    } catch (Exception e) {
-                        System.err.println("Could not restore status for auction: " + e.getMessage());
-                    }
+                    auction.setStatusForDBRestore(AuctionStatus.valueOf(statusStr));
 
                     // Load and restore bid history
                     loadBidHistoryForAuction(conn, auction, userService);
@@ -135,7 +123,6 @@ public class AuctionService {
                 String imageUrl = rs.getString("image_url");
                 BigDecimal minIncrement = rs.getBigDecimal("min_increment");
 
-                UserService userService = new UserService();
                 User sellerUser = userService.getUser(getUsernameFromId(conn, sellerId));
                 if (!(sellerUser instanceof Seller)) return null;
                 Seller seller = (Seller) sellerUser;
@@ -389,24 +376,8 @@ public class AuctionService {
 
     // Lấy tất cả phiên đấu giá và cập nhật trạng thái nếu cần
     public List<Auction> getAllAuctions() {
-        Instant now = Instant.now();
         for (Auction auction : auctions.values()) {
-            if (auction.getStatus() == AuctionStatus.OPEN && !now.isBefore(auction.getStartTime())
-                    && now.isBefore(auction.getEndTime())) {
-                try {
-                    java.lang.reflect.Field statusField = Auction.class.getDeclaredField("status");
-                    statusField.setAccessible(true);
-                    statusField.set(auction, AuctionStatus.RUNNING);
-                } catch (Exception ignored) {
-                }
-            } else if (auction.getStatus() == AuctionStatus.RUNNING && !now.isBefore(auction.getEndTime())) {
-                try {
-                    java.lang.reflect.Field statusField = Auction.class.getDeclaredField("status");
-                    statusField.setAccessible(true);
-                    statusField.set(auction, AuctionStatus.FINISHED);
-                } catch (Exception ignored) {
-                }
-            }
+            auction.updateStatus();
         }
         return new ArrayList<>(auctions.values());
     }
@@ -489,28 +460,10 @@ public class AuctionService {
     // Lấy phiên đấu giá theo TÊN người bán
     public List<Auction> getAuctionsBySeller(String sellerUsername) {
         List<Auction> sellerAuctions = new ArrayList<>();
-        Instant now = Instant.now();
         for (Auction auction : auctions.values()) {
             if (auction.getSeller() != null && auction.getSeller().getUsername().equals(sellerUsername)) {
                 // Cập nhật status nếu cần
-                if (auction.getStatus() == AuctionStatus.OPEN && !now.isBefore(auction.getStartTime())
-                        && now.isBefore(auction.getEndTime())) {
-                    try {
-                        java.lang.reflect.Field statusField = Auction.class.getDeclaredField("status");
-                        statusField.setAccessible(true);
-                        statusField.set(auction, AuctionStatus.RUNNING);
-                    } catch (Exception ignored) {
-                    }
-                } else if (auction.getStatus() == AuctionStatus.RUNNING && !now.isBefore(auction.getEndTime())) {
-                    try {
-                        java.lang.reflect.Field statusField = Auction.class.getDeclaredField("status");
-                        statusField.setAccessible(true);
-                        statusField.set(auction, AuctionStatus.FINISHED);
-                        // Việc hoàn tất thanh toán sẽ được xử lý bởi callback của bộ lập lịch Auction (finalizeAuction)
-                        // Không thực hiện các thao tác DB chặn luồng ở đây!
-                    } catch (Exception ignored) {
-                    }
-                }
+                auction.updateStatus();
                 sellerAuctions.add(auction);
             }
         }

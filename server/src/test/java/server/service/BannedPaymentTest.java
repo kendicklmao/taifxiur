@@ -1,7 +1,9 @@
 package server.service;
 
+import org.junit.After;
 import org.junit.Test;
 import org.junit.Before;
+import server.database.DatabaseConfig;
 import shared.enums.Role;
 import java.math.BigDecimal;
 import java.util.UUID;
@@ -15,24 +17,28 @@ public class BannedPaymentTest {
     public void setUp() {
         userService = new UserService();
         walletService = new WalletService();
+        userService.initializeDefaultUsers();
+    }
+
+    @After
+    public void tearDown() {
+        DatabaseConfig.closeDataSource();
     }
 
     @Test
     public void testBannedUserCannotBeCharged() {
         String bidder = "bidder_" + UUID.randomUUID().toString().substring(0, 8);
         String seller = "seller_" + UUID.randomUUID().toString().substring(0, 8);
-        String admin = "admin_" + UUID.randomUUID().toString().substring(0, 8);
+        String admin = "admin";
 
-        // 1. Đăng ký người dùng
+        // 1. Register users
         userService.register(bidder, "Pass@123", bidder + "@test.com", "q", "a", "q", "a", Role.BIDDER);
         userService.register(seller, "Pass@123", seller + "@test.com", "q", "a", "q", "a", Role.SELLER);
-        userService.register(admin, "Pass@123", admin + "@test.com", "q", "a", "q", "a", Role.ADMIN);
 
-        // 2. Nạp tiền vào ví người đấu giá (Cần có tiền thì mới thực hiện thanh toán ở
-        // bước 4 được)
+        // 2. Deposit money into the bidder's wallet
         walletService.createDepositRequest(bidder, new BigDecimal("1000"));
 
-        // Lấy ID của yêu cầu vừa tạo để phê duyệt
+        // Get the ID of the request just created to approve it
         String requestId = walletService.getPendingDepositRequests().stream()
                 .filter(r -> r.get("username").equals(bidder))
                 .findFirst()
@@ -40,18 +46,18 @@ public class BannedPaymentTest {
                 .get("id");
         walletService.approveDeposit(requestId, admin);
 
-        // 3. Ban người đấu giá
+        // 3. Ban the bidder
         userService.banUser(bidder, admin);
         assertTrue("User should be banned", userService.isUserBanned(bidder));
 
-        // 4. Thanh toán cho phiên đấu giá nơi người đấu giá bị cấm đã thắng
+        // 4. Finalize payment for an auction where the banned bidder won
         String result = walletService.finalizePaymentForWinner(
                 UUID.randomUUID().toString(),
                 bidder,
                 seller,
                 new BigDecimal("100.00"));
 
-        // 5. Kiểm tra thanh toán đã bị chặn do lệnh cấm
+        // 5. Check that the payment was blocked due to the ban
         assertEquals("Bidder is banned. Payment blocked.", result);
     }
 }

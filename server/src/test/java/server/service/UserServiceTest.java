@@ -1,37 +1,53 @@
 package server.service;
 
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
+import server.database.DatabaseConfig;
 import shared.enums.Role;
+
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 public class UserServiceTest {
 
+    private UserService userService;
+
+    @Before
+    public void setUp() {
+        userService = new UserService();
+        userService.initializeDefaultUsers();
+    }
+
+    @After
+    public void tearDown() {
+        DatabaseConfig.closeDataSource();
+    }
+
     @Test
     public void testAdminCannotBanAdmin() {
-        UserService userService = new UserService();
-        
-        // Giả sử có 2 admin là admin1 và admin2
-        userService.register("admin1", "Pass@123", "1@gmail.com", "q", "a", "q", "a", Role.ADMIN);
-        userService.register("admin2", "Pass@123", "2@gmail.com", "q", "a", "q", "a", Role.ADMIN);
-        
-        // Admin1 cố gắng ban Admin2
-        String result = userService.banUser("admin2", "admin1");
-        
-        // Kiểm tra kết quả phải trả về lỗi chặn
+        // Admin1 tries to ban Admin2
+        String result = userService.banUser("admin1", "admin");
+        // Check that the result is the expected error message
         assertEquals("Cannot ban an administrator", result);
     }
 
     @Test
     public void testNonAdminCannotBanUser() {
-        UserService userService = new UserService();
-        
-        userService.register("admin1", "Pass@123", "1@gmail.com", "q", "a", "q", "a", Role.ADMIN);
-        userService.register("bidder1", "Pass@123", "3@gmail.com", "q", "a", "q", "a", Role.BIDDER);
-        
-        // Bidder cố gắng ban 1 người dùng khác
-        String result = userService.banUser("admin1", "bidder1");
-        
-        // Kiểm tra kết quả
+        // A bidder tries to ban an admin
+        String result = userService.banUser("admin", "bidder");
+        // Check that the result is the expected error message
         assertEquals("Only admin can ban users", result);
+    }
+
+    @Test
+    public void testRegisterUser() {
+        boolean result = userService.register("newuser", "Password@123", "newuser@test.com", "q", "a", "q", "a", Role.BIDDER);
+        assertEquals(true, result);
+    }
+
+    @Test
+    public void testLoginUser() {
+        assertNotNull(userService.login("bidder", "Admin@123"));
     }
 }

@@ -3,12 +3,21 @@ package shared.models;
 import shared.enums.Category;
 import shared.enums.ItemStatus;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+
 public class Electronic extends Item { // Mặt hàng điện tử
     private final String brand; // Hãng
     private final ItemStatus status; // Trạng thái mặt hàng (New, Like New, Used)
 
     public Electronic(String name, String description, Seller seller, String brand, ItemStatus status) {
-        super(null, name, description, null, null, null, seller, Category.ELECTRONICS);
+        super(name, description, seller, Category.ELECTRONICS);
+        this.brand = brand;
+        this.status = status;
+    }
+
+    public Electronic(String name, String description, Seller seller, String brand, ItemStatus status, LocalDateTime startTime, LocalDateTime endTime) {
+        super(name, description, seller, Category.ELECTRONICS, startTime, endTime);
         this.brand = brand;
         this.status = status;
     }

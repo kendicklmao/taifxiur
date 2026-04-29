@@ -115,7 +115,7 @@ public class GsonUtils {
                 case ELECTRONICS -> {
                     String brand = obj.get("brand").getAsString();
                     ItemStatus status = ItemStatus.valueOf(obj.get("status").getAsString().toUpperCase());
-                    yield new Electronic(name, description, null, brand, status);
+                    yield new Electronic(name, description, null, brand, status, null, null);
                 }
                 case ARTS -> {
                     String artist = obj.get("artist").getAsString();

@@ -35,7 +35,7 @@ public class Seller extends User {
 
     // Tạo sản phẩm điện tử
     public void createElectronic(String name, String description, String brand, ItemStatus status) {
-        Electronic e = new Electronic(name, description, this, brand, status);
+        Electronic e = new Electronic(name, description, this, brand, status, null, null);
         if (!e.isValid()) {
             throw new IllegalArgumentException();
         }

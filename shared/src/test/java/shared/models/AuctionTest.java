@@ -7,6 +7,8 @@ import shared.enums.ItemStatus;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 
 import static org.junit.Assert.*;
 
@@ -25,20 +27,18 @@ public class AuctionTest {
         seller = new Seller("seller123", "Pass@123", "s@mail.com", "q", "a", "q", "a");
         bidder1 = new Bidder("bidder1", "Pass@123", "b1@mail.com", "q", "a", "q", "a");
         bidder2 = new Bidder("bidder2", "Pass@123", "b2@mail.com", "q", "a", "q", "a");
-        item = new Electronic("Laptop", "Old laptop", seller, "Dell", ItemStatus.USED);
-        Instant end = Instant.now().plusSeconds(60);
-        Instant start = Instant.now().minusSeconds(60);
-        auction = new Auction("auc123", item, new BigDecimal("1000"), seller, start, end);
 
-        // Wait for it to be RUNNING
-        int maxWait = 0;
-        while (auction.getStatus() != AuctionStatus.RUNNING && maxWait < 20) {
-            try {
-                Thread.sleep(100);
-            } catch (InterruptedException e) {
-            }
-            maxWait++;
-        }
+        // Use current time to ensure the auction is always running during the test
+        Instant startTime = Instant.now();
+        Instant endTime = startTime.plusSeconds(3600); // End 1 hour from now
+
+        // Electronic constructor needs LocalDateTime, so we convert
+        LocalDateTime startLdt = LocalDateTime.ofInstant(startTime, ZoneOffset.UTC);
+        LocalDateTime endLdt = LocalDateTime.ofInstant(endTime, ZoneOffset.UTC);
+
+        item = new Electronic("Laptop", "Old laptop", seller, "Dell", ItemStatus.USED, startLdt, endLdt);
+        item.setMinIncrement(new BigDecimal("100000")); // Set a default minimum increment
+        auction = new Auction("auc123", item, new BigDecimal("1000"), seller, startTime, endTime);
     }
 
     /**
@@ -50,6 +50,7 @@ public class AuctionTest {
         assertEquals("auc123", auction.getId());
         assertEquals(item, auction.getItem());
         assertEquals(seller, auction.getSeller());
+        assertEquals(AuctionStatus.RUNNING, auction.getStatus());
     }
 
     /**

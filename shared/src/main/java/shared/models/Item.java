@@ -4,6 +4,7 @@ import shared.enums.Category;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 // Lớp các mặt hàng
 public abstract class Item implements Serializable {
@@ -15,22 +16,46 @@ public abstract class Item implements Serializable {
     private BigDecimal startingPrice;
     private BigDecimal minIncrement;
     private String imageUrl;
+    private LocalDateTime auctionStartTime;
+    private LocalDateTime auctionEndTime;
 
-    public Item(String id, String name, String description, BigDecimal startingPrice, BigDecimal minIncrement, String imageUrl, Seller seller, Category category) {
-        this.id = id;
+    public Item(String name, String description, Seller seller, Category category) {
         this.name = name;
         this.description = description;
-        this.startingPrice = startingPrice;
-        this.minIncrement = minIncrement;
-        this.imageUrl = imageUrl;
         this.seller = seller;
         this.category = category;
     }
+
+    public Item(String name, String description, Seller seller, Category category, LocalDateTime auctionStartTime, LocalDateTime auctionEndTime) {
+        this.name = name;
+        this.description = description;
+        this.seller = seller;
+        this.category = category;
+        this.auctionStartTime = auctionStartTime;
+        this.auctionEndTime = auctionEndTime;
+    }
+
 
     // No-arg constructor
     public Item() {
         this.seller = null;
         this.category = null;
+    }
+
+    public LocalDateTime getAuctionStartTime() {
+        return auctionStartTime;
+    }
+
+    public void setAuctionStartTime(LocalDateTime auctionStartTime) {
+        this.auctionStartTime = auctionStartTime;
+    }
+
+    public LocalDateTime getAuctionEndTime() {
+        return auctionEndTime;
+    }
+
+    public void setAuctionEndTime(LocalDateTime auctionEndTime) {
+        this.auctionEndTime = auctionEndTime;
     }
 
     public String getId() {

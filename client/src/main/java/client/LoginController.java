@@ -1,7 +1,6 @@
 package client;
 
 import javafx.fxml.FXML;
-import javafx.scene.control.Alert;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
 import shared.models.Admin;
@@ -17,7 +16,24 @@ import java.util.Map;
 public class LoginController {
     @FXML TextField usernameField;
     @FXML PasswordField passwordField;
-    private final AppContext ctx = AppContext.getInstance();
+
+    private final AppContext ctx;
+    private final INavigator navigator;
+    private final IAlertService alertService;
+
+    // Constructor for dependency injection
+    public LoginController(AppContext context, INavigator navigator, IAlertService alertService) {
+        this.ctx = context;
+        this.navigator = navigator;
+        this.alertService = alertService;
+    }
+
+    // Default constructor for FXML loading
+    public LoginController() {
+        this.ctx = AppContext.getInstance();
+        this.navigator = new NavigatorImpl();
+        this.alertService = new AlertServiceImpl();
+    }
 
     @FXML
     public void handleLogin() {
@@ -48,38 +64,36 @@ public class LoginController {
                 }
                 ctx.setCurrentUser(currentUser);
 
-                showAlert("Success", "Login successful with role: " + role);
+                alertService.showAlert("Success", "Login successful with role: " + role);
                 if (role.equals("BIDDER")) {
-                    Navigator.switchScene("bidder_home.fxml");
+                    navigator.switchScene("bidder_home.fxml");
                 } else if (role.equals("SELLER")) {
-                    Navigator.switchScene("seller_home.fxml");
+                    navigator.switchScene("seller_home.fxml");
                 } else if (role.equals("ADMIN")) {
-                    Navigator.switchScene("admin_home.fxml");
+                    navigator.switchScene("admin_home.fxml");
                 }
             } else {
-                showAlert("Error", res.getMessage());
+                alertService.showAlert("Error", res.getMessage());
             }
 
         } catch (Exception e) {
-            showAlert("Error", "Cannot connect to Server!");
+            alertService.showAlert("Error", "Cannot connect to Server!");
             e.printStackTrace();
         }
     }
 
     @FXML
     public void goToRegister() {
-        Navigator.switchScene("register.fxml");
+        navigator.switchScene("register.fxml");
     }
 
     @FXML
     public void goToForgotPassword() {
-        Navigator.switchScene("forgot_password.fxml");
+        navigator.switchScene("forgot_password.fxml");
     }
 
+    // This method is now delegated to the alert service
     private void showAlert(String title, String msg){
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle(title);
-        alert.setContentText(msg);
-        alert.showAndWait();
+        alertService.showAlert(title, msg);
     }
 }

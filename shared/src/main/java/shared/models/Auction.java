@@ -297,6 +297,12 @@ public class Auction {
         }
     }
 
+    public void setStatus(AuctionStatus status) {
+        synchronized (bidLock) {
+            this.status = status;
+        }
+    }
+
     public List<BidTransaction> getBidHistory() {
         synchronized (bidLock) {
             return new ArrayList<>(bidHistory);
@@ -317,5 +323,40 @@ public class Auction {
 
     public Instant getEndTime() {
         return endTime;
+    }
+
+    /**
+     * Cập nhật trạng thái của phiên đấu giá dựa trên thời gian hiện tại.
+     * Chỉ nên được gọi bởi các service đáng tin cậy.
+     */
+    public void updateStatus() {
+        synchronized (bidLock) {
+            Instant now = Instant.now();
+            if (status == AuctionStatus.OPEN && !now.isBefore(startTime)) {
+                status = AuctionStatus.RUNNING;
+            } else if (status == AuctionStatus.RUNNING && !now.isBefore(endTime)) {
+                status = AuctionStatus.FINISHED;
+            }
+        }
+    }
+
+    /**
+     * Đặt giá hiện tại khi khôi phục từ cơ sở dữ liệu.
+     * Chỉ nên được gọi bởi các service đáng tin cậy.
+     */
+    public void setCurrentPriceForDBRestore(BigDecimal price) {
+        synchronized (bidLock) {
+            this.currentPrice = price;
+        }
+    }
+
+    /**
+     * Đặt trạng thái khi khôi phục từ cơ sở dữ liệu.
+     * Chỉ nên được gọi bởi các service đáng tin cậy.
+     */
+    public void setStatusForDBRestore(AuctionStatus status) {
+        synchronized (bidLock) {
+            this.status = status;
+        }
     }
 }
