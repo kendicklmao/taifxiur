@@ -4,140 +4,172 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.image.ImageView?>
 
-<BorderPane xmlns:fx="http://javafx.com/fxml" fx:controller="client.SellerHomeController">
+<BorderPane xmlns:fx="http://javafx.com/fxml" fx:controller="client.SellerHomeController"
+            styleClass="app-shell">
 
-    <!-- TOP -->
+    <!-- TOP APP BAR -->
     <top>
-        <HBox spacing="20" alignment="CENTER_LEFT"
-              style="-fx-padding: 20; -fx-background-color: linear-gradient(to right, #1a1a1a, #2c2c2c); -fx-spacing: 15;">
-            <Label text="🏪 SELLER DASHBOARD"
-                   style="-fx-text-fill: #d4af6a; -fx-font-size: 22px; -fx-font-weight: bold;"/>
-            <Pane HBox.hgrow="ALWAYS"/>
-            <Label fx:id="welcomeLabel" style="-fx-text-fill: #ffffff; -fx-font-size: 14px;"/>
-            <Button text="REFRESH" onAction="#handleRefresh" styleClass="dashboard-btn-primary" prefWidth="100"/>
-            <Button text="CHANGE PASSWORD" onAction="#handleChangePassword" styleClass="dashboard-btn-primary" prefWidth="170"/>
-            <Button text="LOGOUT" onAction="#handleLogout" styleClass="dashboard-btn-logout" prefWidth="100"/>
-        </HBox>
+        <VBox styleClass="app-bar" spacing="0">
+            <HBox alignment="CENTER_LEFT" spacing="18">
+                <HBox spacing="6" alignment="CENTER_LEFT">
+                    <Label text="A" styleClass="app-brand, app-brand-accent"/>
+                    <Label text="UCTION" styleClass="app-brand"/>
+                    <Label text="HOUSE" styleClass="app-brand, app-brand-accent"/>
+                </HBox>
+                <Label text="SELLER" styleClass="app-role-pill"/>
+                <Pane HBox.hgrow="ALWAYS"/>
+                <Label text="Welcome," styleClass="app-welcome"/>
+                <Label fx:id="welcomeLabel" styleClass="app-username"/>
+                <Button text="REFRESH" onAction="#handleRefresh" styleClass="dashboard-btn-ghost"/>
+                <Button text="CHANGE PASSWORD" onAction="#handleChangePassword" styleClass="dashboard-btn-ghost"/>
+                <Button text="LOGOUT" onAction="#handleLogout" styleClass="dashboard-btn-logout"/>
+            </HBox>
+        </VBox>
     </top>
 
     <!-- CENTER -->
     <center>
-        <ScrollPane fitToWidth="true" style="-fx-background-color: #f8f7f5; -fx-padding: 0; -fx-border-style: none;">
-            <VBox spacing="20" style="-fx-padding: 25; -fx-background-color: #f8f7f5;">
+        <ScrollPane fitToWidth="true" hbarPolicy="NEVER">
+            <VBox styleClass="app-content" spacing="22">
 
-                <VBox spacing="12" style="-fx-border-color: #e8e6e1; -fx-border-width: 1; -fx-padding: 20; -fx-border-radius: 4; -fx-background-color: #ffffff;">
-                    <VBox spacing="6">
-                        <Label text="Wallet" styleClass="dashboard-section-title"/>
-                        <Label text="Withdraw requests are reviewed by admin and approved requests deduct from your balance" styleClass="dashboard-section-subtitle"/>
+                <!-- Wallet card -->
+                <HBox styleClass="dash-card-accent" spacing="20" alignment="CENTER_LEFT">
+                    <VBox spacing="6" HBox.hgrow="ALWAYS">
+                        <Label text="WALLET BALANCE" styleClass="balance-label"/>
+                        <Label fx:id="walletBalanceLabel" text="Balance: loading..."
+                               styleClass="balance-amount"/>
+                        <Label text="Withdraw requests are reviewed by an admin and approved requests deduct from your balance."
+                               styleClass="dashboard-section-subtitle" wrapText="true"/>
                     </VBox>
-                    <HBox spacing="12" alignment="CENTER_LEFT">
-                        <Label fx:id="walletBalanceLabel" text="Balance: loading..." style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #1a1a1a;"/>
-                        <Pane HBox.hgrow="ALWAYS"/>
-                        <Button text="REQUEST WITHDRAW" onAction="#handleWithdrawRequest" styleClass="dashboard-btn-primary" prefWidth="190"/>
-                    </HBox>
-                </VBox>
-
-                <!-- CREATE AUCTION SECTION -->
-                <VBox spacing="12" style="-fx-border-color: #e8e6e1; -fx-border-width: 1; -fx-padding: 20; -fx-border-radius: 4; -fx-background-color: #ffffff;">
-                    <VBox spacing="6">
-                        <Label text="Create New Auction" styleClass="dashboard-section-title"/>
-                        <Label text="List a new item for auction" styleClass="dashboard-section-subtitle"/>
+                    <VBox spacing="10" alignment="CENTER_RIGHT">
+                        <Button text="REQUEST WITHDRAW" onAction="#handleWithdrawRequest"
+                                styleClass="dashboard-btn-primary" prefWidth="200"/>
                     </VBox>
+                </HBox>
 
-                    <VBox spacing="12">
-                        <!-- Item Details -->
-                        <VBox spacing="8">
-                            <Label text="Product Name" styleClass="form-label-register"/>
-                            <TextField fx:id="itemNameField" promptText="Enter product name" styleClass="dashboard-input"/>
-                        </VBox>
-                        <VBox spacing="8">
-                            <Label text="Starting Price" styleClass="form-label-register"/>
-                            <TextField fx:id="startPriceField" promptText="Enter starting price" styleClass="dashboard-input"/>
-                        </VBox>
-                        <VBox spacing="8">
-                            <Label text="Category" styleClass="form-label-register"/>
-                            <ChoiceBox fx:id="categoryBox" prefWidth="Infinity" style="-fx-padding: 10; -fx-font-size: 13; -fx-border-color: #e0e0e0; -fx-border-width: 1; -fx-background-color: #f9f9f9; -fx-border-radius: 4;"/>
+                <!-- Two-column responsive area: Create Auction + Your Auctions -->
+                <HBox spacing="22">
+
+                    <!-- CREATE AUCTION -->
+                    <VBox styleClass="dash-card" spacing="16" HBox.hgrow="ALWAYS"
+                          minWidth="380" prefWidth="520">
+                        <VBox spacing="4">
+                            <Label text="Create New Auction" styleClass="dashboard-section-title"/>
+                            <Label text="List a new item for live auction"
+                                   styleClass="dashboard-section-subtitle"/>
                         </VBox>
 
-                        <VBox spacing="15">
-                            <VBox spacing="8">
-                                <Label text="Minimum Increment Type" styleClass="form-label-register"/>
-                                <ChoiceBox fx:id="incrementTypeBox" maxWidth="Infinity" style="-fx-padding: 10; -fx-font-size: 13; -fx-border-color: #e0e0e0; -fx-border-width: 1; -fx-background-color: #f9f9f9; -fx-border-radius: 4;"/>
+                        <!-- Product Name -->
+                        <VBox spacing="6">
+                            <Label text="PRODUCT NAME" styleClass="form-label-register"/>
+                            <TextField fx:id="itemNameField" promptText="Enter product name"
+                                       styleClass="dashboard-input"/>
+                        </VBox>
+
+                        <HBox spacing="14">
+                            <VBox spacing="6" HBox.hgrow="ALWAYS">
+                                <Label text="STARTING PRICE" styleClass="form-label-register"/>
+                                <TextField fx:id="startPriceField" promptText="e.g. 1000"
+                                           styleClass="dashboard-input"/>
                             </VBox>
-                            <VBox fx:id="customIncrementPane" spacing="8" visible="false" managed="false">
-                                <Label text="Custom Increment Amount ($)" styleClass="form-label-register"/>
-                                <TextField fx:id="customIncrementField" promptText="Enter amount (e.g. 100)" styleClass="dashboard-input"/>
+                            <VBox spacing="6" HBox.hgrow="ALWAYS">
+                                <Label text="CATEGORY" styleClass="form-label-register"/>
+                                <ChoiceBox fx:id="categoryBox" maxWidth="Infinity"
+                                           styleClass="dashboard-choicebox"/>
+                            </VBox>
+                        </HBox>
+
+                        <VBox spacing="14">
+                            <VBox spacing="6">
+                                <Label text="MINIMUM INCREMENT TYPE" styleClass="form-label-register"/>
+                                <ChoiceBox fx:id="incrementTypeBox" maxWidth="Infinity"
+                                           styleClass="dashboard-choicebox"/>
+                            </VBox>
+                            <VBox fx:id="customIncrementPane" spacing="6"
+                                  visible="false" managed="false">
+                                <Label text="CUSTOM INCREMENT AMOUNT ($)"
+                                       styleClass="form-label-register"/>
+                                <TextField fx:id="customIncrementField"
+                                           promptText="e.g. 100"
+                                           styleClass="dashboard-input"/>
                             </VBox>
                         </VBox>
 
                         <!-- Auction Timing -->
-                        <VBox spacing="8">
-                            <Label text="Auction Timing" styleClass="form-section-title"/>
-                        </VBox>
-
-                        <!-- Custom Timing Pane -->
-                        <VBox fx:id="customTimingPane" spacing="12" visible="true" managed="true">
-                            <HBox spacing="20">
+                        <Label text="AUCTION TIMING" styleClass="form-section-title"/>
+                        <VBox fx:id="customTimingPane" spacing="14" visible="true" managed="true">
+                            <HBox spacing="14">
                                 <VBox spacing="6" HBox.hgrow="ALWAYS">
-                                    <Label text="Start Date" styleClass="form-label-register"/>
-                                    <DatePicker fx:id="startDatePicker" style="-fx-padding: 8; -fx-font-size: 12; -fx-border-color: #e0e0e0; -fx-border-width: 1; -fx-background-color: #f9f9f9; -fx-border-radius: 4;"/>
+                                    <Label text="START DATE" styleClass="form-label-register"/>
+                                    <DatePicker fx:id="startDatePicker" maxWidth="Infinity"/>
                                 </VBox>
                                 <VBox spacing="6" HBox.hgrow="ALWAYS">
-                                    <Label text="Start Time" styleClass="form-label-register"/>
-                                    <HBox spacing="5">
-                                        <Spinner fx:id="startHourSpinner" prefWidth="100" editable="true" style="-fx-padding: 8; -fx-font-size: 12; -fx-border-color: #e0e0e0; -fx-border-width: 1; -fx-background-color: #f9f9f9; -fx-border-radius: 4;"/>
-                                        <Label text=":" style="-fx-font-size: 14; -fx-text-fill: #2c2c2c;"/>
-                                        <Spinner fx:id="startMinuteSpinner" prefWidth="100" editable="true" style="-fx-padding: 8; -fx-font-size: 12; -fx-border-color: #e0e0e0; -fx-border-width: 1; -fx-background-color: #f9f9f9; -fx-border-radius: 4;"/>
+                                    <Label text="START TIME" styleClass="form-label-register"/>
+                                    <HBox spacing="6" alignment="CENTER_LEFT">
+                                        <Spinner fx:id="startHourSpinner" prefWidth="90" editable="true"/>
+                                        <Label text=":" style="-fx-text-fill: #8b8ba7;"/>
+                                        <Spinner fx:id="startMinuteSpinner" prefWidth="90" editable="true"/>
                                     </HBox>
                                 </VBox>
                             </HBox>
-                            <HBox spacing="20">
+                            <HBox spacing="14">
                                 <VBox spacing="6" HBox.hgrow="ALWAYS">
-                                    <Label text="End Date" styleClass="form-label-register"/>
-                                    <DatePicker fx:id="endDatePicker" style="-fx-padding: 8; -fx-font-size: 12; -fx-border-color: #e0e0e0; -fx-border-width: 1; -fx-background-color: #f9f9f9; -fx-border-radius: 4;"/>
+                                    <Label text="END DATE" styleClass="form-label-register"/>
+                                    <DatePicker fx:id="endDatePicker" maxWidth="Infinity"/>
                                 </VBox>
                                 <VBox spacing="6" HBox.hgrow="ALWAYS">
-                                    <Label text="End Time" styleClass="form-label-register"/>
-                                    <HBox spacing="5">
-                                        <Spinner fx:id="endHourSpinner" prefWidth="100" editable="true" style="-fx-padding: 8; -fx-font-size: 12; -fx-border-color: #e0e0e0; -fx-border-width: 1; -fx-background-color: #f9f9f9; -fx-border-radius: 4;"/>
-                                        <Label text=":" style="-fx-font-size: 14; -fx-text-fill: #2c2c2c;"/>
-                                        <Spinner fx:id="endMinuteSpinner" prefWidth="100" editable="true" style="-fx-padding: 8; -fx-font-size: 12; -fx-border-color: #e0e0e0; -fx-border-width: 1; -fx-background-color: #f9f9f9; -fx-border-radius: 4;"/>
+                                    <Label text="END TIME" styleClass="form-label-register"/>
+                                    <HBox spacing="6" alignment="CENTER_LEFT">
+                                        <Spinner fx:id="endHourSpinner" prefWidth="90" editable="true"/>
+                                        <Label text=":" style="-fx-text-fill: #8b8ba7;"/>
+                                        <Spinner fx:id="endMinuteSpinner" prefWidth="90" editable="true"/>
                                     </HBox>
                                 </VBox>
                             </HBox>
                         </VBox>
 
                         <!-- Description -->
-                        <VBox styleClass="form-group">
-                            <Label styleClass="form-label-register" text="Description" />
-                            <TextArea fx:id="descField" promptText="Enter description" styleClass="dashboard-input" />
+                        <VBox spacing="6">
+                            <Label text="DESCRIPTION" styleClass="form-label-register"/>
+                            <TextArea fx:id="descField" promptText="Tell bidders about this item..."
+                                      prefRowCount="4" wrapText="true"
+                                      styleClass="dashboard-input"/>
                         </VBox>
 
                         <!-- Image Upload -->
-                        <VBox styleClass="form-group">
-                            <Label styleClass="form-label-register" text="Image" />
-                            <Button onAction="#handleUploadImage" text="Upload Image" styleClass="dashboard-button" />
-                            <ImageView fx:id="itemImageView" fitHeight="100" fitWidth="100" preserveRatio="true" />
+                        <VBox spacing="6">
+                            <Label text="IMAGE" styleClass="form-label-register"/>
+                            <HBox spacing="12" alignment="CENTER_LEFT">
+                                <Button onAction="#handleUploadImage" text="UPLOAD IMAGE"
+                                        styleClass="dashboard-btn-ghost"/>
+                                <ImageView fx:id="itemImageView" fitHeight="80" fitWidth="80"
+                                           preserveRatio="true"/>
+                            </HBox>
                         </VBox>
 
-                        <!-- Dynamic Form for additional attributes -->
-                        <VBox fx:id="dynamicForm" spacing="10" style="-fx-padding: 5 0 5 0;"/>
+                        <!-- Dynamic attributes -->
+                        <VBox fx:id="dynamicForm" spacing="12"/>
 
-                        <!-- Submit Button -->
-                        <Button text="CREATE AUCTION" onAction="#handleCreateAuction" styleClass="dashboard-btn-primary" prefWidth="Infinity" prefHeight="45" style="-fx-font-size: 14;"/>
+                        <Button text="CREATE AUCTION" onAction="#handleCreateAuction"
+                                styleClass="dashboard-btn-primary"
+                                maxWidth="Infinity" prefHeight="48"/>
                     </VBox>
-                </VBox>
 
-                <!-- YOUR AUCTIONS SECTION -->
-                <VBox spacing="12" style="-fx-border-color: #e8e6e1; -fx-border-width: 1; -fx-padding: 20; -fx-border-radius: 4; -fx-background-color: #ffffff;">
-                    <VBox spacing="6">
-                        <Label text="Your Active Auctions" styleClass="dashboard-section-title"/>
-                        <Label text="Manage your ongoing auctions" styleClass="dashboard-section-subtitle"/>
+                    <!-- YOUR AUCTIONS -->
+                    <VBox styleClass="dash-card" spacing="16" HBox.hgrow="ALWAYS"
+                          minWidth="320">
+                        <VBox spacing="4">
+                            <Label text="Your Active Auctions" styleClass="dashboard-section-title"/>
+                            <Label text="Manage your ongoing listings"
+                                   styleClass="dashboard-section-subtitle"/>
+                        </VBox>
+                        <ScrollPane fitToWidth="true" hbarPolicy="NEVER"
+                                    style="-fx-background-color: transparent;">
+                            <TilePane fx:id="auctionGrid" hgap="16" vgap="16"
+                                      style="-fx-padding: 4;"/>
+                        </ScrollPane>
                     </VBox>
-                    <ScrollPane fitToWidth="true" style="-fx-background-color: transparent;">
-                        <TilePane fx:id="auctionGrid" hgap="15" vgap="15" style="-fx-padding: 10;"/>
-                    </ScrollPane>
-                </VBox>
+                </HBox>
 
             </VBox>
         </ScrollPane>

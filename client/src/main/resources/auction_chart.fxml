@@ -5,22 +5,32 @@
 <?import javafx.scene.chart.NumberAxis?>
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.control.Label?>
-<?import javafx.geometry.Insets?>
+<?import java.net.URL?>
 
 <VBox xmlns:fx="http://javafx.com/fxml/1"
       fx:controller="client.AuctionChartController"
-      alignment="CENTER" spacing="10"
-      style="-fx-padding: 20; -fx-background-color: #f8f7f5;">
+      alignment="TOP_CENTER" spacing="16"
+      styleClass="app-shell"
+      style="-fx-padding: 24; -fx-background-color: #0d0d17;">
 
-    <Label fx:id="chartTitleLabel" style="-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: #1a1a1a;"/>
+    <stylesheets>
+        <URL value="@styles.css"/>
+    </stylesheets>
 
-    <LineChart fx:id="priceChart" prefHeight="400" prefWidth="600" createSymbols="true">
-        <xAxis>
-            <CategoryAxis label="Time of Bid"/>
-        </xAxis>
-        <yAxis>
-            <NumberAxis label="Price (VND)"/>
-        </yAxis>
-    </LineChart>
+    <VBox spacing="6" alignment="CENTER_LEFT">
+        <Label text="PRICE HISTORY" styleClass="balance-label"/>
+        <Label fx:id="chartTitleLabel" styleClass="dashboard-section-title"/>
+    </VBox>
 
+    <VBox styleClass="dash-card" spacing="0" VBox.vgrow="ALWAYS">
+        <LineChart fx:id="priceChart" prefHeight="420" prefWidth="640" createSymbols="true"
+                   legendVisible="false" animated="false">
+            <xAxis>
+                <CategoryAxis label="Time of Bid"/>
+            </xAxis>
+            <yAxis>
+                <NumberAxis label="Price (VND)"/>
+            </yAxis>
+        </LineChart>
+    </VBox>
 </VBox>

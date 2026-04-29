@@ -8,6 +8,7 @@ import java.time.LocalDateTime;
 
 // Lớp các mặt hàng
 public abstract class Item implements Serializable {
+    private int dbId;
     private String id;
     private String name; // Tên mặt hàng
     private String description; // Mô tả mặt hàng
@@ -35,6 +36,14 @@ public abstract class Item implements Serializable {
         this.auctionEndTime = auctionEndTime;
     }
 
+
+    public int getDbId() {
+        return dbId;
+    }
+
+    public void setDbId(int dbId) {
+        this.dbId = dbId;
+    }
 
     // No-arg constructor
     public Item() {

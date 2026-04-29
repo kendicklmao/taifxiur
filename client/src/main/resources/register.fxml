@@ -1,140 +1,157 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
-<?import javafx.geometry.Insets?>
 
-<BorderPane xmlns="http://javafx.com/javafx"
-            xmlns:fx="http://javafx.com/fxml"
-            fx:controller="client.RegisterController"
-            style="-fx-background-color: #1a1a1a;">
+<StackPane xmlns="http://javafx.com/javafx"
+           xmlns:fx="http://javafx.com/fxml"
+           fx:controller="client.RegisterController"
+           styleClass="auth-root">
 
-    <center>
-        <HBox spacing="0" alignment="CENTER" style="-fx-background-color: #1a1a1a;">
+    <HBox alignment="CENTER" spacing="0">
 
-            <!-- Left Sidebar - Decorative -->
-            <VBox prefWidth="280" style="-fx-background-color: linear-gradient(to bottom, #2d2d2d, #1a1a1a); -fx-padding: 40;" alignment="CENTER" spacing="30" HBox.hgrow="SOMETIMES">
-                <VBox alignment="CENTER" spacing="15" VBox.vgrow="ALWAYS">
-                    <Label text="AUCTION HOUSE" style="-fx-font-size: 28; -fx-font-weight: bold; -fx-text-fill: #d4af6a;" alignment="CENTER" wrapText="true"/>
-                    <Label text="Premium Auctions" style="-fx-font-size: 14; -fx-text-fill: #a8a8a8;" alignment="CENTER" wrapText="true"/>
-                    <Separator style="-fx-border-color: #d4af6a; -fx-border-width: 0.5; -fx-padding: 20 0 20 0;"/>
-                    <Label text="Join our exclusive community of collectors" style="-fx-font-size: 12; -fx-text-fill: #888888; -fx-line-spacing: 2;" alignment="CENTER" wrapText="true"/>
-                </VBox>
-                <VBox alignment="BOTTOM_CENTER" spacing="20" VBox.vgrow="ALWAYS">
-                    <Separator style="-fx-border-color: #d4af6a; -fx-border-width: 0.5;"/>
-                    <Label text="Established 2026" style="-fx-font-size: 11; -fx-text-fill: #666666;" alignment="CENTER"/>
-                </VBox>
+        <!-- LEFT: Brand / Hero panel -->
+        <VBox styleClass="auth-hero" alignment="CENTER_LEFT" spacing="28"
+              prefWidth="420" minWidth="300" HBox.hgrow="SOMETIMES">
+            <VBox spacing="16" VBox.vgrow="ALWAYS" alignment="CENTER_LEFT">
+                <HBox spacing="10" alignment="CENTER_LEFT">
+                    <Label text="A" styleClass="brand-mark, brand-accent"/>
+                    <Label text="UCTION" styleClass="brand-mark"/>
+                    <Label text="HOUSE" styleClass="brand-mark, brand-accent"/>
+                </HBox>
+                <Label text="Premium live auctions" styleClass="brand-tagline"/>
             </VBox>
 
-            <!-- Right Form Panel -->
-            <VBox spacing="0" style="-fx-background-color: #ffffff;" alignment="TOP_CENTER" HBox.hgrow="ALWAYS" VBox.vgrow="ALWAYS">
-                <ScrollPane fitToWidth="true" fitToHeight="false" style="-fx-background-color: #ffffff; -fx-padding: 0; -fx-border-style: none;">
-                    <VBox spacing="0" alignment="TOP_CENTER" style="-fx-background-color: #ffffff;">
+            <VBox spacing="18" VBox.vgrow="ALWAYS" alignment="CENTER_LEFT">
+                <Label text="JOIN THE COMMUNITY" styleClass="hero-pill"/>
+                <Label text="Create your account in under a minute."
+                       styleClass="hero-headline" wrapText="true"/>
+                <Label text="Become a bidder, seller or admin and start exploring exclusive lots."
+                       styleClass="hero-subline" wrapText="true"/>
+            </VBox>
 
-                        <VBox spacing="30" maxWidth="420" minWidth="300" style="-fx-padding: 50 40 50 40;">
+            <VBox spacing="14" alignment="BOTTOM_LEFT">
+                <Separator styleClass="hero-divider"/>
+                <Label text="© 2026 Auction House — Established 2026" styleClass="footer-text"/>
+            </VBox>
+        </VBox>
 
-                            <!-- Header -->
-                            <VBox spacing="6" alignment="CENTER">
-                                <Label text="Create Account" styleClass="register-title-main"/>
-                                <Label text="Join our exclusive auction community" styleClass="register-subtitle-main"/>
+        <!-- RIGHT: Form panel -->
+        <StackPane HBox.hgrow="ALWAYS" style="-fx-background-color: #0d0d17;">
+            <ScrollPane fitToWidth="true" fitToHeight="true" pannable="true" hbarPolicy="NEVER"
+                        style="-fx-background-color: transparent;">
+                <VBox alignment="CENTER" style="-fx-padding: 50 40 50 40;">
+                    <VBox styleClass="auth-card" spacing="26"
+                          style="-fx-padding: 40;">
+
+                        <!-- Header -->
+                        <VBox spacing="6">
+                            <Label text="Create account" styleClass="register-title-main"/>
+                            <Label text="Set up your profile and security details"
+                                   styleClass="register-subtitle-main"/>
+                        </VBox>
+
+                        <!-- Account Information -->
+                        <VBox spacing="14">
+                            <Label text="ACCOUNT INFORMATION" styleClass="form-section-title"/>
+
+                            <VBox spacing="6">
+                                <Label text="USERNAME" styleClass="form-label-register"/>
+                                <TextField fx:id="usernameField"
+                                           promptText="6–20 characters"
+                                           styleClass="register-input"/>
+                                <Label fx:id="usernameError" styleClass="error-label"/>
                             </VBox>
 
-                            <!-- Form Content -->
-                            <VBox spacing="20">
-
-                                <!-- Account Information Section -->
-                                <VBox spacing="14">
-                                    <Label text="Account Information" styleClass="form-section-title"/>
-
-                                    <!-- Username -->
-                                    <VBox spacing="6">
-                                        <Label text="Username" styleClass="form-label-register"/>
-                                        <TextField fx:id="usernameField" promptText="6-20 characters" styleClass="register-input"/>
-                                        <Label fx:id="usernameError" styleClass="error-label"/>
-                                    </VBox>
-
-                                    <!-- Email -->
-                                    <VBox spacing="6">
-                                        <Label text="Email Address" styleClass="form-label-register"/>
-                                        <TextField fx:id="emailField" promptText="your@email.com" styleClass="register-input"/>
-                                        <Label fx:id="emailError" styleClass="error-label"/>
-                                    </VBox>
-
-                                    <!-- Password -->
-                                    <VBox spacing="6">
-                                        <Label text="Password" styleClass="form-label-register"/>
-                                        <PasswordField fx:id="passwordField" promptText="Use uppercase, numbers, and special characters" styleClass="register-input"/>
-                                        <Label fx:id="passwordError" styleClass="error-label"/>
-                                    </VBox>
-
-                                    <!-- Confirm Password -->
-                                    <VBox spacing="6">
-                                        <Label text="Confirm Password" styleClass="form-label-register"/>
-                                        <PasswordField fx:id="confirmPasswordField" promptText="Re-enter your password" styleClass="register-input"/>
-                                        <Label fx:id="confirmPasswordError" styleClass="error-label"/>
-                                    </VBox>
-                                </VBox>
-
-                                <!-- Security Section -->
-                                <VBox spacing="14">
-                                    <Label text="Security Questions" styleClass="form-section-title"/>
-
-                                    <!-- Question 1 -->
-                                    <VBox spacing="6">
-                                        <Label text="Security Question 1" styleClass="form-label-register"/>
-                                        <TextField fx:id="q1Field" promptText="e.g., What is your pet's name?" styleClass="register-input"/>
-                                        <Label fx:id="q1Error" styleClass="error-label"/>
-                                    </VBox>
-
-                                    <!-- Answer 1 -->
-                                    <VBox spacing="6">
-                                        <Label text="Answer 1" styleClass="form-label-register"/>
-                                        <TextField fx:id="a1Field" promptText="Your answer" styleClass="register-input"/>
-                                        <Label fx:id="a1Error" styleClass="error-label"/>
-                                    </VBox>
-
-                                    <!-- Question 2 -->
-                                    <VBox spacing="6">
-                                        <Label text="Security Question 2" styleClass="form-label-register"/>
-                                        <TextField fx:id="q2Field" promptText="e.g., What is your birth city?" styleClass="register-input"/>
-                                        <Label fx:id="q2Error" styleClass="error-label"/>
-                                    </VBox>
-
-                                    <!-- Answer 2 -->
-                                    <VBox spacing="6">
-                                        <Label text="Answer 2" styleClass="form-label-register"/>
-                                        <TextField fx:id="a2Field" promptText="Your answer" styleClass="register-input"/>
-                                        <Label fx:id="a2Error" styleClass="error-label"/>
-                                    </VBox>
-                                </VBox>
-
-                                <!-- Role Selection Section -->
-                                <VBox spacing="14">
-                                    <Label text="Account Type" styleClass="form-section-title"/>
-                                    <VBox spacing="6">
-                                        <Label text="Select Your Role" styleClass="form-label-register"/>
-                                        <ChoiceBox fx:id="roleBox" prefWidth="Infinity" styleClass="register-choice"/>
-                                    </VBox>
-                                </VBox>
-
-                                <!-- Form Error -->
-                                <Label fx:id="formError" styleClass="form-error" wrapText="true"/>
+                            <VBox spacing="6">
+                                <Label text="EMAIL" styleClass="form-label-register"/>
+                                <TextField fx:id="emailField"
+                                           promptText="you@example.com"
+                                           styleClass="register-input"/>
+                                <Label fx:id="emailError" styleClass="error-label"/>
                             </VBox>
 
-                            <!-- Buttons -->
-                            <VBox spacing="12">
-                                <Button text="CREATE ACCOUNT" onAction="#handleRegister" styleClass="register-btn-primary" prefWidth="Infinity"/>
-                                <Button text="Back to Login" onAction="#goBack" styleClass="register-btn-secondary" prefWidth="Infinity"/>
-                            </VBox>
+                            <HBox spacing="14">
+                                <VBox spacing="6" HBox.hgrow="ALWAYS">
+                                    <Label text="PASSWORD" styleClass="form-label-register"/>
+                                    <PasswordField fx:id="passwordField"
+                                                   promptText="Upper, lower, number, symbol"
+                                                   styleClass="register-input"/>
+                                    <Label fx:id="passwordError" styleClass="error-label"/>
+                                </VBox>
+                                <VBox spacing="6" HBox.hgrow="ALWAYS">
+                                    <Label text="CONFIRM PASSWORD" styleClass="form-label-register"/>
+                                    <PasswordField fx:id="confirmPasswordField"
+                                                   promptText="Re-enter password"
+                                                   styleClass="register-input"/>
+                                    <Label fx:id="confirmPasswordError" styleClass="error-label"/>
+                                </VBox>
+                            </HBox>
+                        </VBox>
 
-                            <!-- Footer -->
-                            <Label text="© 2026 Auction House. All rights reserved."
-                                    style="-fx-text-fill: #999999; -fx-font-size: 11; -fx-padding: 20 0 0 0;"
-                                    alignment="CENTER"/>
+                        <!-- Security Questions -->
+                        <VBox spacing="14">
+                            <Label text="SECURITY QUESTIONS" styleClass="form-section-title"/>
+
+                            <HBox spacing="14">
+                                <VBox spacing="6" HBox.hgrow="ALWAYS">
+                                    <Label text="QUESTION 1" styleClass="form-label-register"/>
+                                    <TextField fx:id="q1Field"
+                                               promptText="e.g. Pet's name?"
+                                               styleClass="register-input"/>
+                                    <Label fx:id="q1Error" styleClass="error-label"/>
+                                </VBox>
+                                <VBox spacing="6" HBox.hgrow="ALWAYS">
+                                    <Label text="ANSWER 1" styleClass="form-label-register"/>
+                                    <TextField fx:id="a1Field"
+                                               promptText="Your answer"
+                                               styleClass="register-input"/>
+                                    <Label fx:id="a1Error" styleClass="error-label"/>
+                                </VBox>
+                            </HBox>
+
+                            <HBox spacing="14">
+                                <VBox spacing="6" HBox.hgrow="ALWAYS">
+                                    <Label text="QUESTION 2" styleClass="form-label-register"/>
+                                    <TextField fx:id="q2Field"
+                                               promptText="e.g. Birth city?"
+                                               styleClass="register-input"/>
+                                    <Label fx:id="q2Error" styleClass="error-label"/>
+                                </VBox>
+                                <VBox spacing="6" HBox.hgrow="ALWAYS">
+                                    <Label text="ANSWER 2" styleClass="form-label-register"/>
+                                    <TextField fx:id="a2Field"
+                                               promptText="Your answer"
+                                               styleClass="register-input"/>
+                                    <Label fx:id="a2Error" styleClass="error-label"/>
+                                </VBox>
+                            </HBox>
+                        </VBox>
+
+                        <!-- Role -->
+                        <VBox spacing="14">
+                            <Label text="ACCOUNT TYPE" styleClass="form-section-title"/>
+                            <VBox spacing="6">
+                                <Label text="ROLE" styleClass="form-label-register"/>
+                                <ChoiceBox fx:id="roleBox" maxWidth="Infinity"
+                                           styleClass="register-choice"/>
+                            </VBox>
+                        </VBox>
+
+                        <Label fx:id="formError" styleClass="form-error" wrapText="true"/>
+
+                        <!-- Buttons -->
+                        <VBox spacing="12">
+                            <Button text="CREATE ACCOUNT" onAction="#handleRegister"
+                                    styleClass="register-btn-primary"
+                                    maxWidth="Infinity"/>
+                            <Button text="Back to sign in" onAction="#goBack"
+                                    styleClass="register-btn-secondary"
+                                    maxWidth="Infinity"/>
                         </VBox>
                     </VBox>
-                </ScrollPane>
-            </VBox>
-        </HBox>
-    </center>
+                </VBox>
+            </ScrollPane>
+        </StackPane>
 
-</BorderPane>
+    </HBox>
+</StackPane>

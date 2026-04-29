@@ -3,51 +3,78 @@
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.control.*?>
 
-<BorderPane xmlns:fx="http://javafx.com/fxml" fx:controller="client.BidderHomeController">
+<BorderPane xmlns:fx="http://javafx.com/fxml" fx:controller="client.BidderHomeController"
+            styleClass="app-shell">
 
-    <!-- TOP -->
+    <!-- TOP APP BAR -->
     <top>
-        <HBox spacing="20" alignment="CENTER_LEFT" style="-fx-padding: 20; -fx-background-color: linear-gradient(to right, #1a1a1a, #2c2c2c); -fx-spacing: 15;">
-            <Label text="🔨 BIDDER DASHBOARD" style="-fx-text-fill: #d4af6a; -fx-font-size: 22px; -fx-font-weight: bold;"/>
-            <Pane HBox.hgrow="ALWAYS"/>
-            <Label fx:id="welcomeLabel" style="-fx-text-fill: #ffffff; -fx-font-size: 14px;"/>
-            <Button text="REFRESH" onAction="#handleRefresh" styleClass="dashboard-btn-primary" prefWidth="100"/>
-            <Button text="CHANGE PASSWORD" onAction="#handleChangePassword" styleClass="dashboard-btn-primary" prefWidth="170"/>
-            <Button text="LOGOUT" onAction="#handleLogout" styleClass="dashboard-btn-logout" prefWidth="100"/>
-        </HBox>
+        <VBox styleClass="app-bar" spacing="0">
+            <HBox alignment="CENTER_LEFT" spacing="18">
+                <HBox spacing="6" alignment="CENTER_LEFT">
+                    <Label text="A" styleClass="app-brand, app-brand-accent"/>
+                    <Label text="UCTION" styleClass="app-brand"/>
+                    <Label text="HOUSE" styleClass="app-brand, app-brand-accent"/>
+                </HBox>
+                <Label text="BIDDER" styleClass="app-role-pill"/>
+                <Pane HBox.hgrow="ALWAYS"/>
+                <Label text="Welcome," styleClass="app-welcome"/>
+                <Label fx:id="welcomeLabel" styleClass="app-username"/>
+                <Button text="REFRESH" onAction="#handleRefresh" styleClass="dashboard-btn-ghost"/>
+                <Button text="CHANGE PASSWORD" onAction="#handleChangePassword" styleClass="dashboard-btn-ghost"/>
+                <Button text="LOGOUT" onAction="#handleLogout" styleClass="dashboard-btn-logout"/>
+            </HBox>
+        </VBox>
     </top>
 
     <!-- CENTER -->
     <center>
-        <VBox spacing="20" style="-fx-padding: 25; -fx-background-color: #f8f7f5;">
-            <VBox spacing="12" style="-fx-border-color: #e8e6e1; -fx-border-width: 1; -fx-padding: 20; -fx-border-radius: 4; -fx-background-color: #ffffff;">
-                <VBox spacing="6">
-                    <Label text="Wallet" styleClass="dashboard-section-title"/>
-                    <Label text="Deposit requests are approved by admin before funds are added" styleClass="dashboard-section-subtitle"/>
-                </VBox>
-                <HBox spacing="12" alignment="CENTER_LEFT">
-                    <Label fx:id="walletBalanceLabel" text="Balance: loading..." style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #1a1a1a;"/>
-                    <Pane HBox.hgrow="ALWAYS"/>
-                    <Button text="REQUEST DEPOSIT" onAction="#handleDepositRequest" styleClass="dashboard-btn-primary" prefWidth="170"/>
-                    <Button text="REQUEST WITHDRAW" onAction="#handleWithdrawRequest" styleClass="dashboard-btn-primary" prefWidth="170"/>
+        <ScrollPane fitToWidth="true" hbarPolicy="NEVER">
+            <VBox styleClass="app-content" spacing="22">
+
+                <!-- Wallet card -->
+                <HBox styleClass="dash-card-accent" spacing="20" alignment="CENTER_LEFT">
+                    <VBox spacing="6" HBox.hgrow="ALWAYS">
+                        <Label text="WALLET BALANCE" styleClass="balance-label"/>
+                        <Label fx:id="walletBalanceLabel" text="Balance: loading..."
+                               styleClass="balance-amount"/>
+                        <Label text="Deposit requests are approved by an admin before funds are added."
+                               styleClass="dashboard-section-subtitle" wrapText="true"/>
+                    </VBox>
+                    <VBox spacing="10" alignment="CENTER_RIGHT">
+                        <Button text="REQUEST DEPOSIT" onAction="#handleDepositRequest"
+                                styleClass="dashboard-btn-primary" prefWidth="190"/>
+                        <Button text="REQUEST WITHDRAW" onAction="#handleWithdrawRequest"
+                                styleClass="dashboard-btn-ghost" prefWidth="190"/>
+                    </VBox>
                 </HBox>
+
+                <!-- Live Auctions section -->
+                <VBox styleClass="dash-card" spacing="18">
+                    <HBox alignment="CENTER_LEFT" spacing="12">
+                        <VBox spacing="4" HBox.hgrow="ALWAYS">
+                            <Label text="Live Auctions" styleClass="dashboard-section-title"/>
+                            <Label text="Double-click an auction card to bid, auto-bid or view its price chart."
+                                   styleClass="dashboard-section-subtitle"/>
+                        </VBox>
+                    </HBox>
+
+                    <!-- Search and Sort Controls -->
+                    <HBox spacing="12" alignment="CENTER_LEFT">
+                        <TextField fx:id="searchField"
+                                   promptText="Search by item name..."
+                                   HBox.hgrow="ALWAYS"
+                                   styleClass="dashboard-input"/>
+                        <ComboBox fx:id="sortComboBox" promptText="Sort by..."
+                                  prefWidth="220" styleClass="dashboard-choicebox"/>
+                    </HBox>
+
+                    <TilePane fx:id="auctionGrid" hgap="18" vgap="18"
+                              prefColumns="4"
+                              style="-fx-padding: 4 0 4 0;"/>
+                </VBox>
+
             </VBox>
-
-            <VBox spacing="8">
-                <Label text="Live Auctions" styleClass="dashboard-section-title"/>
-                <Label text="Double-click an auction to place your bid" styleClass="dashboard-section-subtitle"/>
-            </VBox>
-
-            <!-- Search and Sort Controls -->
-            <HBox spacing="10" alignment="CENTER_LEFT" style="-fx-padding: 0 0 10 0;">
-                <TextField fx:id="searchField" promptText="Search by item name..." HBox.hgrow="ALWAYS" styleClass="text-field"/>
-                <ComboBox fx:id="sortComboBox" promptText="Sort by..."/>
-            </HBox>
-
-            <ScrollPane fitToWidth="true" style="-fx-background-color: transparent;">
-                <TilePane fx:id="auctionGrid" hgap="15" vgap="15" style="-fx-padding: 10;"/>
-            </ScrollPane>
-        </VBox>
+        </ScrollPane>
     </center>
 
 </BorderPane>

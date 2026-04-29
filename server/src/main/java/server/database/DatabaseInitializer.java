@@ -18,9 +18,6 @@ public class DatabaseInitializer {
             // Tạo bảng wallets
             createWalletTable(stmt);
 
-            // Tạo bảng auctions
-            createAuctionTable(stmt);
-
             // Tạo bảng items
             createItemsTable(stmt);
 
@@ -93,26 +90,6 @@ public class DatabaseInitializer {
         System.out.println("Wallets table created or already exists");
     }
 
-    private static void createAuctionTable(Statement stmt) throws SQLException {
-        String sql = """
-                CREATE TABLE IF NOT EXISTS auctions (
-                    id VARCHAR(36) PRIMARY KEY,
-                    item_id INTEGER NOT NULL,
-                    seller_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-                    start_price DECIMAL(15, 2) NOT NULL,
-                    current_price DECIMAL(15, 2) NOT NULL,
-                    status VARCHAR(50) DEFAULT 'UPCOMING',
-                    start_time TIMESTAMP NOT NULL,
-                    end_time TIMESTAMP NOT NULL,
-                    winner_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                )
-                """;
-        stmt.execute(sql);
-        System.out.println("Auctions table created or already exists");
-    }
-
     private static void createItemsTable(Statement stmt) throws SQLException {
         String sql = """
                 CREATE TABLE IF NOT EXISTS items (
@@ -137,7 +114,12 @@ public class DatabaseInitializer {
                     image_url TEXT,
                     min_increment DECIMAL(15, 2),
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    auction_id VARCHAR(36) UNIQUE,
+                    auction_status VARCHAR(50),
+                    start_time TIMESTAMP,
+                    end_time TIMESTAMP,
+                    winner_id INTEGER REFERENCES users(id) ON DELETE SET NULL
                 )
                 """;
         stmt.execute(sql);
@@ -148,10 +130,11 @@ public class DatabaseInitializer {
         String sql = """
                 CREATE TABLE IF NOT EXISTS bids (
                     id SERIAL PRIMARY KEY,
-                    auction_id VARCHAR(36) NOT NULL REFERENCES auctions(id) ON DELETE CASCADE,
+                    auction_id VARCHAR(36) NOT NULL,
                     bidder_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
                     bid_amount DECIMAL(15, 2) NOT NULL,
-                    bid_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    bid_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (auction_id) REFERENCES items(auction_id) ON DELETE CASCADE
                 )
                 """;
         stmt.execute(sql);
@@ -162,10 +145,11 @@ public class DatabaseInitializer {
         String sql = """
                 CREATE TABLE IF NOT EXISTS auto_bids (
                     id SERIAL PRIMARY KEY,
-                    auction_id VARCHAR(36) NOT NULL REFERENCES auctions(id) ON DELETE CASCADE,
+                    auction_id VARCHAR(36) NOT NULL,
                     bidder_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
                     max_bid_amount DECIMAL(15, 2) NOT NULL,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (auction_id) REFERENCES items(auction_id) ON DELETE CASCADE
                 )
                 """;
         stmt.execute(sql);

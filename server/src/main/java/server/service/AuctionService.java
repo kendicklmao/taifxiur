@@ -42,19 +42,19 @@ public class AuctionService {
         try (Connection conn = DatabaseConfig.getDataSource().getConnection();
              Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(
-                     "SELECT a.id, a.item_id, a.seller_id, a.start_price, a.current_price, a.status, " +
-                     "a.start_time, a.end_time, a.winner_id " +
-                     "FROM auctions a")) {
+                     "SELECT id, seller_id, base_price, current_price, auction_status, " +
+                             "start_time, end_time, winner_id, auction_id " +
+                             "FROM items WHERE auction_id IS NOT NULL")) {
 
             UserService userService = new UserService();
             while (rs.next()) {
                 try {
-                    String auctionId = rs.getString("id");
-                    int itemId = rs.getInt("item_id");
+                    String auctionId = rs.getString("auction_id");
+                    int itemId = rs.getInt("id");
                     int sellerId = rs.getInt("seller_id");
-                    BigDecimal startPrice = rs.getBigDecimal("start_price");
+                    BigDecimal startPrice = rs.getBigDecimal("base_price");
                     BigDecimal currentPrice = rs.getBigDecimal("current_price");
-                    String statusStr = rs.getString("status");
+                    String statusStr = rs.getString("auction_status");
                     Instant startTime = rs.getTimestamp("start_time").toInstant();
                     Instant endTime = rs.getTimestamp("end_time").toInstant();
                     Integer winnerId = rs.getObject("winner_id") != null ? rs.getInt("winner_id") : null;
@@ -161,6 +161,7 @@ public class AuctionService {
                         // Mặc định nếu min_increment bị thiếu
                         item.setMinIncrement(new BigDecimal("10000"));
                     }
+                    item.setDbId(itemId);
                 }
                 return item;
             }
@@ -262,28 +263,8 @@ public class AuctionService {
         auction.setBanChecker(username -> userService.isUserBanned(username));
         auctions.put(id, auction);
 
-        // Lưu item vào database
-        int itemId = saveItemToDatabase(item, seller, startPrice);
-
-        // Lưu auction vào database
-        try (Connection conn = DatabaseConfig.getDataSource().getConnection();
-                PreparedStatement pstmt = conn.prepareStatement(
-                        "INSERT INTO auctions (id, item_id, seller_id, start_price, current_price, status, start_time, end_time) VALUES (?, ?, ?, ?, ?, ?, ?, ?)")) {
-
-            pstmt.setString(1, id);
-            pstmt.setInt(2, itemId); // Use actual item ID from database
-            pstmt.setInt(3, getUserIdFromDatabase(seller.getUsername()));
-            pstmt.setBigDecimal(4, startPrice);
-            pstmt.setBigDecimal(5, startPrice);
-            pstmt.setString(6, AuctionStatus.OPEN.name());
-            pstmt.setTimestamp(7, Timestamp.from(startTime));
-            pstmt.setTimestamp(8, Timestamp.from(endTime));
-
-            pstmt.executeUpdate();
-        } catch (SQLException e) {
-            System.err.println("Error creating auction: " + e.getMessage());
-            e.printStackTrace();
-        }
+        // Lưu item và auction vào database
+        saveItemAndAuctionToDatabase(item, seller, startPrice, startTime, endTime, id);
 
         return auction;
     }
@@ -318,7 +299,7 @@ public class AuctionService {
                 System.out.println("Bid inserted: " + result + " rows affected");
 
                 // Cập nhật giá hiện tại của phiên đấu giá
-                updateAuctionPrice(auctionId, amount);
+                updateItemPrice(auction.getItem().getDbId(), amount);
             } catch (SQLException e) {
                 System.err.println("Error storing bid: " + e.getMessage());
                 e.printStackTrace();
@@ -403,7 +384,7 @@ public class AuctionService {
                         // Cập nhật trạng thái phiên đấu giá trong database thành PAID
                         try (Connection conn = DatabaseConfig.getDataSource().getConnection();
                                 PreparedStatement pstmt = conn
-                                        .prepareStatement("UPDATE auctions SET status = ? WHERE id = ?")) {
+                                        .prepareStatement("UPDATE items SET auction_status = ? WHERE auction_id = ?")) {
                             pstmt.setString(1, AuctionStatus.PAID.name());
                             pstmt.setString(2, auctionId);
                             pstmt.executeUpdate();
@@ -424,7 +405,7 @@ public class AuctionService {
                     // Không có người thắng: chỉ cập nhật trạng thái phiên đấu giá thành FINISHED trong DB
                     try (Connection conn = DatabaseConfig.getDataSource().getConnection();
                             PreparedStatement pstmt = conn
-                                    .prepareStatement("UPDATE auctions SET status = ? WHERE id = ?")) {
+                                    .prepareStatement("UPDATE items SET auction_status = ? WHERE auction_id = ?")) {
                         pstmt.setString(1, AuctionStatus.FINISHED.name());
                         pstmt.setString(2, auction.getId());
                         pstmt.executeUpdate();
@@ -471,16 +452,16 @@ public class AuctionService {
     }
 
     // Phương thức trợ giúp để lưu mặt hàng vào cơ sở dữ liệu với thông tin giá cả
-    private int saveItemToDatabase(Item item, Seller seller, BigDecimal startPrice) {
+    private int saveItemAndAuctionToDatabase(Item item, Seller seller, BigDecimal startPrice, Instant startTime, Instant endTime, String auctionId) {
         try (Connection conn = DatabaseConfig.getDataSource().getConnection();
                 PreparedStatement pstmt = conn.prepareStatement(
                         "INSERT INTO items (seller_id, name, description, category, status, item_type, " +
                                 "base_price, current_price, legit_check, seller_name, " +
-                                "brand, item_status, model_year, km_travel, artist, year_created, is_original, image_url, min_increment) "
-                                +
-                                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                                "brand, item_status, model_year, km_travel, artist, year_created, is_original, image_url, min_increment, " +
+                                "auction_id, auction_status, start_time, end_time) " +
+                                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                         Statement.RETURN_GENERATED_KEYS)) {
-            
+
             int sellerId = getUserIdFromDatabase(seller.getUsername());
             pstmt.setInt(1, sellerId);
             pstmt.setString(2, item.getName());
@@ -520,6 +501,12 @@ public class AuctionService {
             pstmt.setString(18, item.getImageUrl()); // image_url
             pstmt.setBigDecimal(19, item.getMinIncrement()); // min_increment
 
+            // Set auction information
+            pstmt.setString(20, auctionId);
+            pstmt.setString(21, AuctionStatus.OPEN.name());
+            pstmt.setTimestamp(22, Timestamp.from(startTime));
+            pstmt.setTimestamp(23, Timestamp.from(endTime));
+
             // Set item-specific fields based on type
             if (item instanceof shared.models.Electronic electronic) {
                 pstmt.setString(11, electronic.getBrand()); // brand
@@ -543,7 +530,9 @@ public class AuctionService {
             if (affectedRows > 0) {
                 try (ResultSet generatedKeys = pstmt.getGeneratedKeys()) {
                     if (generatedKeys.next()) {
-                        return generatedKeys.getInt(1);
+                        int generatedId = generatedKeys.getInt(1);
+                        item.setDbId(generatedId);
+                        return generatedId;
                     }
                 }
             }
@@ -582,14 +571,14 @@ public class AuctionService {
     /**
      * Update auction current price (ASYNC to avoid blocking)
      */
-    private void updateAuctionPrice(String auctionId, BigDecimal newPrice) {
+    private void updateItemPrice(int itemId, BigDecimal newPrice) {
         asyncExecutor.execute(() -> {
             try (Connection conn = DatabaseConfig.getDataSource().getConnection();
                     PreparedStatement pstmt = conn.prepareStatement(
-                            "UPDATE auctions SET current_price = ? WHERE id = ?")) {
+                            "UPDATE items SET current_price = ? WHERE id = ?")) {
 
                 pstmt.setBigDecimal(1, newPrice);
-                pstmt.setString(2, auctionId);
+                pstmt.setInt(2, itemId);
                 pstmt.executeUpdate();
             } catch (SQLException e) {
                 System.err.println("Error updating auction price: " + e.getMessage());
