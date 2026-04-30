@@ -37,12 +37,15 @@ public class WalletService {
         }
     }
 
-    public String createDepositRequest(String bidderUsername, BigDecimal amount) {
+    public String createDepositRequest(String bidderUsername, BigDecimal amount, String bankName, String accountNumber) {
         if (!Validator.isValidUsername(bidderUsername)) {
             return "Invalid username";
         }
         if (!isPositiveAmount(amount)) {
             return "Amount must be greater than 0";
+        }
+        if (bankName == null || bankName.trim().isEmpty() || accountNumber == null || accountNumber.trim().isEmpty()) {
+            return "Bank name and account number are required";
         }
 
         bidderUsername = Validator.normalizeAndLowercase(bidderUsername);
@@ -50,8 +53,8 @@ public class WalletService {
         try (Connection conn = DatabaseConfig.getDataSource().getConnection();
                 PreparedStatement pstmt = conn.prepareStatement(
                         """
-                                INSERT INTO deposit_requests (id, bidder_id, amount, status, created_at, updated_at)
-                                VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                                INSERT INTO deposit_requests (id, bidder_id, amount, status, bank_name, account_number, created_at, updated_at)
+                                VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
                                 """)) {
 
             Integer bidderId = getUserIdByUsernameAndRole(conn, bidderUsername, "BIDDER");
@@ -65,6 +68,8 @@ public class WalletService {
             pstmt.setInt(2, bidderId);
             pstmt.setBigDecimal(3, amount);
             pstmt.setString(4, RequestStatus.PENDING.name());
+            pstmt.setString(5, bankName);
+            pstmt.setString(6, accountNumber);
             pstmt.executeUpdate();
             return null;
         } catch (SQLException e) {
@@ -133,7 +138,7 @@ public class WalletService {
         List<Map<String, String>> requests = new ArrayList<>();
 
         String sql = """
-                SELECT dr.id, u.username, dr.amount, dr.status, dr.created_at
+                SELECT dr.id, u.username, dr.amount, dr.status, dr.created_at, dr.bank_name, dr.account_number
                 FROM deposit_requests dr
                 JOIN users u ON dr.bidder_id = u.id
                 WHERE dr.status = ?
@@ -153,6 +158,8 @@ public class WalletService {
                 row.put("amount", rs.getBigDecimal("amount").toPlainString());
                 row.put("status", rs.getString("status"));
                 row.put("createdAt", rs.getTimestamp("created_at").toString());
+                row.put("bankName", rs.getString("bank_name"));
+                row.put("accountNumber", rs.getString("account_number"));
                 requests.add(row);
             }
         } catch (SQLException e) {
@@ -184,7 +191,9 @@ public class WalletService {
                 row.put("id", rs.getString("id"));
                 row.put("username", rs.getString("username"));
                 row.put("amount", rs.getBigDecimal("amount").toPlainString());
-                row.put("bankAccount", rs.getString("bank_account"));
+                String[] bankInfo = rs.getString("bank_account").split(" - ");
+                row.put("bankName", bankInfo.length > 0 ? bankInfo[0] : "");
+                row.put("accountNumber", bankInfo.length > 1 ? bankInfo[1] : "");
                 row.put("status", rs.getString("status"));
                 row.put("createdAt", rs.getTimestamp("created_at").toString());
                 requests.add(row);

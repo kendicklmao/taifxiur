@@ -264,7 +264,11 @@ public class AuctionService {
         auctions.put(id, auction);
 
         // Lưu item và auction vào database
-        saveItemAndAuctionToDatabase(item, seller, startPrice, startTime, endTime, id);
+        int dbId = saveItemAndAuctionToDatabase(item, seller, startPrice, startTime, endTime, id);
+        if (dbId == -1) {
+            auctions.remove(id); // remove from in-memory map if DB save failed
+            throw new RuntimeException("Failed to save auction to database.");
+        }
 
         return auction;
     }
@@ -394,7 +398,7 @@ public class AuctionService {
                         // Thông báo cho client
                         try {
                             Gson gson = GsonUtils.createGson();
-                            Response resp = new Response("AUCTION_FINISHED", auction.getId());
+                            Response resp = new Response("AUCTION_PAID", auction.getId());
                             ClientHandler.broadcast(gson.toJson(resp));
                         } catch (Exception ignored) {
                         }

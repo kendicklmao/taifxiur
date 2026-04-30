@@ -565,10 +565,12 @@ public class SellerHomeController {
 
         TextField amountField = new TextField();
         amountField.setPromptText("Enter amount");
+        amountField.getStyleClass().add("dashboard-input");
 
         ComboBox<String> bankNameComboBox = new ComboBox<>();
         bankNameComboBox.setPromptText("Select bank name");
         bankNameComboBox.setEditable(true);
+        bankNameComboBox.getStyleClass().add("dashboard-choicebox");
         ObservableList<String> bankOptions = FXCollections.observableArrayList(BANK_NAMES);
         bankNameComboBox.setItems(bankOptions);
 
@@ -585,12 +587,18 @@ public class SellerHomeController {
 
         TextField accountNumberField = new TextField();
         accountNumberField.setPromptText("Enter account number");
+        accountNumberField.getStyleClass().add("dashboard-input");
 
-        VBox content = new VBox(10);
+        VBox content = new VBox(15);
         content.getChildren().addAll(new Label("Amount"), amountField, new Label("Bank Name"), bankNameComboBox,
                 new Label("Account Number"), accountNumberField);
+        content.setStyle("-fx-padding: 20px;");
         dialog.getDialogPane().setContent(content);
         dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+
+        // Apply custom dialog styling
+        dialog.getDialogPane().getStylesheets().add(getClass().getResource("/styles.css").toExternalForm());
+        dialog.getDialogPane().getStyleClass().add("my-dialog");
 
         dialog.setResultConverter(buttonType -> {
             if (buttonType == ButtonType.OK) {

@@ -107,7 +107,7 @@ public class AdminHomeController {
                 if (empty || item == null) {
                     setText(null);
                 } else {
-                    setText("Deposit | " + item.get("username") + " | $" + item.get("amount") + " | " + item.get("createdAt"));
+                    setText("Deposit | " + item.get("username") + " | $" + item.get("amount") + " | Bank: " + item.get("bankName") + " | Acc: " + item.get("accountNumber") + " | " + item.get("createdAt"));
                 }
             }
         });
@@ -121,7 +121,7 @@ public class AdminHomeController {
                 if (empty || item == null) {
                     setText(null);
                 } else {
-                    setText("Withdraw | " + item.get("username") + " | $" + item.get("amount") + " | " + item.get("bankAccount"));
+                    setText("Withdraw | " + item.get("username") + " | $" + item.get("amount") + " | Bank: " + item.get("bankName") + " | Acc: " + item.get("accountNumber") + " | " + item.get("createdAt"));
                 }
             }
         });

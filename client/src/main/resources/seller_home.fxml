@@ -103,9 +103,9 @@
                                 <VBox spacing="6" HBox.hgrow="ALWAYS">
                                     <Label text="START TIME" styleClass="form-label-register"/>
                                     <HBox spacing="6" alignment="CENTER_LEFT">
-                                        <Spinner fx:id="startHourSpinner" prefWidth="90" editable="true"/>
+                                        <Spinner fx:id="startHourSpinner" prefWidth="120" editable="true"/>
                                         <Label text=":" style="-fx-text-fill: #8b8ba7;"/>
-                                        <Spinner fx:id="startMinuteSpinner" prefWidth="90" editable="true"/>
+                                        <Spinner fx:id="startMinuteSpinner" prefWidth="120" editable="true"/>
                                     </HBox>
                                 </VBox>
                             </HBox>
@@ -117,9 +117,9 @@
                                 <VBox spacing="6" HBox.hgrow="ALWAYS">
                                     <Label text="END TIME" styleClass="form-label-register"/>
                                     <HBox spacing="6" alignment="CENTER_LEFT">
-                                        <Spinner fx:id="endHourSpinner" prefWidth="90" editable="true"/>
+                                        <Spinner fx:id="endHourSpinner" prefWidth="120" editable="true"/>
                                         <Label text=":" style="-fx-text-fill: #8b8ba7;"/>
-                                        <Spinner fx:id="endMinuteSpinner" prefWidth="90" editable="true"/>
+                                        <Spinner fx:id="endMinuteSpinner" prefWidth="120" editable="true"/>
                                     </HBox>
                                 </VBox>
                             </HBox>

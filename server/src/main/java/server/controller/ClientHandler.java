@@ -504,7 +504,9 @@ public class ClientHandler implements Runnable {
             case "CREATE_DEPOSIT_REQUEST":
                 String depositUsername = request.getData().get("username");
                 BigDecimal depositAmount = new BigDecimal(request.getData().get("amount"));
-                String depositError = userService.createDepositRequest(depositUsername, depositAmount);
+                String depositBankName = request.getData().get("bankName");
+                String depositAccountNumber = request.getData().get("accountNumber");
+                String depositError = userService.createDepositRequest(depositUsername, depositAmount, depositBankName, depositAccountNumber);
                 if (depositError == null) {
                     return new Response("SUCCESS", "Deposit request created successfully");
                 } else {
