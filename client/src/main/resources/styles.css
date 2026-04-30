@@ -882,3 +882,33 @@
 .default-color0.chart-line-symbol {
     -fx-background-color: #7c5dfa, #ffffff;
 }
+
+/* ---------- My Dialog Style (Corrected for Dark Theme) ---------- */
+/* This targets the DialogPane to look like the login auth-card */
+.my-dialog.dialog-pane {
+    -fx-background-color: #161629;
+    -fx-background-radius: 20;
+    -fx-border-color: #2a2a3e;
+    -fx-border-radius: 20;
+    -fx-border-width: 1;
+    -fx-effect: dropshadow(gaussian, rgba(124,93,250,0.18), 32, 0.0, 0, 12);
+}
+
+/* Ensure the inner content area is transparent */
+.my-dialog.dialog-pane .content.pane {
+    -fx-background-color: transparent;
+}
+
+/* Style the header panel */
+.my-dialog.dialog-pane .header-panel {
+    -fx-background-color: transparent;
+    -fx-padding: 24 24 12 24;
+}
+
+/* Style the header text to match "Welcome back" */
+.my-dialog.dialog-pane .header-panel .label {
+    -fx-font-family: 'Segoe UI', 'Inter', 'Helvetica Neue', Arial, sans-serif;
+    -fx-font-size: 24;
+    -fx-font-weight: bold;
+    -fx-text-fill: #ffffff;
+}

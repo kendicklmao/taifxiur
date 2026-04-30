@@ -12,13 +12,10 @@
         <VBox styleClass="app-bar" spacing="0">
             <HBox alignment="CENTER_LEFT" spacing="18">
                 <HBox spacing="6" alignment="CENTER_LEFT">
-                    <Label text="A" styleClass="app-brand, app-brand-accent"/>
-                    <Label text="UCTION" styleClass="app-brand"/>
-                    <Label text="HOUSE" styleClass="app-brand, app-brand-accent"/>
+                    <Label text="AUCTION" styleClass="app-brand, app-brand-accent"/>
                 </HBox>
                 <Label text="SELLER" styleClass="app-role-pill"/>
                 <Pane HBox.hgrow="ALWAYS"/>
-                <Label text="Welcome," styleClass="app-welcome"/>
                 <Label fx:id="welcomeLabel" styleClass="app-username"/>
                 <Button text="REFRESH" onAction="#handleRefresh" styleClass="dashboard-btn-ghost"/>
                 <Button text="CHANGE PASSWORD" onAction="#handleChangePassword" styleClass="dashboard-btn-ghost"/>

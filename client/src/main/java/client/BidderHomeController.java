@@ -51,6 +51,8 @@ public class BidderHomeController {
 
     private final AppContext ctx = AppContext.getInstance();
     private final Gson gson = GsonUtils.createGson();
+    private final IAlertService alertService = new AlertServiceImpl();
+
     private Consumer<String> messageListener;
     private final ObservableList<Auction> allAuctions = FXCollections.observableArrayList();
 
@@ -193,100 +195,48 @@ public class BidderHomeController {
 
     private void refreshAuctions() {
         try {
-            Request req = new Request("GET_AUCTIONS", new HashMap<>());
-            Response response = ctx.sendRequestAndWait(req, 15);
+            Response response = ctx.sendRequestAndWait(new Request("GET_AUCTIONS", new HashMap<>()), 15);
             if ("SUCCESS".equals(response.getStatus())) {
                 List<Auction> auctions = gson.fromJson(response.getMessage(), new TypeToken<List<Auction>>() {
                 }.getType());
-                Platform.runLater(() -> {
-                    allAuctions.setAll(auctions);
-                });
+                Platform.runLater(() -> updateAuctionGrid(auctions));
             }
         } catch (Exception e) {
-            System.out.println("Failed to refresh auctions: " + e.getMessage());
+            alertService.showAlert("Error", "Failed to refresh auctions: " + e.getMessage(), welcomeLabel);
         }
     }
 
     @FXML
     public void handleChangePassword() {
-        ChangePasswordSupport.showDialog(ctx);
+        ChangePasswordSupport.showDialog(ctx, welcomeLabel);
     }
 
     @FXML
     public void handleDepositRequest() {
-        Dialog<String> dialog = new Dialog<>();
+        TextInputDialog dialog = new TextInputDialog();
         dialog.setTitle("Deposit Request");
-        dialog.setHeaderText("Send a deposit request to admin");
+        dialog.setHeaderText("Enter the amount you want to deposit:");
+        dialog.setContentText("Amount:");
 
-        TextField amountField = new TextField();
-        amountField.setPromptText("Enter amount");
-
-        ComboBox<String> bankNameComboBox = new ComboBox<>();
-        bankNameComboBox.setPromptText("Select bank name");
-        bankNameComboBox.setEditable(true);
-        ObservableList<String> bankOptions = FXCollections.observableArrayList(BANK_NAMES);
-        bankNameComboBox.setItems(bankOptions);
-
-        bankNameComboBox.getEditor().textProperty().addListener((obs, oldText, newText) -> {
-            if (newText == null || newText.isEmpty()) {
-                bankNameComboBox.setItems(bankOptions);
-            } else {
-                List<String> filteredList = BANK_NAMES.stream()
-                        .filter(s -> s.toLowerCase().contains(newText.toLowerCase()))
-                        .collect(Collectors.toList());
-                bankNameComboBox.setItems(FXCollections.observableArrayList(filteredList));
-            }
-        });
-
-        TextField accountNumberField = new TextField();
-        accountNumberField.setPromptText("Enter account number");
-
-        VBox content = new VBox(10);
-        content.getChildren().addAll(new Label("Amount"), amountField, new Label("Bank Name"), bankNameComboBox,
-                new Label("Account Number"), accountNumberField);
-        dialog.getDialogPane().setContent(content);
-        dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
-
-        dialog.setResultConverter(buttonType -> {
-            if (buttonType == ButtonType.OK) {
-                String selectedBank = bankNameComboBox.getSelectionModel().getSelectedItem();
-                if (selectedBank == null && !bankNameComboBox.getEditor().getText().isEmpty()) {
-                    selectedBank = bankNameComboBox.getEditor().getText();
+        dialog.showAndWait().ifPresent(amountStr -> {
+            try {
+                BigDecimal amount = new BigDecimal(amountStr);
+                if (amount.compareTo(BigDecimal.ZERO) <= 0) {
+                    alertService.showAlert("Error", "Amount must be greater than 0", welcomeLabel);
+                    return;
                 }
-                return amountField.getText() + "," + selectedBank + "," + accountNumberField.getText();
-            }
-            return null;
-        });
-        dialog.showAndWait().ifPresent(result -> {
-            String[] parts = result.split(",");
-            if (parts.length == 3) {
-                try {
-                    BigDecimal amount = new BigDecimal(parts[0]);
-                    String bankName = parts[1];
-                    String accountNumber = parts[2];
-                    if (amount.compareTo(BigDecimal.ZERO) <= 0) {
-                        showAlert("Error", "Amount must be greater than 0");
-                        return;
-                    }
-                    if (bankName.trim().isEmpty() || accountNumber.trim().isEmpty()) {
-                        showAlert("Error", "Bank name and account number cannot be empty");
-                        return;
-                    }
 
-                    Map<String, String> data = new HashMap<>();
-                    data.put("username", ctx.getCurrentUser().getUsername());
-                    data.put("amount", amount.toPlainString());
-                    data.put("bankName", bankName.trim());
-                    data.put("accountNumber", accountNumber.trim());
-                    Response response = ctx.sendRequestAndWait(new Request("CREATE_DEPOSIT_REQUEST", data), 15);
-                    if ("SUCCESS".equals(response.getStatus())) {
-                        showAlert("Success", response.getMessage());
-                    } else {
-                        showAlert("Error", response.getMessage());
-                    }
-                } catch (Exception e) {
-                    showAlert("Error", "Please enter valid data");
+                Map<String, String> data = new HashMap<>();
+                data.put("username", ctx.getCurrentUser().getUsername());
+                data.put("amount", amount.toPlainString());
+                Response response = ctx.sendRequestAndWait(new Request("CREATE_DEPOSIT_REQUEST", data), 15);
+                if ("SUCCESS".equals(response.getStatus())) {
+                    alertService.showAlert("Success", response.getMessage(), welcomeLabel);
+                } else {
+                    alertService.showAlert("Error", response.getMessage(), welcomeLabel);
                 }
+            } catch (Exception e) {
+                alertService.showAlert("Error", "Please enter a valid amount", welcomeLabel);
             }
         });
     }
@@ -385,12 +335,6 @@ public class BidderHomeController {
         Navigator.switchSceneStatic("login.fxml");
     }
 
-    private void showAlert(String title, String msg) {
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle(title);
-        alert.setContentText(msg);
-        alert.showAndWait();
-    }
 
     private void showBidOptionsDialog(Auction auction) {
         Dialog<String> dialog = new Dialog<>();
@@ -545,6 +489,10 @@ public class BidderHomeController {
         } catch (Exception e) {
             showAlert("Error", "Failed to register auto-bid: " + e.getMessage());
         }
+    }
+
+    private void showAlert(String title, String message) {
+        alertService.showAlert(title, message, welcomeLabel);
     }
 
     private String formatEndTime(Instant endTime) {

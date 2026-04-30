@@ -64,7 +64,7 @@ public class LoginController {
                 }
                 ctx.setCurrentUser(currentUser);
 
-                alertService.showAlert("Success", "Login successful with role: " + role);
+                alertService.showAlert("Success", "Login successful with role: " + role, usernameField);
                 if (role.equals("BIDDER")) {
                     navigator.switchScene("bidder_home.fxml");
                 } else if (role.equals("SELLER")) {
@@ -73,11 +73,11 @@ public class LoginController {
                     navigator.switchScene("admin_home.fxml");
                 }
             } else {
-                alertService.showAlert("Error", res.getMessage());
+                alertService.showAlert("Error", res.getMessage(), usernameField);
             }
 
         } catch (Exception e) {
-            alertService.showAlert("Error", "Cannot connect to Server!");
+            alertService.showAlert("Error", "Cannot connect to Server!", usernameField);
             e.printStackTrace();
         }
     }
@@ -94,6 +94,6 @@ public class LoginController {
 
     // This method is now delegated to the alert service
     private void showAlert(String title, String msg){
-        alertService.showAlert(title, msg);
+        alertService.showAlert(title, msg, usernameField);
     }
 }

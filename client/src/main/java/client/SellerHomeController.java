@@ -84,6 +84,7 @@ public class SellerHomeController {
     private final Gson gson = GsonUtils.createGson();
 
     private final AppContext ctx = AppContext.getInstance();
+    private final IAlertService alertService = new AlertServiceImpl();
     private static final List<String> BANK_NAMES = Arrays.asList(
             "Vietcombank", "Techcombank", "BIDV", "Agribank", "VPBank",
             "MBBank", "ACB", "Sacombank", "Eximbank", "HDBank",
@@ -235,7 +236,7 @@ public class SellerHomeController {
                 itemImageView.setImage(image);
             } catch (Exception e) {
                 e.printStackTrace();
-                showAlert("Error", "Failed to process image.");
+                alertService.showAlert("Error", "Failed to process image.", welcomeLabel);
             }
         }
     }
@@ -316,29 +317,29 @@ public class SellerHomeController {
             BigDecimal startingPrice;
 
             if (name.isEmpty()) {
-                showAlert("Error", "Missing information!");
+                alertService.showAlert("Error", "Missing information!", welcomeLabel);
                 return;
             }
 
             try {
                 startingPrice = new BigDecimal(price);
             } catch (NumberFormatException e) {
-                showAlert("Error", "Starting price must be a valid number!");
+                alertService.showAlert("Error", "Starting price must be a valid number!", welcomeLabel);
                 return;
             }
 
             if (startingPrice.compareTo(BigDecimal.ZERO) <= 0) {
-                showAlert("Error", "Starting price must be greater than 0!");
+                alertService.showAlert("Error", "Starting price must be greater than 0!", welcomeLabel);
                 return;
             }
 
             if (selectedImageFile == null) {
-                showAlert("Error", "Please upload an image for the item.");
+                alertService.showAlert("Error", "Please upload an image for the item.", welcomeLabel);
                 return;
             }
 
             if (name.length() < 3 || desc.length() < 3) {
-                showAlert("Error", "Name and description must have at least 3 characters!");
+                alertService.showAlert("Error", "Name and description must have at least 3 characters!", welcomeLabel);
                 return;
             }
 
@@ -349,7 +350,7 @@ public class SellerHomeController {
             LocalDate endDate = endDatePicker.getValue();
 
             if (startDate == null || endDate == null) {
-                showAlert("Error", "Missing date information!");
+                alertService.showAlert("Error", "Missing date information!", welcomeLabel);
                 return;
             }
 
@@ -362,13 +363,13 @@ public class SellerHomeController {
             endTime = endDate.atTime(endHour, endMinute).atZone(ZoneId.systemDefault()).toInstant();
 
             if (startTime.isAfter(endTime)) {
-                showAlert("Error", "Start time must be before end time!");
+                alertService.showAlert("Error", "Start time must be before end time!", welcomeLabel);
                 return;
             }
 
             Instant minStartTime = Instant.now().plusSeconds(60);
             if (startTime.isBefore(minStartTime)) {
-                showAlert("Error", "Start time must be at least 1 minute from now!");
+                alertService.showAlert("Error", "Start time must be at least 1 minute from now!", welcomeLabel);
                 return;
             }
 
@@ -384,23 +385,23 @@ public class SellerHomeController {
             if ("Custom Amount".equals(incrementTypeBox.getValue())) {
                 String customInc = customIncrementField.getText();
                 if (customInc == null || customInc.isEmpty()) {
-                    showAlert("Error", "Please enter custom increment amount!");
+                    alertService.showAlert("Error", "Please enter custom increment amount!", welcomeLabel);
                     return;
                 }
                 try {
                     BigDecimal inc = new BigDecimal(customInc);
                     if (inc.compareTo(BigDecimal.ZERO) <= 0) {
-                        showAlert("Error", "Minimum increment must be greater than 0!");
+                        alertService.showAlert("Error", "Minimum increment must be greater than 0!", welcomeLabel);
                         return;
                     }
                     BigDecimal defaultMinIncrement = startingPrice.multiply(new BigDecimal("0.05"));
                     if (inc.compareTo(defaultMinIncrement) < 0) {
-                        showAlert("Error", "Custom increment must be greater than or equal to default minimum increment: " + defaultMinIncrement.toPlainString());
+                        alertService.showAlert("Error", "Custom increment must be greater than or equal to default minimum increment: " + defaultMinIncrement.toPlainString(), welcomeLabel);
                         return;
                     }
                     data.put("minIncrement", customInc);
                 } catch (NumberFormatException e) {
-                    showAlert("Error", "Custom increment must be a valid number!");
+                    alertService.showAlert("Error", "Custom increment must be a valid number!", welcomeLabel);
                     return;
                 }
             }
@@ -444,7 +445,7 @@ public class SellerHomeController {
             System.out.println("MESSAGE = " + response.getMessage());
             if ("SUCCESS".equals(response.getStatus())) {
                 fetchSellerAuctions(); // Refresh the grid
-                showAlert("OK", "Auction created successfully!");
+                alertService.showAlert("OK", "Auction created successfully!", welcomeLabel);
                 itemNameField.clear();
                 startPriceField.clear();
                 descField.clear();
@@ -474,11 +475,11 @@ public class SellerHomeController {
                 selectedImageFile = null;
                 croppedImageBytes = null;
             } else {
-                showAlert("Lỗi", response.getMessage());
+                alertService.showAlert("Lỗi", response.getMessage(), welcomeLabel);
             }
 
         } catch (Exception e) {
-            showAlert("Error", "Invalid data!");
+            alertService.showAlert("Error", "Invalid data!", welcomeLabel);
             e.printStackTrace();
         }
     }
@@ -494,7 +495,7 @@ public class SellerHomeController {
     // ================= LOGOUT =================
     @FXML
     public void handleChangePassword() {
-        ChangePasswordSupport.showDialog(ctx);
+        ChangePasswordSupport.showDialog(ctx, welcomeLabel);
     }
 
     @FXML
@@ -513,11 +514,7 @@ public class SellerHomeController {
 
     // ================= ALERT =================
     private void showAlert(String title, String message) {
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle(title);
-        alert.setHeaderText(null);
-        alert.setContentText(message);
-        alert.showAndWait();
+        alertService.showAlert(title, message, welcomeLabel);
     }
 
     private String formatTime(java.time.Instant instant) {
@@ -613,11 +610,11 @@ public class SellerHomeController {
                     String bankName = parts[1];
                     String accountNumber = parts[2];
                     if (amount.compareTo(BigDecimal.ZERO) <= 0) {
-                        showAlert("Error", "Amount must be greater than 0");
+                        alertService.showAlert("Error", "Amount must be greater than 0", welcomeLabel);
                         return;
                     }
                     if (bankName.trim().isEmpty() || accountNumber.trim().isEmpty()) {
-                        showAlert("Error", "Bank name and account number cannot be empty");
+                        alertService.showAlert("Error", "Bank name and account number cannot be empty", welcomeLabel);
                         return;
                     }
 
@@ -628,12 +625,12 @@ public class SellerHomeController {
                     data.put("accountNumber", accountNumber.trim());
                     Response response = ctx.sendRequestAndWait(new Request("CREATE_WITHDRAW_REQUEST", data), 15);
                     if ("SUCCESS".equals(response.getStatus())) {
-                        showAlert("Success", response.getMessage());
+                        alertService.showAlert("Success", response.getMessage(), welcomeLabel);
                     } else {
-                        showAlert("Error", response.getMessage());
+                        alertService.showAlert("Error", response.getMessage(), welcomeLabel);
                     }
                 } catch (Exception e) {
-                    showAlert("Error", "Please enter valid data");
+                    alertService.showAlert("Error", "Please enter valid data", welcomeLabel);
                 }
             }
         });

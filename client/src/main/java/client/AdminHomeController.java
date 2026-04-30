@@ -1,13 +1,17 @@
 package client;
 
-import javafx.application.Platform;
-import javafx.fxml.FXML;
-import javafx.scene.control.*;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
+import javafx.application.Platform;
+import javafx.fxml.FXML;
+import javafx.scene.control.ComboBox;
+import javafx.scene.control.Label;
+import javafx.scene.control.ListCell;
+import javafx.scene.control.ListView;
+import javafx.scene.control.TextArea;
+import shared.models.AdminActionLog;
 import shared.models.Auction;
 import shared.models.User;
-import shared.models.AdminActionLog;
 import shared.network.Request;
 import shared.network.Response;
 import shared.utils.GsonUtils;
@@ -16,6 +20,7 @@ import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public class AdminHomeController {
     @FXML private ListView<Auction> allAuctionsList;
@@ -29,6 +34,7 @@ public class AdminHomeController {
 
     private final AppContext ctx = AppContext.getInstance();
     private final Gson gson = GsonUtils.createGson();
+    private final IAlertService alertService = new AlertServiceImpl();
     private java.util.List<String> allUsernames = new java.util.ArrayList<>();
 
     @FXML
@@ -44,13 +50,12 @@ public class AdminHomeController {
         refreshWalletRequests();
 
         usernameField.getEditor().textProperty().addListener((obs, oldText, newText) -> {
-            // Filter dropdown items dựa trên text nhập vào
             if (newText == null || newText.isEmpty()) {
                 usernameField.setItems(javafx.collections.FXCollections.observableArrayList(allUsernames));
             } else {
                 java.util.List<String> filteredList = allUsernames.stream()
                         .filter(s -> s.toLowerCase().contains(newText.toLowerCase()))
-                        .collect(java.util.stream.Collectors.toList());
+                        .collect(Collectors.toList());
                 usernameField.setItems(javafx.collections.FXCollections.observableArrayList(filteredList));
                 usernameField.show();
             }
@@ -66,13 +71,13 @@ public class AdminHomeController {
                     setText(null);
                 } else {
                     setText(
-                        "📦 " + item.getItem().getName() +
-                        " | ID: " + item.getId().substring(0, 8) + "..." +
-                        " | Seller: " + item.getSeller().getUsername() +
-                        " | Price: " + item.getCurrentPrice() +
-                        " | Status: " + item.getStatus() +
-                        " | Start: " + formatTime(item.getStartTime()) +
-                        " | End: " + formatTime(item.getEndTime())
+                            "📦 " + item.getItem().getName() +
+                                    " | ID: " + item.getId().substring(0, 8) + "..." +
+                                    " | Seller: " + item.getSeller().getUsername() +
+                                    " | Price: " + item.getCurrentPrice() +
+                                    " | Status: " + item.getStatus() +
+                                    " | Start: " + formatTime(item.getStartTime()) +
+                                    " | End: " + formatTime(item.getEndTime())
                     );
                 }
             }
@@ -132,7 +137,7 @@ public class AdminHomeController {
                 Platform.runLater(() -> adminActionLogsList.getItems().setAll(logs));
             }
         } catch (Exception e) {
-            showAlert("Error", "Failed to load admin action logs: " + e.getMessage());
+            alertService.showAlert("Error", "Failed to load admin action logs: " + e.getMessage(), welcomeLabel);
         }
     }
 
@@ -146,7 +151,7 @@ public class AdminHomeController {
                 Platform.runLater(() -> allAuctionsList.getItems().setAll(auctions));
             }
         } catch (Exception e) {
-            showAlert("Error", "Failed to load auctions: " + e.getMessage());
+            alertService.showAlert("Error", "Failed to load auctions: " + e.getMessage(), welcomeLabel);
         }
     }
 
@@ -158,35 +163,18 @@ public class AdminHomeController {
             if ("SUCCESS".equals(response.getStatus())) {
                 User[] users = gson.fromJson(response.getMessage(), User[].class);
                 Platform.runLater(() -> {
-                    // ...existing code...
-                    allUsersList.getItems().clear();
-                    allUsersList.setCellFactory(lv -> new ListCell<>() {
-                        @Override
-                        protected void updateItem(User item, boolean empty) {
-                            super.updateItem(item, empty);
-                            if (empty || item == null) {
-                                setText(null);
-                            } else {
-                                String status = item.isBanned() ? "BANNED" : "ACTIVE";
-                                setText(item.getUsername() + " (" + item.getRole() + ") - " + status);
-                            }
-                        }
-                    });
                     allUsersList.getItems().setAll(users);
-                    
-                    // Cập nhật dropdown list (bao gồm tất cả users)
-                    java.util.List<String> usernames = java.util.Arrays.stream(users)
-                        .map(User::getUsername)
-                        .collect(java.util.stream.Collectors.toList());
+                    List<String> usernames = java.util.Arrays.stream(users)
+                            .map(User::getUsername)
+                            .collect(Collectors.toList());
                     allUsernames.clear();
                     allUsernames.addAll(usernames);
                     usernameField.setItems(javafx.collections.FXCollections.observableArrayList(allUsernames));
-                    
                     allUsersList.refresh();
                 });
             }
         } catch (Exception e) {
-            showAlert("Error", "Failed to load users: " + e.getMessage());
+            alertService.showAlert("Error", "Failed to load users: " + e.getMessage(), welcomeLabel);
         }
     }
 
@@ -206,7 +194,7 @@ public class AdminHomeController {
                 Platform.runLater(() -> depositRequestsList.getItems().setAll(requests));
             }
         } catch (Exception e) {
-            showAlert("Error", "Failed to load deposit requests: " + e.getMessage());
+            alertService.showAlert("Error", "Failed to load deposit requests: " + e.getMessage(), welcomeLabel);
         }
     }
 
@@ -220,7 +208,7 @@ public class AdminHomeController {
                 Platform.runLater(() -> withdrawRequestsList.getItems().setAll(requests));
             }
         } catch (Exception e) {
-            showAlert("Error", "Failed to load withdraw requests: " + e.getMessage());
+            alertService.showAlert("Error", "Failed to load withdraw requests: " + e.getMessage(), welcomeLabel);
         }
     }
 
@@ -228,7 +216,7 @@ public class AdminHomeController {
     public void handleBanUser() {
         String username = usernameField.getEditor().getText() != null ? usernameField.getEditor().getText().trim() : "";
         if (username.isEmpty()) {
-            showAlert("Error", "Please enter a username");
+            alertService.showAlert("Error", "Please enter a username", welcomeLabel);
             return;
         }
 
@@ -239,21 +227,16 @@ public class AdminHomeController {
             Response response = ctx.sendRequestAndWait(req, 15);
 
             if ("SUCCESS".equals(response.getStatus())) {
-                showAlert("Success", "User " + username + " has been banned!");
+                alertService.showAlert("Success", "User " + username + " has been banned!", welcomeLabel);
                 userStatusArea.appendText("\n✓ Banned user: " + username);
-                // Cập nhật dropdown list ngay lập tức
-                allUsernames.remove(username);
-                usernameField.setItems(javafx.collections.FXCollections.observableArrayList(allUsernames));
-                // Clear dropdown field
                 usernameField.setValue(null);
                 usernameField.getEditor().clear();
-                // Refresh danh sách user từ server
                 refreshUsers();
             } else {
-                showAlert("Error", response.getMessage());
+                alertService.showAlert("Error", response.getMessage(), welcomeLabel);
             }
         } catch (Exception e) {
-            showAlert("Error", "Failed to ban user: " + e.getMessage());
+            alertService.showAlert("Error", "Failed to ban user: " + e.getMessage(), welcomeLabel);
         }
     }
 
@@ -261,7 +244,7 @@ public class AdminHomeController {
     public void handleUnbanUser() {
         String username = usernameField.getEditor().getText() != null ? usernameField.getEditor().getText().trim() : "";
         if (username.isEmpty()) {
-            showAlert("Error", "Please enter a username");
+            alertService.showAlert("Error", "Please enter a username", welcomeLabel);
             return;
         }
 
@@ -272,23 +255,16 @@ public class AdminHomeController {
             Response response = ctx.sendRequestAndWait(req, 15);
 
             if ("SUCCESS".equals(response.getStatus())) {
-                showAlert("Success", "User " + username + " has been unbanned!");
+                alertService.showAlert("Success", "User " + username + " has been unbanned!", welcomeLabel);
                 userStatusArea.appendText("\n✓ Unbanned user: " + username);
-                // Cập nhật dropdown list - thêm lại user vào list
-                if (!allUsernames.contains(username)) {
-                    allUsernames.add(username);
-                }
-                usernameField.setItems(javafx.collections.FXCollections.observableArrayList(allUsernames));
-                // Clear dropdown field
                 usernameField.setValue(null);
                 usernameField.getEditor().clear();
-                // Refresh danh sách user từ server
                 refreshUsers();
             } else {
-                showAlert("Error", response.getMessage());
+                alertService.showAlert("Error", response.getMessage(), welcomeLabel);
             }
         } catch (Exception e) {
-            showAlert("Error", "Failed to unban user: " + e.getMessage());
+            alertService.showAlert("Error", "Failed to unban user: " + e.getMessage(), welcomeLabel);
         }
     }
 
@@ -314,7 +290,7 @@ public class AdminHomeController {
 
     @FXML
     public void handleChangePassword() {
-        ChangePasswordSupport.showDialog(ctx);
+        ChangePasswordSupport.showDialog(ctx, welcomeLabel);
     }
 
     @FXML
@@ -333,7 +309,7 @@ public class AdminHomeController {
 
     private void processWalletRequest(Map<String, String> requestItem, String action) {
         if (requestItem == null) {
-            showAlert("Error", "Please select a request first");
+            alertService.showAlert("Error", "Please select a request first", welcomeLabel);
             return;
         }
 
@@ -343,22 +319,14 @@ public class AdminHomeController {
             Response response = ctx.sendRequestAndWait(new Request(action, data), 15);
 
             if ("SUCCESS".equals(response.getStatus())) {
-                showAlert("Success", response.getMessage());
+                alertService.showAlert("Success", response.getMessage(), welcomeLabel);
                 refreshWalletRequests();
             } else {
-                showAlert("Error", response.getMessage());
+                alertService.showAlert("Error", response.getMessage(), welcomeLabel);
             }
         } catch (Exception e) {
-            showAlert("Error", "Failed to process request: " + e.getMessage());
+            alertService.showAlert("Error", "Failed to process request: " + e.getMessage(), welcomeLabel);
         }
-    }
-
-    private void showAlert(String title, String message) {
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle(title);
-        alert.setHeaderText(null);
-        alert.setContentText(message);
-        alert.showAndWait();
     }
 
     private String formatTime(java.time.Instant instant) {
