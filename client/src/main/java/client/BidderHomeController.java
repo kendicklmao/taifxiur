@@ -213,30 +213,104 @@ public class BidderHomeController {
 
     @FXML
     public void handleDepositRequest() {
-        TextInputDialog dialog = new TextInputDialog();
+        Dialog<String> dialog = new Dialog<>();
         dialog.setTitle("Deposit Request");
-        dialog.setHeaderText("Enter the amount you want to deposit:");
-        dialog.setContentText("Amount:");
+        dialog.setHeaderText("Send a deposit request to admin");
 
-        dialog.showAndWait().ifPresent(amountStr -> {
+        // --- Custom Layout for the Dialog ---
+        TextField amountField = new TextField();
+        amountField.setPromptText("Enter amount");
+        amountField.getStyleClass().add("dashboard-input");
+
+        ComboBox<String> bankNameComboBox = new ComboBox<>();
+        bankNameComboBox.setPromptText("Select bank name");
+        bankNameComboBox.setEditable(true);
+        bankNameComboBox.getStyleClass().add("dashboard-choicebox");
+        ObservableList<String> bankOptions = FXCollections.observableArrayList(BANK_NAMES);
+        bankNameComboBox.setItems(bankOptions);
+
+        // Autocomplete filter for the ComboBox
+        bankNameComboBox.getEditor().textProperty().addListener((obs, oldText, newText) -> {
+            if (newText == null || newText.isEmpty()) {
+                bankNameComboBox.setItems(bankOptions);
+            } else {
+                List<String> filteredList = BANK_NAMES.stream()
+                        .filter(s -> s.toLowerCase().contains(newText.toLowerCase()))
+                        .collect(Collectors.toList());
+                bankNameComboBox.setItems(FXCollections.observableArrayList(filteredList));
+                bankNameComboBox.show();
+            }
+        });
+
+        TextField accountNumberField = new TextField();
+        accountNumberField.setPromptText("Enter account number");
+        accountNumberField.getStyleClass().add("dashboard-input");
+
+        VBox content = new VBox(15);
+        content.getChildren().addAll(
+                new Label("Amount"), amountField,
+                new Label("Bank Name"), bankNameComboBox,
+                new Label("Account Number"), accountNumberField
+        );
+        content.setStyle("-fx-padding: 20px;");
+
+        dialog.getDialogPane().setContent(content);
+        dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+
+        // Apply custom dialog styling
+        dialog.getDialogPane().getStylesheets().add(getClass().getResource("/styles.css").toExternalForm());
+        dialog.getDialogPane().getStyleClass().add("my-dialog");
+
+
+        // Convert the result to a string array
+        dialog.setResultConverter(buttonType -> {
+            if (buttonType == ButtonType.OK) {
+                String selectedBank = bankNameComboBox.getSelectionModel().getSelectedItem();
+                if (selectedBank == null && !bankNameComboBox.getEditor().getText().isEmpty()) {
+                    selectedBank = bankNameComboBox.getEditor().getText();
+                }
+                return amountField.getText() + "," + selectedBank + "," + accountNumberField.getText();
+            }
+            return null;
+        });
+
+        dialog.showAndWait().ifPresent(result -> {
+            if (result == null || result.isEmpty()) return;
+
+            String[] parts = result.split(",", 3);
+            if (parts.length < 3 || parts[0].isEmpty() || parts[1] == null || parts[1].trim().isEmpty() || parts[2].isEmpty()) {
+                alertService.showAlert("Error", "Please fill in all fields.", welcomeLabel);
+                return;
+            }
+
             try {
-                BigDecimal amount = new BigDecimal(amountStr);
+                BigDecimal amount = new BigDecimal(parts[0]);
+                String bankName = parts[1].trim();
+                String accountNumber = parts[2].trim();
+
                 if (amount.compareTo(BigDecimal.ZERO) <= 0) {
-                    alertService.showAlert("Error", "Amount must be greater than 0", welcomeLabel);
+                    alertService.showAlert("Error", "Amount must be greater than 0.", welcomeLabel);
                     return;
                 }
 
                 Map<String, String> data = new HashMap<>();
                 data.put("username", ctx.getCurrentUser().getUsername());
                 data.put("amount", amount.toPlainString());
+                data.put("bankName", bankName);
+                data.put("accountNumber", accountNumber);
+
                 Response response = ctx.sendRequestAndWait(new Request("CREATE_DEPOSIT_REQUEST", data), 15);
+
                 if ("SUCCESS".equals(response.getStatus())) {
                     alertService.showAlert("Success", response.getMessage(), welcomeLabel);
                 } else {
                     alertService.showAlert("Error", response.getMessage(), welcomeLabel);
                 }
+            } catch (NumberFormatException e) {
+                alertService.showAlert("Error", "Please enter a valid amount.", welcomeLabel);
             } catch (Exception e) {
-                alertService.showAlert("Error", "Please enter a valid amount", welcomeLabel);
+                alertService.showAlert("Error", "An unexpected error occurred: " + e.getMessage(), welcomeLabel);
+                e.printStackTrace();
             }
         });
     }
@@ -249,10 +323,12 @@ public class BidderHomeController {
 
         TextField amountField = new TextField();
         amountField.setPromptText("Enter amount");
+        amountField.getStyleClass().add("dashboard-input");
 
         ComboBox<String> bankNameComboBox = new ComboBox<>();
         bankNameComboBox.setPromptText("Select bank name");
         bankNameComboBox.setEditable(true);
+        bankNameComboBox.getStyleClass().add("dashboard-choicebox");
         ObservableList<String> bankOptions = FXCollections.observableArrayList(BANK_NAMES);
         bankNameComboBox.setItems(bankOptions);
 
@@ -269,12 +345,19 @@ public class BidderHomeController {
 
         TextField accountNumberField = new TextField();
         accountNumberField.setPromptText("Enter account number");
+        accountNumberField.getStyleClass().add("dashboard-input");
 
-        VBox content = new VBox(10);
+        VBox content = new VBox(15);
         content.getChildren().addAll(new Label("Amount"), amountField, new Label("Bank Name"), bankNameComboBox,
                 new Label("Account Number"), accountNumberField);
+        content.setStyle("-fx-padding: 20px;");
+
         dialog.getDialogPane().setContent(content);
         dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+
+        // Apply custom dialog styling
+        dialog.getDialogPane().getStylesheets().add(getClass().getResource("/styles.css").toExternalForm());
+        dialog.getDialogPane().getStyleClass().add("my-dialog");
 
         dialog.setResultConverter(buttonType -> {
             if (buttonType == ButtonType.OK) {
@@ -341,6 +424,10 @@ public class BidderHomeController {
         dialog.setTitle("Auction Options");
         dialog.setHeaderText("Choose an action for: " + auction.getItem().getName());
 
+        // Apply custom dialog styling
+        dialog.getDialogPane().getStylesheets().add(getClass().getResource("/styles.css").toExternalForm());
+        dialog.getDialogPane().getStyleClass().add("my-dialog");
+
         // Create buttons
         ButtonType placeBidType = new ButtonType("Place Bid", ButtonBar.ButtonData.YES);
         ButtonType autoBidType = new ButtonType("Auto Bid", ButtonBar.ButtonData.NO);
@@ -404,12 +491,18 @@ public class BidderHomeController {
         dialog.setTitle(isAutoBid ? "Auto Bid" : "Place Bid");
         dialog.setHeaderText("Enter bid amount for: " + auction.getItem().getName());
 
+        // Apply custom dialog styling
+        dialog.getDialogPane().getStylesheets().add(getClass().getResource("/styles.css").toExternalForm());
+        dialog.getDialogPane().getStyleClass().add("my-dialog");
+
         TextField amountField = new TextField();
         amountField.setPromptText("Enter amount");
+        amountField.getStyleClass().add("dashboard-input");
 
         BigDecimal minBid = auction.getCurrentPrice().add(auction.getItem().getMinIncrement());
 
         VBox content = new VBox(10);
+        content.setStyle("-fx-padding: 20px;");
         content.getChildren().add(new Label("Current price: " + auction.getCurrentPrice()));
         content.getChildren()
                 .add(new Label("Minimum bid: " + minBid + " (current + " + auction.getItem().getMinIncrement() + ")"));

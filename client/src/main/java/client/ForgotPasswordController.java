@@ -3,7 +3,6 @@ package client;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import javafx.fxml.FXML;
-import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.Control;
 import javafx.scene.control.Label;
@@ -49,6 +48,7 @@ public class ForgotPasswordController {
 
     private final AppContext ctx = AppContext.getInstance();
     private final Gson gson = GsonUtils.createGson();
+    private final IAlertService alertService = new AlertServiceImpl();
     private String loadedUsername;
     private String loadedEmail;
 
@@ -79,7 +79,7 @@ public class ForgotPasswordController {
             valid = false;
         }
         if (!valid) {
-            showAlert(Alert.AlertType.ERROR, "Invalid information", "Please enter a valid username and email.");
+            showAlert("Invalid information", "Please enter a valid username and email.");
             return;
         }
 
@@ -92,7 +92,7 @@ public class ForgotPasswordController {
 
             Response response = ctx.sendRequestAndWait(new Request("FORGOT_PASSWORD_INIT", data), 10);
             if (!"SUCCESS".equals(response.getStatus())) {
-                showAlert(Alert.AlertType.ERROR, "Lookup failed", response.getMessage());
+                showAlert("Lookup failed", response.getMessage());
                 return;
             }
 
@@ -115,7 +115,7 @@ public class ForgotPasswordController {
             emailField.setDisable(true);
             loadQuestionsButton.setDisable(true);
         } catch (Exception e) {
-            showAlert(Alert.AlertType.ERROR, "Connection error", "Cannot connect to server.");
+            showAlert("Connection error", "Cannot connect to server.");
             e.printStackTrace();
         }
     }
@@ -125,7 +125,7 @@ public class ForgotPasswordController {
         clearValidation();
 
         if (loadedUsername == null || loadedEmail == null) {
-            showAlert(Alert.AlertType.ERROR, "Missing verification", "Please load your security questions first.");
+            showAlert("Missing verification", "Please load your security questions first.");
             return;
         }
 
@@ -159,7 +159,6 @@ public class ForgotPasswordController {
 
         if (!valid) {
             showAlert(
-                    Alert.AlertType.ERROR,
                     "Invalid information",
                     String.join("\n", errors)
             );
@@ -178,13 +177,13 @@ public class ForgotPasswordController {
 
             Response response = ctx.sendRequestAndWait(new Request("RESET_PASSWORD", data), 10);
             if ("SUCCESS".equals(response.getStatus())) {
-                showAlert(Alert.AlertType.INFORMATION, "Success", "Password reset successfully. Please sign in again.");
+                showAlert("Success", "Password reset successfully. Please sign in again.");
                 Navigator.switchSceneStatic("login.fxml");
             } else {
-                showAlert(Alert.AlertType.ERROR, "Reset failed", response.getMessage());
+                showAlert("Reset failed", response.getMessage());
             }
         } catch (Exception e) {
-            showAlert(Alert.AlertType.ERROR, "Connection error", "Cannot connect to server.");
+            showAlert("Connection error", "Cannot connect to server.");
             e.printStackTrace();
         }
     }
@@ -250,11 +249,7 @@ public class ForgotPasswordController {
         return answer != null && !answer.trim().isEmpty();
     }
 
-    private void showAlert(Alert.AlertType type, String title, String message) {
-        Alert alert = new Alert(type);
-        alert.setTitle(title);
-        alert.setHeaderText(null);
-        alert.setContentText(message);
-        alert.showAndWait();
+    private void showAlert(String title, String message) {
+        alertService.showAlert(title, message, usernameField);
     }
 }

@@ -14,9 +14,7 @@
               prefWidth="420" minWidth="300" HBox.hgrow="SOMETIMES">
             <VBox spacing="16" VBox.vgrow="ALWAYS" alignment="CENTER_LEFT">
                 <HBox spacing="10" alignment="CENTER_LEFT">
-                    <Label text="A" styleClass="brand-mark, brand-accent"/>
-                    <Label text="UCTION" styleClass="brand-mark"/>
-                    <Label text="HOUSE" styleClass="brand-mark, brand-accent"/>
+                    <Label text="AUCTION HOUSE" styleClass="brand-mark, brand-accent"/>
                 </HBox>
                 <Label text="Premium live auctions" styleClass="brand-tagline"/>
             </VBox>

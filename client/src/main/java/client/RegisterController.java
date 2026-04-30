@@ -43,6 +43,7 @@ public class RegisterController {
     @FXML
     private Label formError;
     private final AppContext ctx = AppContext.getInstance();
+    private final IAlertService alertService = new AlertServiceImpl();
 
     @FXML
     public void initialize() {
@@ -154,10 +155,7 @@ public class RegisterController {
     }
 
     private void showAlert(String title, String msg) {
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle(title);
-        alert.setContentText(msg);
-        alert.showAndWait();
+        alertService.showAlert(title, msg, usernameField);
     }
 
     private boolean validateInput() {
