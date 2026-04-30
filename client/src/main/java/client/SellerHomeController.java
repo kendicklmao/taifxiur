@@ -508,7 +508,7 @@ public class SellerHomeController {
             // Ignore, proceed with logout
         }
         ctx.setCurrentUser(null);
-        Navigator.switchScene("login.fxml");
+        Navigator.switchSceneStatic("login.fxml");
     }
 
     // ================= ALERT =================

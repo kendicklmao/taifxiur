@@ -382,7 +382,7 @@ public class BidderHomeController {
             // Ignore, proceed with logout
         }
         ctx.setCurrentUser(null);
-        Navigator.switchScene("login.fxml");
+        Navigator.switchSceneStatic("login.fxml");
     }
 
     private void showAlert(String title, String msg) {

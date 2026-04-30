@@ -6,9 +6,14 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 
-public class Navigator {
+public class Navigator implements INavigator {
     private static Stage stage;
     private static String globalStylesheet;
+    private static final Navigator instance = new Navigator();
+
+    public static Navigator getInstance() {
+        return instance;
+    }
 
     public static void setStage(Stage s){
         stage = s;
@@ -23,7 +28,12 @@ public class Navigator {
         }
     }
 
-    public static void switchScene(String fxml){
+    @Override
+    public void switchScene(String fxml) {
+        switchSceneStatic(fxml);
+    }
+
+    public static void switchSceneStatic(String fxml){
         try{
             boolean isMaximized = stage.isMaximized();
 

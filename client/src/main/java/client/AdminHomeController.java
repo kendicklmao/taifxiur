@@ -328,7 +328,7 @@ public class AdminHomeController {
             // Ignore, proceed with logout
         }
         ctx.setCurrentUser(null);
-        Navigator.switchScene("login.fxml");
+        Navigator.switchSceneStatic("login.fxml");
     }
 
     private void processWalletRequest(Map<String, String> requestItem, String action) {

@@ -5,7 +5,6 @@ import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import shared.models.User;
 import shared.network.Response;
 
 import static org.junit.jupiter.api.Assertions.*;

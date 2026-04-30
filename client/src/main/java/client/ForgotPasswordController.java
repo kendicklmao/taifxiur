@@ -179,7 +179,7 @@ public class ForgotPasswordController {
             Response response = ctx.sendRequestAndWait(new Request("RESET_PASSWORD", data), 10);
             if ("SUCCESS".equals(response.getStatus())) {
                 showAlert(Alert.AlertType.INFORMATION, "Success", "Password reset successfully. Please sign in again.");
-                Navigator.switchScene("login.fxml");
+                Navigator.switchSceneStatic("login.fxml");
             } else {
                 showAlert(Alert.AlertType.ERROR, "Reset failed", response.getMessage());
             }
@@ -218,7 +218,7 @@ public class ForgotPasswordController {
 
     @FXML
     public void goBack() {
-        Navigator.switchScene("login.fxml");
+        Navigator.switchSceneStatic("login.fxml");
     }
 
     private void ensureConnected() throws Exception {

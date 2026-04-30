@@ -18,12 +18,21 @@ public class LoginController {
     @FXML PasswordField passwordField;
 
     private final AppContext ctx;
+    private final INavigator navigator;
     private final IAlertService alertService;
 
     // Default constructor for FXML loading
     public LoginController() {
         this.ctx = AppContext.getInstance();
+        this.navigator = Navigator.getInstance();
         this.alertService = new AlertServiceImpl();
+    }
+
+    // Constructor for testing (Dependency Injection)
+    public LoginController(AppContext ctx, INavigator navigator, IAlertService alertService) {
+        this.ctx = ctx;
+        this.navigator = navigator;
+        this.alertService = alertService;
     }
 
     @FXML
@@ -57,11 +66,11 @@ public class LoginController {
 
                 alertService.showAlert("Success", "Login successful with role: " + role);
                 if (role.equals("BIDDER")) {
-                    Navigator.switchScene("bidder_home.fxml");
+                    navigator.switchScene("bidder_home.fxml");
                 } else if (role.equals("SELLER")) {
-                    Navigator.switchScene("seller_home.fxml");
+                    navigator.switchScene("seller_home.fxml");
                 } else if (role.equals("ADMIN")) {
-                    Navigator.switchScene("admin_home.fxml");
+                    navigator.switchScene("admin_home.fxml");
                 }
             } else {
                 alertService.showAlert("Error", res.getMessage());
@@ -75,12 +84,12 @@ public class LoginController {
 
     @FXML
     public void goToRegister() {
-        Navigator.switchScene("register.fxml");
+        navigator.switchScene("register.fxml");
     }
 
     @FXML
     public void goToForgotPassword() {
-        Navigator.switchScene("forgot_password.fxml");
+        navigator.switchScene("forgot_password.fxml");
     }
 
     // This method is now delegated to the alert service

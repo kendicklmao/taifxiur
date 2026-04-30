@@ -150,7 +150,7 @@ public class RegisterController {
 
     @FXML
     public void goBack() {
-        Navigator.switchScene("login.fxml");
+        Navigator.switchSceneStatic("login.fxml");
     }
 
     private void showAlert(String title, String msg) {
@@ -272,7 +272,7 @@ public class RegisterController {
 
             if ("SUCCESS".equals(res.getStatus())) {
                 showAlert("Success", "Registered successfully!");
-                Navigator.switchScene("login.fxml");
+                Navigator.switchSceneStatic("login.fxml");
             } else {
                 showAlert("Error", res.getMessage());
             }

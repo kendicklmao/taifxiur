@@ -11,7 +11,7 @@ public class MainApp extends Application {
         stage.setMinHeight(700);
 
         Navigator.setStage(stage);
-        Navigator.switchScene("login.fxml");
+        Navigator.switchSceneStatic("login.fxml");
 
         stage.show();
     }

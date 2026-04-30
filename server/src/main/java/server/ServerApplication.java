@@ -1,6 +1,5 @@
 package server; 
 
-
 import server.controller.ClientHandler;
 import server.database.DatabaseConfig;
 import server.database.DatabaseInitializer;

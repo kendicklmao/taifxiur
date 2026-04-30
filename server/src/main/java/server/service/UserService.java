@@ -413,7 +413,7 @@ public class UserService {
         try (Connection conn = DatabaseConfig.getDataSource().getConnection();
                 PreparedStatement selectStmt = conn.prepareStatement(
                         """
-                                SELECT id, username, password, email, role, is_banned, question_1, answer_1, question_2, answer_2
+                                SELECT *
                                 FROM users
                                 WHERE username = ? AND email = ?
                                 """)) {
@@ -431,12 +431,13 @@ public class UserService {
                 return false;
             }
 
-            try (PreparedStatement updateStmt = conn.prepareStatement(
-                    "UPDATE users SET password = ?, updated_at = CURRENT_TIMESTAMP WHERE username = ? AND email = ?")) {
+                try (PreparedStatement updateStmt = conn.prepareStatement(
+                        "UPDATE users SET password = ?, password_salt = ?, updated_at = CURRENT_TIMESTAMP WHERE username = ? AND email = ?")) {
 
-                updateStmt.setString(1, newPassword);
-                updateStmt.setString(2, username);
-                updateStmt.setString(3, email);
+                    updateStmt.setString(1, user.getHashedPassword());
+                    updateStmt.setString(2, user.getPasswordSalt());
+                    updateStmt.setString(3, username);
+                    updateStmt.setString(4, email);
 
                 int updatedRows = updateStmt.executeUpdate();
                 if (updatedRows > 0) {
@@ -476,7 +477,7 @@ public class UserService {
         try (Connection conn = DatabaseConfig.getDataSource().getConnection();
                 PreparedStatement selectStmt = conn.prepareStatement(
                         """
-                                SELECT id, username, password, email, role, is_banned, question_1, answer_1, question_2, answer_2
+                                SELECT *
                                 FROM users
                                 WHERE username = ?
                                 """)) {
@@ -497,10 +498,11 @@ public class UserService {
             }
 
             try (PreparedStatement updateStmt = conn.prepareStatement(
-                    "UPDATE users SET password = ?, updated_at = CURRENT_TIMESTAMP WHERE username = ?")) {
+                    "UPDATE users SET password = ?, password_salt = ?, updated_at = CURRENT_TIMESTAMP WHERE username = ?")) {
 
-                updateStmt.setString(1, newPassword);
-                updateStmt.setString(2, username);
+                updateStmt.setString(1, user.getHashedPassword());
+                updateStmt.setString(2, user.getPasswordSalt());
+                updateStmt.setString(3, username);
 
                 int updatedRows = updateStmt.executeUpdate();
                 if (updatedRows > 0) {
@@ -526,20 +528,23 @@ public class UserService {
         String username = rs.getString("username");
         String role = rs.getString("role");
         String email = rs.getString("email");
-        String password = rs.getString("password");
+        String hashedPassword = rs.getString("password");
+        String passwordSalt = rs.getString("password_salt");
         String q1 = rs.getString("question_1");
-        String a1 = rs.getString("answer_1");
+        String hashedA1 = rs.getString("answer_1");
+        String saltA1 = rs.getString("answer_salt_1");
         String q2 = rs.getString("question_2");
-        String a2 = rs.getString("answer_2");
+        String hashedA2 = rs.getString("answer_2");
+        String saltA2 = rs.getString("answer_salt_2");
         boolean isBanned = rs.getBoolean("is_banned");
 
         User user = null;
         if ("BIDDER".equals(role)) {
-            user = new Bidder(id, username, password, email, q1, a1, q2, a2);
+            user = new Bidder(id, username, hashedPassword, passwordSalt, email, isBanned, q1, hashedA1, saltA1, q2, hashedA2, saltA2);
         } else if ("SELLER".equals(role)) {
-            user = new Seller(id, username, password, email, q1, a1, q2, a2);
+            user = new Seller(id, username, hashedPassword, passwordSalt, email, isBanned, q1, hashedA1, saltA1, q2, hashedA2, saltA2);
         } else if ("ADMIN".equals(role)) {
-            user = new Admin(id, username, password, email, q1, a1, q2, a2);
+            user = new Admin(id, username, hashedPassword, passwordSalt, email, isBanned, q1, hashedA1, saltA1, q2, hashedA2, saltA2);
         }
 
         if (user != null && isBanned) {
@@ -562,7 +567,7 @@ public class UserService {
         try (Connection conn = DatabaseConfig.getDataSource().getConnection();
                 Statement stmt = conn.createStatement();
                 ResultSet rs = stmt.executeQuery(
-                        "SELECT id, username, password, email, role, is_banned, question_1, answer_1, question_2, answer_2 FROM users")) {
+                        "SELECT * FROM users")) {
 
             while (rs.next()) {
                 User user = mapUser(rs, conn);
