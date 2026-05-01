@@ -48,8 +48,9 @@ public class AuctionService {
 
             UserService userService = new UserService();
             while (rs.next()) {
+                String auctionId = "Unknown";
                 try {
-                    String auctionId = rs.getString("auction_id");
+                    auctionId = rs.getString("auction_id");
                     int itemId = rs.getInt("id");
                     int sellerId = rs.getInt("seller_id");
                     BigDecimal startPrice = rs.getBigDecimal("base_price");
@@ -93,8 +94,10 @@ public class AuctionService {
 
                     auctions.put(auctionId, auction);
                     System.out.println("Loaded auction: " + auctionId + " (status: " + statusStr + ")");
+                } catch (IllegalArgumentException e) {
+                    System.out.println("Skipped loading auto-bids for auction " + auctionId + ": " + e.getMessage());
                 } catch (Exception e) {
-                    System.err.println("Error loading auction from database: " + e.getMessage());
+                    System.err.println("Error loading auction " + auctionId + ": " + e.getMessage());
                     e.printStackTrace();
                 }
             }

@@ -24,6 +24,12 @@ public class ServerApplication {
             // Khởi tạo user mặc định
             new server.service.UserService().initializeDefaultUsers();
             System.out.println("Database initialization completed");
+            
+            // Pre-initialize AuctionService to load all auctions from DB
+            // This prevents the first client from timing out during connection
+            System.out.println("Loading auctions into memory...");
+            server.controller.ClientHandler.initializeServices();
+            System.out.println("All services initialized.");
         } catch (Exception e) {
             System.err.println("Failed to initialize database: " + e.getMessage());
             e.printStackTrace();
