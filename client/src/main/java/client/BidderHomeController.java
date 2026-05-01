@@ -119,7 +119,7 @@ public class BidderHomeController {
             try {
                 Response res = gson.fromJson(line, Response.class);
                 if ("UPDATE_PRICE".equals(res.getStatus()) || "AUCTION_UPDATED".equals(res.getStatus())
-                        || "AUCTION_FINISHED".equals(res.getStatus())) {
+                        || "AUCTION_FINISHED".equals(res.getStatus()) || "AUCTION_CREATED".equals(res.getStatus())) {
                     Platform.runLater(this::refreshAuctions);
                 }
             } catch (Exception e) {

@@ -31,6 +31,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -91,6 +92,7 @@ public class SellerHomeController {
 
     private final AppContext ctx = AppContext.getInstance();
     private final IAlertService alertService = new AlertServiceImpl();
+    private Consumer<String> messageListener;
     private static final List<String> BANK_NAMES = Arrays.asList(
             "Vietcombank", "Techcombank", "BIDV", "Agribank", "VPBank",
             "MBBank", "ACB", "Sacombank", "Eximbank", "HDBank",
@@ -128,14 +130,27 @@ public class SellerHomeController {
             customIncrementPane.setManaged(isCustom);
         });
 
-        // Fetch seller's auctions on initialization
-        fetchSellerAuctions();
+        // Fetch all auctions on initialization
+        fetchAllAuctions();
         refreshWalletBalance();
+
+        messageListener = line -> {
+            try {
+                Response res = gson.fromJson(line, Response.class);
+                if ("UPDATE_PRICE".equals(res.getStatus()) || "AUCTION_UPDATED".equals(res.getStatus())
+                        || "AUCTION_FINISHED".equals(res.getStatus()) || "AUCTION_CREATED".equals(res.getStatus())) {
+                    Platform.runLater(this::fetchAllAuctions);
+                }
+            } catch (Exception e) {
+                // Ignore malformed broadcast
+            }
+        };
+        ctx.addMessageListener(messageListener);
     }
 
     @FXML
     public void handleRefresh() {
-        fetchSellerAuctions();
+        fetchAllAuctions();
         refreshWalletBalance();
     }
 
@@ -276,6 +291,10 @@ public class SellerHomeController {
         terminateButton.getStyleClass().add("dashboard-btn-logout");
         terminateButton.setOnAction(e -> handleTerminateAuction(auction));
 
+        // Only show terminate button if user owns the auction or is admin
+        boolean canTerminate = auction.getSeller().getUsername().equals(ctx.getCurrentUser().getUsername());
+        terminateButton.setVisible(canTerminate);
+        terminateButton.setManaged(canTerminate);
 
         auctionDetailPane.getChildren().addAll(titleBox, imageView, detailsGrid, terminateButton);
     }
@@ -306,7 +325,7 @@ public class SellerHomeController {
 
             if ("SUCCESS".equals(response.getStatus())) {
                 alertService.showAlert("Success", "Auction terminated successfully.", welcomeLabel);
-                fetchSellerAuctions();
+                fetchAllAuctions();
                 auctionDetailPane.setVisible(false);
                 auctionDetailPane.setManaged(false);
             } else {
@@ -548,7 +567,7 @@ public class SellerHomeController {
 
             System.out.println("MESSAGE = " + response.getMessage());
             if ("SUCCESS".equals(response.getStatus())) {
-                fetchSellerAuctions(); // Refresh the grid
+                fetchAllAuctions(); // Refresh the grid
                 alertService.showAlert("OK", "Auction created successfully!", welcomeLabel);
                 itemNameField.clear();
                 startPriceField.clear();
@@ -612,6 +631,7 @@ public class SellerHomeController {
         } catch (Exception e) {
             // Ignore, proceed with logout
         }
+        ctx.removeMessageListener(messageListener);
         ctx.setCurrentUser(null);
         Navigator.switchSceneStatic("login.fxml");
     }
@@ -629,12 +649,10 @@ public class SellerHomeController {
         return dateTime.format(formatter);
     }
 
-    // ================= FETCH SELLER AUCTIONS =================
-    private void fetchSellerAuctions() {
+    // ================= FETCH ALL AUCTIONS =================
+    private void fetchAllAuctions() {
         try {
-            Map<String, String> data = new HashMap<>();
-            data.put("username", ctx.getCurrentUser().getUsername());
-            Request req = new Request("GET_SELLER_AUCTIONS", data);
+            Request req = new Request("GET_AUCTIONS", new HashMap<>());
             Response response = ctx.sendRequestAndWait(req, 15);
             if ("SUCCESS".equals(response.getStatus())) {
                 List<Auction> auctions = gson.fromJson(response.getMessage(), new TypeToken<List<Auction>>() {

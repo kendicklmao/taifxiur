@@ -156,7 +156,7 @@
                     <VBox styleClass="dash-card" spacing="16" HBox.hgrow="ALWAYS"
                           minWidth="320">
                         <VBox spacing="4">
-                            <Label text="Your Active Auctions" styleClass="dashboard-section-title"/>
+                            <Label text="Active Auctions" styleClass="dashboard-section-title"/>
                             <Label text="Manage your ongoing listings"
                                    styleClass="dashboard-section-subtitle"/>
                         </VBox>
