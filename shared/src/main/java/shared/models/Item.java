@@ -20,18 +20,12 @@ public abstract class Item implements Serializable {
     private LocalDateTime auctionStartTime;
     private LocalDateTime auctionEndTime;
 
-    public Item(String name, String description, Seller seller, Category category) {
+    public Item(String name, String description, Seller seller, Category category, BigDecimal startingPrice, LocalDateTime auctionStartTime, LocalDateTime auctionEndTime) {
         this.name = name;
         this.description = description;
         this.seller = seller;
         this.category = category;
-    }
-
-    public Item(String name, String description, Seller seller, Category category, LocalDateTime auctionStartTime, LocalDateTime auctionEndTime) {
-        this.name = name;
-        this.description = description;
-        this.seller = seller;
-        this.category = category;
+        this.startingPrice = startingPrice;
         this.auctionStartTime = auctionStartTime;
         this.auctionEndTime = auctionEndTime;
     }
@@ -43,12 +37,6 @@ public abstract class Item implements Serializable {
 
     public void setDbId(int dbId) {
         this.dbId = dbId;
-    }
-
-    // No-arg constructor
-    public Item() {
-        this.seller = null;
-        this.category = null;
     }
 
     public LocalDateTime getAuctionStartTime() {

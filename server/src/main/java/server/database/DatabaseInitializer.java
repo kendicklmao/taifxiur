@@ -12,6 +12,11 @@ public class DatabaseInitializer {
              Statement stmt = conn.createStatement()) {
             System.out.println("Initializing database schema...");
 
+            // Drop tables to ensure schema is updated
+            stmt.execute("DROP TABLE IF EXISTS deposit_requests;");
+            stmt.execute("DROP TABLE IF EXISTS withdraw_requests;");
+            System.out.println("Dropped deposit and withdraw request tables for recreation.");
+
             // Tạo bảng users
             createUsersTable(stmt);
 
@@ -162,6 +167,8 @@ public class DatabaseInitializer {
                     id VARCHAR(36) PRIMARY KEY,
                     bidder_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
                     amount DECIMAL(15, 2) NOT NULL,
+                    bank_name VARCHAR(255),
+                    account_number VARCHAR(255),
                     status VARCHAR(50) DEFAULT 'PENDING',
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -177,7 +184,8 @@ public class DatabaseInitializer {
                     id VARCHAR(36) PRIMARY KEY,
                     seller_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
                     amount DECIMAL(15, 2) NOT NULL,
-                    bank_account VARCHAR(255),
+                    bank_name VARCHAR(255),
+                    account_number VARCHAR(255),
                     status VARCHAR(50) DEFAULT 'PENDING',
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP

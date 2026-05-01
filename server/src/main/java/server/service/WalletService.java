@@ -106,8 +106,8 @@ public class WalletService {
         try (Connection conn = DatabaseConfig.getDataSource().getConnection();
                 PreparedStatement pstmt = conn.prepareStatement(
                         """
-                                INSERT INTO withdraw_requests (id, seller_id, amount, bank_account, status, created_at, updated_at)
-                                VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                                INSERT INTO withdraw_requests (id, seller_id, amount, bank_name, account_number, status, created_at, updated_at)
+                                VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
                                 """)) {
 
             Integer sellerId = getUserIdByUsername(conn, sellerUsername);
@@ -124,8 +124,9 @@ public class WalletService {
             pstmt.setString(1, UUID.randomUUID().toString());
             pstmt.setInt(2, sellerId);
             pstmt.setBigDecimal(3, amount);
-            pstmt.setString(4, bankName + " - " + accountNumber);
-            pstmt.setString(5, RequestStatus.PENDING.name());
+            pstmt.setString(4, bankName);
+            pstmt.setString(5, accountNumber);
+            pstmt.setString(6, RequestStatus.PENDING.name());
             pstmt.executeUpdate();
             return null;
         } catch (SQLException e) {
@@ -173,7 +174,7 @@ public class WalletService {
         List<Map<String, String>> requests = new ArrayList<>();
 
         String sql = """
-                SELECT wr.id, u.username, wr.amount, wr.bank_account, wr.status, wr.created_at
+                SELECT wr.id, u.username, wr.amount, wr.bank_name, wr.account_number, wr.status, wr.created_at
                 FROM withdraw_requests wr
                 JOIN users u ON wr.seller_id = u.id
                 WHERE wr.status = ?
@@ -191,9 +192,8 @@ public class WalletService {
                 row.put("id", rs.getString("id"));
                 row.put("username", rs.getString("username"));
                 row.put("amount", rs.getBigDecimal("amount").toPlainString());
-                String[] bankInfo = rs.getString("bank_account").split(" - ");
-                row.put("bankName", bankInfo.length > 0 ? bankInfo[0] : "");
-                row.put("accountNumber", bankInfo.length > 1 ? bankInfo[1] : "");
+                row.put("bankName", rs.getString("bank_name"));
+                row.put("accountNumber", rs.getString("account_number"));
                 row.put("status", rs.getString("status"));
                 row.put("createdAt", rs.getTimestamp("created_at").toString());
                 requests.add(row);

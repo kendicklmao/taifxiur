@@ -3,6 +3,7 @@ package shared.models;
 import shared.enums.ItemStatus;
 import shared.enums.Role;
 
+import java.math.BigDecimal;
 import java.util.Collection;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -25,8 +26,8 @@ public class Seller extends User {
     }
 
     // Tạo sản phẩm nghệ thuật
-    public void createArt(String name, String description, String artist, int yearCreated, boolean isOriginal) {
-        Art a = new Art(name, description, this, artist, yearCreated, isOriginal);
+    public void createArt(String name, String description, BigDecimal startingPrice, String artist, int yearCreated, boolean isOriginal) {
+        Art a = new Art(name, description, this, startingPrice, artist, yearCreated, isOriginal);
         if (!a.isValid()) {
             throw new IllegalArgumentException();
         }
@@ -34,8 +35,8 @@ public class Seller extends User {
     }
 
     // Tạo sản phẩm điện tử
-    public void createElectronic(String name, String description, String brand, ItemStatus status) {
-        Electronic e = new Electronic(name, description, this, brand, status, null, null);
+    public void createElectronic(String name, String description, BigDecimal startingPrice, String brand, ItemStatus status) {
+        Electronic e = new Electronic(name, description, this, startingPrice, brand, status, null, null);
         if (!e.isValid()) {
             throw new IllegalArgumentException();
         }
@@ -43,8 +44,8 @@ public class Seller extends User {
     }
 
     // Tạo sản phẩm thời trang
-    public void createFashion(String name, String description, String brand, ItemStatus status) {
-        Fashion f = new Fashion(name, description, this, brand, status);
+    public void createFashion(String name, String description, BigDecimal startingPrice, String brand, ItemStatus status) {
+        Fashion f = new Fashion(name, description, this, startingPrice, brand, status);
         if (!f.isValid()) {
             throw new IllegalArgumentException();
         }
@@ -52,8 +53,8 @@ public class Seller extends User {
     }
 
     // Tạo sản phẩm sưu tầm
-    public void createCollectible(String name, String description, int yearCreated) {
-        Collectible c = new Collectible(name, description, this, yearCreated);
+    public void createCollectible(String name, String description, BigDecimal startingPrice, int yearCreated) {
+        Collectible c = new Collectible(name, description, this, startingPrice, yearCreated);
         if (!c.isValid()) {
             throw new IllegalArgumentException();
         }
@@ -61,8 +62,8 @@ public class Seller extends User {
     }
 
     // Tạo sản phẩm phương tiện
-    public void createVehicle(String name, String description, String brand, int model, int kmTravel) {
-        Vehicle v = new Vehicle(name, description, this, brand, model, kmTravel);
+    public void createVehicle(String name, String description, BigDecimal startingPrice, String brand, int model, int kmTravel) {
+        Vehicle v = new Vehicle(name, description, this, startingPrice, brand, model, kmTravel);
         if (!v.isValid()) {
             throw new IllegalArgumentException();
         }

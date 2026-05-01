@@ -103,36 +103,37 @@ public class GsonUtils {
             Category category = Category.valueOf(obj.get("category").getAsString());
             String name = obj.get("name").getAsString();
             String description = obj.get("description").getAsString();
-            
+            BigDecimal startingPrice = obj.has("startingPrice") ? obj.get("startingPrice").getAsBigDecimal() : BigDecimal.ZERO;
+
             BigDecimal minIncrement = obj.has("minIncrement") ? obj.get("minIncrement").getAsBigDecimal() : BigDecimal.ZERO;
             String imageUrl = obj.has("imageUrl") ? obj.get("imageUrl").getAsString() : null;
             
             Item item = switch (category) {
                 case COLLECTIBLES -> {
                     int yearCreated = obj.get("yearCreated").getAsInt();
-                    yield new Collectible(name, description, null, yearCreated);
+                    yield new Collectible(name, description, null, startingPrice, yearCreated);
                 }
                 case ELECTRONICS -> {
                     String brand = obj.get("brand").getAsString();
                     ItemStatus status = ItemStatus.valueOf(obj.get("status").getAsString().toUpperCase());
-                    yield new Electronic(name, description, null, brand, status, null, null);
+                    yield new Electronic(name, description, null, startingPrice, brand, status, null, null);
                 }
                 case ARTS -> {
                     String artist = obj.get("artist").getAsString();
                     int year = obj.get("yearCreated").getAsInt();
                     boolean original = obj.get("isOriginal").getAsBoolean();
-                    yield new Art(name, description, null, artist, year, original);
+                    yield new Art(name, description, null, startingPrice, artist, year, original);
                 }
                 case VEHICLES -> {
                     String brand = obj.get("brand").getAsString();
                     int model = obj.get("model").getAsInt();
                     int km = obj.get("kmTravel").getAsInt();
-                    yield new Vehicle(name, description, null, brand, model, km);
+                    yield new Vehicle(name, description, null, startingPrice, brand, model, km);
                 }
                 case FASHIONS -> {
                     String brand = obj.get("brand").getAsString();
                     ItemStatus status = ItemStatus.valueOf(obj.get("status").getAsString().toUpperCase());
-                    yield new Fashion(name, description, null, brand, status);
+                    yield new Fashion(name, description, null, startingPrice, brand, status);
                 }
                 default -> throw new JsonParseException("Unknown category: " + category);
             };

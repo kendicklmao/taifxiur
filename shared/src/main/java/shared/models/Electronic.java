@@ -10,14 +10,8 @@ public class Electronic extends Item { // Mặt hàng điện tử
     private final String brand; // Hãng
     private final ItemStatus status; // Trạng thái mặt hàng (New, Like New, Used)
 
-    public Electronic(String name, String description, Seller seller, String brand, ItemStatus status) {
-        super(name, description, seller, Category.ELECTRONICS);
-        this.brand = brand;
-        this.status = status;
-    }
-
-    public Electronic(String name, String description, Seller seller, String brand, ItemStatus status, LocalDateTime startTime, LocalDateTime endTime) {
-        super(name, description, seller, Category.ELECTRONICS, startTime, endTime);
+    public Electronic(String name, String description, Seller seller, BigDecimal startingPrice, String brand, ItemStatus status, LocalDateTime startTime, LocalDateTime endTime) {
+        super(name, description, seller, Category.ELECTRONICS, startingPrice, startTime, endTime);
         this.brand = brand;
         this.status = status;
     }

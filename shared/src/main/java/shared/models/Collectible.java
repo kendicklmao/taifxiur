@@ -2,19 +2,16 @@ package shared.models;
 
 import shared.enums.Category;
 
+import java.math.BigDecimal;
+
 public class Collectible extends Item { //mặt hàng sưu tập
     private int yearCreated;
 
-    public Collectible(String name, String description, Seller seller, int yearCreated) {
-        super(name, description, seller, Category.COLLECTIBLES, null, null);
+    public Collectible(String name, String description, Seller seller, BigDecimal startingPrice, int yearCreated) {
+        super(name, description, seller, Category.COLLECTIBLES, startingPrice, null, null);
         this.yearCreated = yearCreated;
     }
 
-    public Collectible() {
-        // No-arg constructor for deserialization
-        super();
-        this.yearCreated = 0;
-    }
 
     public int getYearCreated() {
         return yearCreated;

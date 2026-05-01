@@ -122,6 +122,7 @@ public class AuctionService {
                 int sellerId = rs.getInt("seller_id");
                 String imageUrl = rs.getString("image_url");
                 BigDecimal minIncrement = rs.getBigDecimal("min_increment");
+                BigDecimal basePrice = rs.getBigDecimal("base_price");
 
                 User sellerUser = userService.getUser(getUsernameFromId(conn, sellerId));
                 if (!(sellerUser instanceof Seller)) return null;
@@ -132,25 +133,25 @@ public class AuctionService {
                     String brand = rs.getString("brand");
                     String statusStr = rs.getString("item_status");
                     shared.enums.ItemStatus itemStatus = shared.enums.ItemStatus.valueOf(statusStr != null ? statusStr : "NEW");
-                    item = new shared.models.Electronic(name, description, seller, brand, itemStatus);
+                    item = new shared.models.Electronic(name, description, seller, basePrice, brand, itemStatus, null, null);
                 } else if ("VEHICLES".equals(category)) {
                     String brand = rs.getString("brand");
                     int model = rs.getInt("model_year");
                     int km = rs.getInt("km_travel");
-                    item = new shared.models.Vehicle(name, description, seller, brand, model, km);
+                    item = new shared.models.Vehicle(name, description, seller, basePrice, brand, model, km);
                 } else if ("ARTS".equals(category)) {
                     String artist = rs.getString("artist");
                     int year = rs.getInt("year_created");
                     boolean isOriginal = rs.getBoolean("is_original");
-                    item = new shared.models.Art(name, description, seller, artist, year, isOriginal);
+                    item = new shared.models.Art(name, description, seller, basePrice, artist, year, isOriginal);
                 } else if ("FASHIONS".equals(category)) {
                     String brand = rs.getString("brand");
                     String statusStr = rs.getString("item_status");
                     shared.enums.ItemStatus itemStatus = shared.enums.ItemStatus.valueOf(statusStr != null ? statusStr : "NEW");
-                    item = new shared.models.Fashion(name, description, seller, brand, itemStatus);
+                    item = new shared.models.Fashion(name, description, seller, basePrice, brand, itemStatus);
                 } else if ("COLLECTIBLES".equals(category)) {
                     int year = rs.getInt("year_created");
-                    item = new shared.models.Collectible(name, description, seller, year);
+                    item = new shared.models.Collectible(name, description, seller, basePrice, year);
                 }
 
                 if (item != null) {
@@ -453,6 +454,37 @@ public class AuctionService {
             }
         }
         return sellerAuctions;
+    }
+
+    public String terminateAuction(String auctionId, String username) {
+        Auction auction = auctions.get(auctionId);
+        if (auction == null) {
+            return "Auction not found.";
+        }
+
+        User user = userService.getUser(username);
+        if (user == null) {
+            return "User not found.";
+        }
+
+        if (user.getRole() != shared.enums.Role.ADMIN && !auction.getSeller().getUsername().equals(username)) {
+            return "You are not authorized to terminate this auction.";
+        }
+
+        auction.cancel();
+        auctions.remove(auctionId);
+
+        try (Connection conn = DatabaseConfig.getDataSource().getConnection();
+             PreparedStatement pstmt = conn.prepareStatement("UPDATE items SET auction_status = ? WHERE auction_id = ?")) {
+            pstmt.setString(1, AuctionStatus.CANCELED.name());
+            pstmt.setString(2, auctionId);
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            System.err.println("Error updating auction status to CANCELLED: " + e.getMessage());
+            return "Database error while terminating auction.";
+        }
+
+        return null;
     }
 
     // Phương thức trợ giúp để lưu mặt hàng vào cơ sở dữ liệu với thông tin giá cả

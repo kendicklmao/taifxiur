@@ -73,6 +73,15 @@ public class Auction {
         scheduleFinish();
     }
 
+    public void cancel() {
+        synchronized (bidLock) {
+            if (finishTask != null) {
+                finishTask.cancel(true);
+            }
+            status = AuctionStatus.CANCELED;
+        }
+    }
+
     public void setFinishCallback(Consumer<Auction> cb) {
         this.finishCallback = cb;
     }

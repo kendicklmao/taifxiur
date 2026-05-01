@@ -70,6 +70,12 @@
                               style="-fx-padding: 4 0 4 0;"/>
                 </VBox>
 
+                <!-- Right-side Auction Detail Pane -->
+                <VBox fx:id="auctionDetailPane" styleClass="dash-card" spacing="16" HBox.hgrow="NEVER"
+                      minWidth="320" managed="false" visible="false">
+                    <!-- Content will be populated dynamically -->
+                </VBox>
+
             </VBox>
         </ScrollPane>
     </center>

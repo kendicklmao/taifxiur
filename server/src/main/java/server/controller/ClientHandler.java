@@ -343,33 +343,33 @@ public class ClientHandler implements Runnable {
                     Item item = null;
                     if (category.equals("COLLECTIBLES")) {
                         int year = Integer.parseInt(data.getOrDefault("yearField", "0"));
-                        item = new Collectible(name, desc, seller, year);
+                        item = new Collectible(name, desc, seller, price, year);
                     }
 
                     else if (category.equals("ELECTRONICS")) {
                         String brand = data.getOrDefault("brandField", "Default");
                         ItemStatus status = ItemStatus.valueOf(data.getOrDefault("statusField", "NEW").toUpperCase());
-                        item = new Electronic(name, desc, seller, brand, status);
+                        item = new Electronic(name, desc, seller, price, brand, status, null, null);
                     }
 
                     else if (category.equals("ARTS")) {
                         String artist = data.getOrDefault("artistField", "Unknown");
                         int year = Integer.parseInt(data.getOrDefault("yearField", "0"));
                         boolean original = Boolean.parseBoolean(data.getOrDefault("originalBox", "false"));
-                        item = new Art(name, desc, seller, artist, year, original);
+                        item = new Art(name, desc, seller, price, artist, year, original);
                     }
 
                     else if (category.equals("VEHICLES")) {
                         String brand = data.getOrDefault("brandField", "Unknown");
                         int model = Integer.parseInt(data.getOrDefault("modelField", "0"));
                         int km = Integer.parseInt(data.getOrDefault("kmField", "0"));
-                        item = new Vehicle(name, desc, seller, brand, model, km);
+                        item = new Vehicle(name, desc, seller, price, brand, model, km);
                     }
 
                     else if (category.equals("FASHIONS")) {
                         String brand = data.getOrDefault("brandField", "Brand");
                         ItemStatus status = ItemStatus.valueOf(data.getOrDefault("statusField", "NEW").toUpperCase());
-                        item = new Fashion(name, desc, seller, brand, status);
+                        item = new Fashion(name, desc, seller, price, brand, status);
                     }
 
                     if (item != null) {
@@ -406,6 +406,16 @@ public class ClientHandler implements Runnable {
                 String sellerUsername = request.getData().get("username");
                 List<Auction> sellerAuctions = auctionService.getAuctionsBySeller(sellerUsername);
                 return new Response("SUCCESS", gson.toJson(sellerAuctions));
+
+            case "TERMINATE_AUCTION":
+                String terminateAuctionId = request.getData().get("auctionId");
+                String terminateUsername = request.getData().get("username");
+                String terminateError = auctionService.terminateAuction(terminateAuctionId, terminateUsername);
+                if (terminateError == null) {
+                    return new Response("SUCCESS", "Auction terminated successfully");
+                } else {
+                    return new Response("FAIL", terminateError);
+                }
 
             case "LOGOUT":
                 if (loggedInUsername != null) {

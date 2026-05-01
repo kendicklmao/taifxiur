@@ -14,6 +14,9 @@ import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.layout.GridPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.TilePane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Modality;
@@ -48,6 +51,8 @@ public class BidderHomeController {
     private TextField searchField;
     @FXML
     private ComboBox<String> sortComboBox;
+    @FXML
+    private VBox auctionDetailPane;
 
     private final AppContext ctx = AppContext.getInstance();
     private final Gson gson = GsonUtils.createGson();
@@ -186,11 +191,79 @@ public class BidderHomeController {
 
         card.setOnMouseClicked(event -> {
             if (event.getClickCount() == 2) {
-                showBidOptionsDialog(auction);
+                showAuctionDetails(auction);
             }
         });
 
         return card;
+    }
+
+    private void showAuctionDetails(Auction auction) {
+        auctionDetailPane.getChildren().clear();
+        auctionDetailPane.setVisible(true);
+        auctionDetailPane.setManaged(true);
+
+        // Title and close button
+        Label titleLabel = new Label("Auction Details");
+        titleLabel.getStyleClass().add("dashboard-section-title");
+        Button closeButton = new Button("X");
+        closeButton.getStyleClass().add("dashboard-btn-ghost");
+        closeButton.setOnAction(e -> {
+            auctionDetailPane.setVisible(false);
+            auctionDetailPane.setManaged(false);
+        });
+        HBox titleBox = new HBox(10, titleLabel, closeButton);
+        HBox.setHgrow(titleLabel, Priority.ALWAYS);
+
+        // Image
+        ImageView imageView = new ImageView();
+        if (auction.getItem().getImageUrl() != null && !auction.getItem().getImageUrl().isEmpty()) {
+            imageView.setImage(new Image(auction.getItem().getImageUrl(), 200, 200, true, true));
+        }
+
+        // Details grid
+        GridPane detailsGrid = new GridPane();
+        detailsGrid.setHgap(10);
+        detailsGrid.setVgap(8);
+        detailsGrid.getStyleClass().add("details-grid");
+
+        int rowIndex = 0;
+        detailsGrid.add(new Label("Name:"), 0, rowIndex);
+        detailsGrid.add(new Label(auction.getItem().getName()), 1, rowIndex++);
+        detailsGrid.add(new Label("Description:"), 0, rowIndex);
+        Label descLabel = new Label(auction.getItem().getDescription());
+        descLabel.setWrapText(true);
+        detailsGrid.add(descLabel, 1, rowIndex++);
+        detailsGrid.add(new Label("Base Price:"), 0, rowIndex);
+        detailsGrid.add(new Label("$" + auction.getItem().getStartingPrice()), 1, rowIndex++);
+        detailsGrid.add(new Label("Current Price:"), 0, rowIndex);
+        detailsGrid.add(new Label("$" + auction.getCurrentPrice()), 1, rowIndex++);
+        detailsGrid.add(new Label("Start Time:"), 0, rowIndex);
+        detailsGrid.add(new Label(formatEndTime(auction.getStartTime())), 1, rowIndex++);
+        detailsGrid.add(new Label("End Time:"), 0, rowIndex);
+        detailsGrid.add(new Label(formatEndTime(auction.getEndTime())), 1, rowIndex++);
+        detailsGrid.add(new Label("Status:"), 0, rowIndex);
+        detailsGrid.add(new Label(auction.getStatus().toString()), 1, rowIndex++);
+
+        // Action buttons
+        HBox actionBox = new HBox(10);
+        Button chartButton = new Button("View Chart");
+        chartButton.getStyleClass().add("dashboard-btn-ghost");
+        chartButton.setOnAction(e -> showPriceChart(auction));
+        actionBox.getChildren().add(chartButton);
+
+        if ("RUNNING".equals(auction.getStatus().toString())) {
+            Button bidButton = new Button("Place Bid");
+            bidButton.getStyleClass().add("dashboard-btn-primary");
+            bidButton.setOnAction(e -> showBidAmountDialog(auction, false));
+
+            Button autoBidButton = new Button("Auto Bid");
+            autoBidButton.getStyleClass().add("dashboard-btn-ghost");
+            autoBidButton.setOnAction(e -> showBidAmountDialog(auction, true));
+            actionBox.getChildren().addAll(bidButton, autoBidButton);
+        }
+
+        auctionDetailPane.getChildren().addAll(titleBox, imageView, detailsGrid, actionBox);
     }
 
     private void refreshAuctions() {
@@ -199,7 +272,10 @@ public class BidderHomeController {
             if ("SUCCESS".equals(response.getStatus())) {
                 List<Auction> auctions = gson.fromJson(response.getMessage(), new TypeToken<List<Auction>>() {
                 }.getType());
-                Platform.runLater(() -> updateAuctionGrid(auctions));
+                List<Auction> activeAuctions = auctions.stream()
+                        .filter(a -> a.getStatus() != shared.enums.AuctionStatus.CANCELED)
+                        .collect(Collectors.toList());
+                Platform.runLater(() -> updateAuctionGrid(activeAuctions));
             }
         } catch (Exception e) {
             alertService.showAlert("Error", "Failed to refresh auctions: " + e.getMessage(), welcomeLabel);

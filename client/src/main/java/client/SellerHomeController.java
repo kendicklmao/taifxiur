@@ -6,6 +6,9 @@ import javafx.scene.control.SpinnerValueFactory;
 import javafx.scene.layout.VBox;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.layout.GridPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.TilePane;
 import javafx.stage.FileChooser;
 import org.imgscalr.Scalr;
@@ -27,6 +30,7 @@ import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -79,6 +83,8 @@ public class SellerHomeController {
     private ImageView itemImageView;
     @FXML
     private Label walletBalanceLabel;
+    @FXML
+    private VBox auctionDetailPane;
     private File selectedImageFile;
     private byte[] croppedImageBytes;
     private final Gson gson = GsonUtils.createGson();
@@ -210,7 +216,105 @@ public class SellerHomeController {
         startsAtLabel.setText("Starts: " + formatTime(auction.getStartTime()));
         endsAtLabel.setText("Ends: " + formatTime(auction.getEndTime()));
 
+        card.setOnMouseClicked(event -> {
+            if (event.getClickCount() == 2) {
+                showAuctionDetails(auction);
+            }
+        });
+
         return card;
+    }
+
+    private void showAuctionDetails(Auction auction) {
+        auctionDetailPane.getChildren().clear();
+        auctionDetailPane.setVisible(true);
+        auctionDetailPane.setManaged(true);
+
+        // Title and close button
+        Label titleLabel = new Label("Auction Details");
+        titleLabel.getStyleClass().add("dashboard-section-title");
+        Button closeButton = new Button("X");
+        closeButton.getStyleClass().add("dashboard-btn-ghost");
+        closeButton.setOnAction(e -> {
+            auctionDetailPane.setVisible(false);
+            auctionDetailPane.setManaged(false);
+        });
+        HBox titleBox = new HBox(10, titleLabel, closeButton);
+        HBox.setHgrow(titleLabel, Priority.ALWAYS);
+
+        // Image
+        ImageView imageView = new ImageView();
+        if (auction.getItem().getImageUrl() != null && !auction.getItem().getImageUrl().isEmpty()) {
+            imageView.setImage(new Image(auction.getItem().getImageUrl(), 200, 200, true, true));
+        }
+
+        // Details grid
+        GridPane detailsGrid = new GridPane();
+        detailsGrid.setHgap(10);
+        detailsGrid.setVgap(8);
+        detailsGrid.getStyleClass().add("details-grid");
+
+        int rowIndex = 0;
+        detailsGrid.add(new Label("Name:"), 0, rowIndex);
+        detailsGrid.add(new Label(auction.getItem().getName()), 1, rowIndex++);
+        detailsGrid.add(new Label("Description:"), 0, rowIndex);
+        Label descLabel = new Label(auction.getItem().getDescription());
+        descLabel.setWrapText(true);
+        detailsGrid.add(descLabel, 1, rowIndex++);
+        detailsGrid.add(new Label("Base Price:"), 0, rowIndex);
+        detailsGrid.add(new Label("$" + auction.getItem().getStartingPrice()), 1, rowIndex++);
+        detailsGrid.add(new Label("Current Price:"), 0, rowIndex);
+        detailsGrid.add(new Label("$" + auction.getCurrentPrice()), 1, rowIndex++);
+        detailsGrid.add(new Label("Start Time:"), 0, rowIndex);
+        detailsGrid.add(new Label(formatTime(auction.getStartTime())), 1, rowIndex++);
+        detailsGrid.add(new Label("End Time:"), 0, rowIndex);
+        detailsGrid.add(new Label(formatTime(auction.getEndTime())), 1, rowIndex++);
+        detailsGrid.add(new Label("Status:"), 0, rowIndex);
+        detailsGrid.add(new Label(auction.getStatus().toString()), 1, rowIndex++);
+
+        Button terminateButton = new Button("Terminate Auction");
+        terminateButton.getStyleClass().add("dashboard-btn-logout");
+        terminateButton.setOnAction(e -> handleTerminateAuction(auction));
+
+
+        auctionDetailPane.getChildren().addAll(titleBox, imageView, detailsGrid, terminateButton);
+    }
+
+    private void handleTerminateAuction(Auction auction) {
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+        alert.setTitle("Confirm Termination");
+        alert.setHeaderText("Are you sure you want to terminate this auction?");
+        alert.setContentText("This action cannot be undone.");
+
+        DialogPane dialogPane = alert.getDialogPane();
+        dialogPane.getStylesheets().add(getClass().getResource("/styles.css").toExternalForm());
+        dialogPane.getStyleClass().add("my-dialog");
+
+        Optional<ButtonType> result = alert.showAndWait();
+        if (result.isPresent() && result.get() == ButtonType.OK) {
+            terminateAuctionOnServer(auction);
+        }
+    }
+
+    private void terminateAuctionOnServer(Auction auction) {
+        try {
+            Map<String, String> data = new HashMap<>();
+            data.put("auctionId", auction.getId());
+            data.put("username", ctx.getCurrentUser().getUsername());
+            Request req = new Request("TERMINATE_AUCTION", data);
+            Response response = ctx.sendRequestAndWait(req, 15);
+
+            if ("SUCCESS".equals(response.getStatus())) {
+                alertService.showAlert("Success", "Auction terminated successfully.", welcomeLabel);
+                fetchSellerAuctions();
+                auctionDetailPane.setVisible(false);
+                auctionDetailPane.setManaged(false);
+            } else {
+                alertService.showAlert("Error", "Failed to terminate auction: " + response.getMessage(), welcomeLabel);
+            }
+        } catch (Exception e) {
+            alertService.showAlert("Error", "An error occurred while terminating the auction.", welcomeLabel);
+        }
     }
 
     @FXML
@@ -535,7 +639,10 @@ public class SellerHomeController {
             if ("SUCCESS".equals(response.getStatus())) {
                 List<Auction> auctions = gson.fromJson(response.getMessage(), new TypeToken<List<Auction>>() {
                 }.getType());
-                Platform.runLater(() -> updateAuctionGrid(auctions));
+                List<Auction> activeAuctions = auctions.stream()
+                        .filter(a -> a.getStatus() != shared.enums.AuctionStatus.CANCELED)
+                        .collect(Collectors.toList());
+                Platform.runLater(() -> updateAuctionGrid(activeAuctions));
             }
         } catch (Exception e) {
             System.out.println("Failed to refresh auctions: " + e.getMessage());

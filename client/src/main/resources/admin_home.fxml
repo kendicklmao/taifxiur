@@ -29,21 +29,26 @@
             <!-- TAB 1: ALL AUCTIONS -->
             <Tab text="All Auctions" closable="false">
                 <ScrollPane fitToWidth="true" hbarPolicy="NEVER">
-                    <VBox styleClass="app-content" spacing="20">
-                        <VBox styleClass="dash-card" spacing="16">
-                            <VBox spacing="4">
-                                <Label text="All Auctions in System" styleClass="dashboard-section-title"/>
-                                <Label text="Browse all active and completed auctions"
-                                       styleClass="dashboard-section-subtitle"/>
+                    <HBox>
+                        <VBox styleClass="app-content" spacing="20" HBox.hgrow="ALWAYS">
+                            <VBox styleClass="dash-card" spacing="16">
+                                <VBox spacing="4">
+                                    <Label text="All Auctions in System" styleClass="dashboard-section-title"/>
+                                    <Label text="Browse all active and completed auctions"
+                                           styleClass="dashboard-section-subtitle"/>
+                                </VBox>
+                                <ListView fx:id="allAuctionsList" prefHeight="500"/>
+                                <HBox spacing="10">
+                                    <Pane HBox.hgrow="ALWAYS"/>
+                                    <Button text="REFRESH" onAction="#refreshAuctions"
+                                            styleClass="dashboard-btn-primary" prefWidth="140"/>
+                                </HBox>
                             </VBox>
-                            <ListView fx:id="allAuctionsList" prefHeight="500"/>
-                            <HBox spacing="10">
-                                <Pane HBox.hgrow="ALWAYS"/>
-                                <Button text="REFRESH" onAction="#refreshAuctions"
-                                        styleClass="dashboard-btn-primary" prefWidth="140"/>
-                            </HBox>
                         </VBox>
-                    </VBox>
+                        <VBox fx:id="auctionDetailPane" styleClass="dash-card" spacing="16" minWidth="320" managed="false" visible="false">
+                            <!-- Auction details will be populated here -->
+                        </VBox>
+                    </HBox>
                 </ScrollPane>
             </Tab>
 
