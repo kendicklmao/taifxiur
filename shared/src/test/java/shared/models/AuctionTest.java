@@ -36,7 +36,7 @@ public class AuctionTest {
         LocalDateTime startLdt = LocalDateTime.ofInstant(startTime, ZoneOffset.UTC);
         LocalDateTime endLdt = LocalDateTime.ofInstant(endTime, ZoneOffset.UTC);
 
-        item = new Electronic("Laptop", "Old laptop", seller, "Dell", ItemStatus.USED, startLdt, endLdt);
+        item = new Electronic("Laptop", "Old laptop", seller, new BigDecimal("1000"), "Dell", ItemStatus.USED, startLdt, endLdt);
         item.setMinIncrement(new BigDecimal("100000")); // Set a default minimum increment
         auction = new Auction("auc123", item, new BigDecimal("1000"), seller, startTime, endTime);
     }
