@@ -349,7 +349,7 @@ public class ClientHandler implements Runnable {
                     else if (category.equals("ELECTRONICS")) {
                         String brand = data.getOrDefault("brandField", "Default");
                         ItemStatus status = ItemStatus.valueOf(data.getOrDefault("statusField", "NEW").toUpperCase());
-                        item = new Electronic(name, desc, seller, price, brand, status, null, null);
+                        item = new Electronic(name, desc, seller, price, brand, status);
                     }
 
                     else if (category.equals("ARTS")) {

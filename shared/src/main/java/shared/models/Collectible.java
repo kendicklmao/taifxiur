@@ -8,7 +8,7 @@ public class Collectible extends Item { //mặt hàng sưu tập
     private int yearCreated;
 
     public Collectible(String name, String description, Seller seller, BigDecimal startingPrice, int yearCreated) {
-        super(name, description, seller, Category.COLLECTIBLES, startingPrice, null, null);
+        super(name, description, seller, Category.COLLECTIBLES, startingPrice);
         this.yearCreated = yearCreated;
     }
 

@@ -10,7 +10,7 @@ public class Vehicle extends Item {//mặt hàng xe cộ
     private final int kmTravel; //số km đã đi
 
     public Vehicle(String name, String description, Seller seller, BigDecimal startingPrice, String brand, int model, int kmTravel) {
-        super(name, description, seller, Category.VEHICLES, startingPrice, null, null);
+        super(name, description, seller, Category.VEHICLES, startingPrice);
         this.brand = brand;
         this.model = model;
         this.kmTravel = kmTravel;

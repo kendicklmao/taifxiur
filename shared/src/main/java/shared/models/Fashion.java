@@ -10,7 +10,7 @@ public class Fashion extends Item {
     private final ItemStatus status; //trạng thái mặt hàng: new || like new || used
 
     public Fashion(String name, String description, Seller seller, BigDecimal startingPrice, String brand, ItemStatus status) {
-        super(name, description, seller, Category.FASHIONS, startingPrice, null, null);
+        super(name, description, seller, Category.FASHIONS, startingPrice);
         this.brand = brand;
         this.status = status;
     }

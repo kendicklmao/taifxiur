@@ -10,7 +10,7 @@ public class Art extends Item { //tác phẩm nghệ thuật
     private final boolean isOriginal; //có là bản gốc hay không?
 
     public Art(String name, String description, Seller seller, BigDecimal startingPrice, String artist, int yearCreated, boolean isOriginal) {
-        super(name, description, seller, Category.ARTS, startingPrice, null, null);
+        super(name, description, seller, Category.ARTS, startingPrice);
         this.artist = artist;
         this.yearCreated = yearCreated;
         this.isOriginal = isOriginal;

@@ -17,19 +17,14 @@ public abstract class Item implements Serializable {
     private BigDecimal startingPrice;
     private BigDecimal minIncrement;
     private String imageUrl;
-    private LocalDateTime auctionStartTime;
-    private LocalDateTime auctionEndTime;
 
-    public Item(String name, String description, Seller seller, Category category, BigDecimal startingPrice, LocalDateTime auctionStartTime, LocalDateTime auctionEndTime) {
+    public Item(String name, String description, Seller seller, Category category, BigDecimal startingPrice) {
         this.name = name;
         this.description = description;
         this.seller = seller;
         this.category = category;
         this.startingPrice = startingPrice;
-        this.auctionStartTime = auctionStartTime;
-        this.auctionEndTime = auctionEndTime;
     }
-
 
     public int getDbId() {
         return dbId;
@@ -37,22 +32,6 @@ public abstract class Item implements Serializable {
 
     public void setDbId(int dbId) {
         this.dbId = dbId;
-    }
-
-    public LocalDateTime getAuctionStartTime() {
-        return auctionStartTime;
-    }
-
-    public void setAuctionStartTime(LocalDateTime auctionStartTime) {
-        this.auctionStartTime = auctionStartTime;
-    }
-
-    public LocalDateTime getAuctionEndTime() {
-        return auctionEndTime;
-    }
-
-    public void setAuctionEndTime(LocalDateTime auctionEndTime) {
-        this.auctionEndTime = auctionEndTime;
     }
 
     public String getId() {

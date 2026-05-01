@@ -133,7 +133,7 @@ public class AuctionService {
                     String brand = rs.getString("brand");
                     String statusStr = rs.getString("item_status");
                     shared.enums.ItemStatus itemStatus = shared.enums.ItemStatus.valueOf(statusStr != null ? statusStr : "NEW");
-                    item = new shared.models.Electronic(name, description, seller, basePrice, brand, itemStatus, null, null);
+                    item = new shared.models.Electronic(name, description, seller, basePrice, brand, itemStatus);
                 } else if ("VEHICLES".equals(category)) {
                     String brand = rs.getString("brand");
                     int model = rs.getInt("model_year");
