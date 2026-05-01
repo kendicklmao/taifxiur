@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
+import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
 import javafx.collections.transformation.SortedList;
@@ -112,7 +113,7 @@ public class BidderHomeController {
         });
 
         // 5. Add a listener to the SortedList to update the UI whenever it changes.
-        sortedData.addListener((javafx.collections.ListChangeListener<Auction>) c -> updateAuctionGrid(sortedData));
+        sortedData.addListener((ListChangeListener<Auction>) c -> updateAuctionGrid(sortedData));
 
         messageListener = line -> {
             try {
@@ -275,7 +276,9 @@ public class BidderHomeController {
                 List<Auction> activeAuctions = auctions.stream()
                         .filter(a -> a.getStatus() != shared.enums.AuctionStatus.CANCELED)
                         .collect(Collectors.toList());
-                Platform.runLater(() -> updateAuctionGrid(activeAuctions));
+                Platform.runLater(() -> {
+                    allAuctions.setAll(activeAuctions);
+                });
             }
         } catch (Exception e) {
             alertService.showAlert("Error", "Failed to refresh auctions: " + e.getMessage(), welcomeLabel);
