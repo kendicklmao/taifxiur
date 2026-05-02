@@ -176,7 +176,7 @@ public class SellerHomeController {
                 VBox card = existingAuctionCards.get(id);
                 Object priceObj = card.getProperties().get("priceLabel");
                 if (priceObj instanceof Label) {
-                    ((Label) priceObj).setText("Current Price: " + auction.getCurrentPrice());
+                    ((Label) priceObj).setText("Current Price: " + auction.getCurrentPrice() + "$");
                 }
                 Object statusObj = card.getProperties().get("statusLabel");
                 if (statusObj instanceof Label) {

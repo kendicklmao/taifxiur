@@ -1,8 +1,13 @@
 package client;
 
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
 import javafx.fxml.FXML;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
+import javafx.util.Duration;
 import shared.models.Admin;
 import shared.models.Bidder;
 import shared.models.Seller;
@@ -16,6 +21,8 @@ import java.util.Map;
 public class LoginController {
     @FXML TextField usernameField;
     @FXML PasswordField passwordField;
+    @FXML Button loginButton;
+    @FXML Label countdownLabel;
 
     private final AppContext ctx;
     private final INavigator navigator;
@@ -72,6 +79,9 @@ public class LoginController {
                 } else if (role.equals("ADMIN")) {
                     navigator.switchScene("admin_home.fxml");
                 }
+            } else if ("ACCOUNT_DISABLED".equals(res.getStatus())) {
+                alertService.showAlert("Account Disabled", res.getMessage(), usernameField);
+                disableLoginFor(60);
             } else {
                 alertService.showAlert("Error", res.getMessage(), usernameField);
             }
@@ -80,6 +90,27 @@ public class LoginController {
             alertService.showAlert("Error", "Cannot connect to Server!", usernameField);
             e.printStackTrace();
         }
+    }
+
+    private void disableLoginFor(int seconds) {
+        setLoginControlsDisabled(true);
+        Timeline timeline = new Timeline();
+        timeline.setCycleCount(seconds);
+        timeline.getKeyFrames().add(new KeyFrame(Duration.seconds(1), e -> {
+            int remaining = timeline.getCycleCount() - (int)timeline.getCurrentTime().toSeconds();
+            countdownLabel.setText("Please wait " + remaining + " seconds before trying again.");
+        }));
+        timeline.setOnFinished(e -> {
+            setLoginControlsDisabled(false);
+            countdownLabel.setText("");
+        });
+        timeline.play();
+    }
+
+    private void setLoginControlsDisabled(boolean disabled) {
+        usernameField.setDisable(disabled);
+        passwordField.setDisable(disabled);
+        loginButton.setDisable(disabled);
     }
 
     @FXML
