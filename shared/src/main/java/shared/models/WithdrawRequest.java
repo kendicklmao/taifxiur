@@ -6,11 +6,11 @@ import java.math.BigDecimal;
 import java.util.UUID;
 
 public class WithdrawRequest {
-    private final String id;//mã
-    private final Seller seller;//người bán
-    private final BigDecimal amount;//số tiền muốn rút
-    private final BankInfo bankInfo; // số tài khoản / ngân hàng
-    private RequestStatus status;//trạng thái
+    private final String id; // Mã yêu cầu
+    private final Seller seller; // Người bán
+    private final BigDecimal amount; // Số tiền muốn rút
+    private final BankInfo bankInfo; // Số tài khoản / ngân hàng
+    private RequestStatus status; // Trạng thái
 
     public WithdrawRequest(Seller seller, BigDecimal amount, BankInfo bankInfo) {
         if (seller == null || amount == null || bankInfo == null) {
@@ -25,29 +25,40 @@ public class WithdrawRequest {
         this.bankInfo = bankInfo;
         this.status = RequestStatus.PENDING;
     }
+
     public String getId() {
         return id;
     }
+
     public Seller getSeller() {
         return seller;
     }
+
     public BigDecimal getAmount() {
         return amount;
     }
+    
     public BankInfo getBankInfo() {
         return bankInfo;
     }
+
     public RequestStatus getStatus() {
         return status;
     }
-    public void approveWithdraw() {//đồng í yêu cầu rút tiền
-        if (status != RequestStatus.PENDING)
+    
+    // Đồng ý yêu cầu rút tiền
+    public void approveWithdraw() {
+        if (status != RequestStatus.PENDING) {
             throw new IllegalStateException();
+        }
         status = RequestStatus.APPROVED;
     }
-    public void rejectWithdraw() {//từ chối yêu cầu rút tiền
-        if (status != RequestStatus.PENDING)
+    
+    // Từ chối yêu cầu rút tiền
+    public void rejectWithdraw() {
+        if (status != RequestStatus.PENDING) {
             throw new IllegalStateException();
+        }
         status = RequestStatus.REJECTED;
     }
 }

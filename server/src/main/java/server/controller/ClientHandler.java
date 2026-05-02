@@ -51,11 +51,7 @@ public class ClientHandler implements Runnable {
         this.socket = socket;
     }
 
-    /**
-     * Triggers static initialization of the class and its services.
-     */
     public static void initializeServices() {
-        // This method intentionally left blank to trigger class loading
     }
 
     @Override

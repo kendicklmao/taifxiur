@@ -3,12 +3,15 @@ package server;
 import server.controller.ClientHandler;
 import server.database.DatabaseConfig;
 import server.database.DatabaseInitializer;
+import server.service.UserService;
 
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 
 public class ServerApplication {
+
+    // Port này để cho server listen và client connect vào
     private static final int PORT = 54321;
 
     public static void main(String[] args) {
@@ -17,16 +20,17 @@ public class ServerApplication {
         System.setProperty("java.net.preferIPv6Addresses", "false");
 
         System.out.println("Initializing...");
-
         // Khởi tạo connection pool và schema cơ sở dữ liệu
         try {
             DatabaseInitializer.initializeDatabase();
             // Khởi tạo user mặc định
-            new server.service.UserService().initializeDefaultUsers();
+            UserService userService = new UserService();
+            userService.initializeDefaultUsers();
+            
             System.out.println("Database initialization completed");
             
-            // Pre-initialize AuctionService to load all auctions from DB
-            // This prevents the first client from timing out during connection
+            // Khởi tạo trước AuctionService để tải tất cả các phiên đấu giá từ DB
+            // Điều này ngăn client đầu tiên bị time out trong quá trình kết nối
             System.out.println("Loading auctions into memory...");
             server.controller.ClientHandler.initializeServices();
             System.out.println("All services initialized.");

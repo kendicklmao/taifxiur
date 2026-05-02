@@ -40,7 +40,7 @@ public class AuctionServiceTest {
 
     @Test
     public void testCreateAuction() {
-        Electronic item = new Electronic("Test Item", "Description", seller, "Brand", ItemStatus.NEW, null, null);
+        Electronic item = new Electronic("Test Item", "Description", seller, "Brand", ItemStatus.NEW, null, null, "url");
         Instant startTime = Instant.now().plus(1, ChronoUnit.HOURS);
         Instant endTime = startTime.plus(1, ChronoUnit.HOURS);
         Auction auction = auctionService.createAuction(seller, item, new BigDecimal("100.00"), startTime, endTime);

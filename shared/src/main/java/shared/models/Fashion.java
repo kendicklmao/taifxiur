@@ -6,8 +6,8 @@ import shared.enums.ItemStatus;
 import java.math.BigDecimal;
 
 public class Fashion extends Item {
-    private final String brand; //hãng
-    private final ItemStatus status; //trạng thái mặt hàng: new || like new || used
+    private final String brand; // Hãng
+    private final ItemStatus status; // Trạng thái mặt hàng: new || like new || used
 
     public Fashion(String name, String description, Seller seller, BigDecimal startingPrice, String brand, ItemStatus status) {
         super(name, description, seller, Category.FASHIONS, startingPrice);

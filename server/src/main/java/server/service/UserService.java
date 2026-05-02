@@ -1,7 +1,6 @@
 package server.service;
 
 import server.database.DatabaseConfig;
-import shared.enums.BankList;
 import shared.enums.Role;
 import shared.models.*;
 import shared.utils.Validator;
@@ -15,11 +14,8 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class UserService {
-    private final ConcurrentHashMap<String, Integer> failedAttempts = new ConcurrentHashMap<>(); // Lưu số lần đăng nhập
-    // thất bại của từng
-    // tài khoản
-    private final ConcurrentHashMap<String, Instant> lockUntil = new ConcurrentHashMap<>(); // Lưu số giây bị ban của
-    // từng tài khoản
+    private final ConcurrentHashMap<String, Integer> failedAttempts = new ConcurrentHashMap<>(); // Lưu số lần đăng nhập thất bại của từng tài khoản
+    private final ConcurrentHashMap<String, Instant> lockUntil = new ConcurrentHashMap<>(); // Lưu số giây bị ban của từng tài khoản
     private final ConcurrentHashMap<String, Boolean> loggedIn = new ConcurrentHashMap<>(); // Lưu trạng thái đăng nhập
     private static final int MAX_ATTEMPTS = 5; // Số lượt đăng nhập thất bại tối đa
     private static final long BASE_LOCK_SECONDS = 2; // Số giây cơ sở để vô hiệu hóa nếu đăng nhập thất bại
@@ -45,8 +41,7 @@ public class UserService {
     }
 
     // Đăng ký người dùng mới trong cơ sở dữ liệu
-    public boolean register(String username, String password, String email, String q1, String a1, String q2, String a2,
-                            Role role) {
+    public boolean register(String username, String password, String email, String q1, String a1, String q2, String a2, Role role) {
         System.out.println("DEBUG REGISTER: Attempting to register user: " + username);
         if (!Validator.isValidUsername(username)) {
             System.out.println("DEBUG REGISTER: Invalid username format: " + username);

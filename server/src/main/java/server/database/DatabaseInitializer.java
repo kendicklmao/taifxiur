@@ -9,12 +9,10 @@ public class DatabaseInitializer {
 
     public static void initializeDatabase() throws Exception {
         try (Connection conn = DatabaseConfig.getDataSource().getConnection();
-             Statement stmt = conn.createStatement()) {
+                Statement stmt = conn.createStatement()) {
             System.out.println("Initializing database schema...");
 
             // Drop tables to ensure schema is updated
-            stmt.execute("DROP TABLE IF EXISTS deposit_requests;");
-            stmt.execute("DROP TABLE IF EXISTS withdraw_requests;");
             System.out.println("Dropped deposit and withdraw request tables for recreation.");
 
             // Tạo bảng users
@@ -160,7 +158,7 @@ public class DatabaseInitializer {
         stmt.execute(sql);
         System.out.println("Auto bids table created or already exists");
     }
-    
+
     private static void createDepositRequestsTable(Statement stmt) throws SQLException {
         String sql = """
                 CREATE TABLE IF NOT EXISTS deposit_requests (
@@ -177,7 +175,7 @@ public class DatabaseInitializer {
         stmt.execute(sql);
         System.out.println("Deposit requests table created or already exists");
     }
-    
+
     private static void createWithdrawRequestsTable(Statement stmt) throws SQLException {
         String sql = """
                 CREATE TABLE IF NOT EXISTS withdraw_requests (
