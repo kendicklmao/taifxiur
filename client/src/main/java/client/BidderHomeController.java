@@ -128,12 +128,6 @@ public class BidderHomeController {
         };
         ctx.addMessageListener(messageListener);
 
-        ctx.setAuctionListener(newAuction -> {
-            Platform.runLater(() -> {
-                allAuctions.add(newAuction);
-            });
-        });
-
         refreshWalletBalance();
         refreshAuctions();
     }
@@ -589,8 +583,7 @@ public class BidderHomeController {
         VBox content = new VBox(10);
         content.setStyle("-fx-padding: 20px;");
         content.getChildren().add(new Label("Current price: " + auction.getCurrentPrice()));
-        content.getChildren()
-                .add(new Label("Minimum bid: " + minBid + " (current + " + auction.getItem().getMinIncrement() + ")"));
+        content.getChildren().add(new Label("Minimum bid: " + minBid + " (current + " + auction.getItem().getMinIncrement() + ")"));
         content.getChildren().add(new Label("Enter amount:"));
         content.getChildren().add(amountField);
 

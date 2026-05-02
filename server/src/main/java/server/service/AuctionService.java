@@ -274,14 +274,6 @@ public class AuctionService {
             throw new RuntimeException("Failed to save auction to database.");
         }
 
-        // Notify all clients about the new auction
-        try {
-            Gson gson = GsonUtils.createGson();
-            Response resp = new Response("NEW_AUCTION_CREATED", gson.toJson(auction));
-            ClientHandler.broadcast(gson.toJson(resp));
-        } catch (Exception e) {
-            System.err.println("Error broadcasting new auction: " + e.getMessage());
-        }
 
         return auction;
     }

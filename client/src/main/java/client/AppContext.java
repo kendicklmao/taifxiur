@@ -33,7 +33,6 @@ public class AppContext {
     private final ConcurrentHashMap<String, CompletableFuture<Response>> pendingRequests = new ConcurrentHashMap<>();
     private final Gson gson = GsonUtils.createGson();
     private Thread listenerThread;
-    private Consumer<Auction> auctionListener;
 
     public static AppContext getInstance() {
         return instance;
@@ -50,10 +49,6 @@ public class AppContext {
     }
     public void setSelectedAuction(Auction a) {
         selectedAuction = a;
-    }
-
-    public void setAuctionListener(Consumer<Auction> listener) {
-        this.auctionListener = listener;
     }
 
     public void connect() throws Exception {
@@ -94,11 +89,6 @@ public class AppContext {
                                 pendingRequests.remove(res.getRequestId());
                             } else {
                                 System.out.println("DEBUG CLIENT: No pending request found for ID " + res.getRequestId());
-                            }
-                        } else if ("NEW_AUCTION_CREATED".equals(res.getStatus())) {
-                            if (auctionListener != null) {
-                                Auction newAuction = gson.fromJson(res.getMessage(), Auction.class);
-                                auctionListener.accept(newAuction);
                             }
                         }
                     } catch (Exception e) {

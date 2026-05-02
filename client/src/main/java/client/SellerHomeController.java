@@ -146,10 +146,6 @@ public class SellerHomeController {
             }
         };
         ctx.addMessageListener(messageListener);
-
-        ctx.setAuctionListener(newAuction -> {
-            Platform.runLater(this::fetchAllAuctions);
-        });
     }
 
     @FXML
