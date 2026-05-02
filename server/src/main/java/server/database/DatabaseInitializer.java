@@ -13,6 +13,8 @@ public class DatabaseInitializer {
             System.out.println("Initializing database schema...");
 
             // Drop tables to ensure schema is updated
+            stmt.execute("DROP TABLE IF EXISTS deposit_requests;");
+            stmt.execute("DROP TABLE IF EXISTS withdraw_requests;");
             System.out.println("Dropped deposit and withdraw request tables for recreation.");
 
             // Tạo bảng users

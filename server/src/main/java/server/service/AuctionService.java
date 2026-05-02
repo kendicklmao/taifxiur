@@ -274,6 +274,7 @@ public class AuctionService {
             throw new RuntimeException("Failed to save auction to database.");
         }
 
+
         return auction;
     }
 

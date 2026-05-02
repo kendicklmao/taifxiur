@@ -50,6 +50,7 @@ public class AppContext {
     public void setSelectedAuction(Auction a) {
         selectedAuction = a;
     }
+
     public void connect() throws Exception {
         System.out.println("DEBUG CLIENT: Connecting to server...");
         // Always disconnect first to ensure clean state
