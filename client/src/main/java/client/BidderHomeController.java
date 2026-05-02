@@ -128,6 +128,12 @@ public class BidderHomeController {
         };
         ctx.addMessageListener(messageListener);
 
+        ctx.setAuctionListener(newAuction -> {
+            Platform.runLater(() -> {
+                allAuctions.add(newAuction);
+            });
+        });
+
         refreshWalletBalance();
         refreshAuctions();
     }
