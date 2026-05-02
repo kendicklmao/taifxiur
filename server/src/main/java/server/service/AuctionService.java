@@ -44,7 +44,7 @@ public class AuctionService {
              ResultSet rs = stmt.executeQuery(
                      "SELECT id, seller_id, base_price, current_price, auction_status, " +
                              "start_time, end_time, winner_id, auction_id " +
-                             "FROM items WHERE auction_id IS NOT NULL")) {
+                             "FROM items WHERE auction_id IS NOT NULL AND auction_status != 'CANCELED'")) {
 
             while (rs.next()) {
                 String auctionId = "Unknown";
@@ -556,14 +556,39 @@ public class AuctionService {
         auction.cancel();
         auctions.remove(auctionId);
 
-        try (Connection conn = DatabaseConfig.getDataSource().getConnection();
-             PreparedStatement pstmt = conn.prepareStatement("UPDATE items SET auction_status = ? WHERE auction_id = ?")) {
-            pstmt.setString(1, AuctionStatus.CANCELED.name());
-            pstmt.setString(2, auctionId);
-            pstmt.executeUpdate();
+        // Giải phóng toàn bộ tiền đang bị đóng băng (hold) của những người đã đặt giá
+        walletService.releaseAllHoldsForAuction(auctionId);
+
+        try (Connection conn = DatabaseConfig.getDataSource().getConnection()) {
+            conn.setAutoCommit(false); 
+            try {
+                // 1. Xóa lịch sử đặt thầu
+                try (PreparedStatement pstmt = conn.prepareStatement("DELETE FROM bids WHERE auction_id = ?")) {
+                    pstmt.setString(1, auctionId);
+                    pstmt.executeUpdate();
+                }
+
+                // 2. Xóa cấu hình autobid
+                try (PreparedStatement pstmt = conn.prepareStatement("DELETE FROM auto_bids WHERE auction_id = ?")) {
+                    pstmt.setString(1, auctionId);
+                    pstmt.executeUpdate();
+                }
+
+                // 3. Xóa chính đấu giá đó (bao gồm cả item vì dùng chung bảng items)
+                try (PreparedStatement pstmt = conn.prepareStatement("DELETE FROM items WHERE auction_id = ?")) {
+                    pstmt.setString(1, auctionId);
+                    pstmt.executeUpdate();
+                }
+
+                conn.commit();
+                System.out.println("🗑️ [PERMANENT DELETE] Auction " + auctionId + " and all related data (bids, auto-bids, holds) have been removed.");
+            } catch (SQLException e) {
+                conn.rollback();
+                throw e;
+            }
         } catch (SQLException e) {
-            System.err.println("Error updating auction status to CANCELLED: " + e.getMessage());
-            return "Database error while terminating auction.";
+            System.err.println("Error deleting auction from database: " + e.getMessage());
+            return "Database error while deleting auction.";
         }
 
         return null;
