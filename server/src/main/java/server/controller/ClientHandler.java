@@ -398,8 +398,7 @@ public class ClientHandler implements Runnable {
 
                     Auction auction = auctionService.createAuction(seller, item, price, start, end);
                     
-                    // Broadcast new auction to all clients
-                    Response broadcastRes = new Response("AUCTION_CREATED", "A new auction has been created!");
+                    Response broadcastRes = new Response("AUCTION_CREATED", gson.toJson(auction));
                     broadcast(gson.toJson(broadcastRes));
 
                     return new Response("SUCCESS", gson.toJson(auction));

@@ -40,6 +40,7 @@ public class AdminHomeController {
     private final Gson gson = GsonUtils.createGson();
     private final IAlertService alertService = new AlertServiceImpl();
     private java.util.List<String> allUsernames = new java.util.ArrayList<>();
+    private java.util.function.Consumer<String> messageListener;
 
     @FXML
     public void initialize() {
@@ -64,6 +65,20 @@ public class AdminHomeController {
                 usernameField.show();
             }
         });
+
+        // Đăng ký lắng nghe sự kiện từ Server
+        messageListener = line -> {
+            try {
+                Response res = gson.fromJson(line, Response.class);
+                if ("AUCTION_CREATED".equals(res.getStatus()) || "AUCTION_UPDATED".equals(res.getStatus()) || "UPDATE_PRICE".equals(res.getStatus())) {
+                    System.out.println("📢 [ADMIN] Received update from server, refreshing list...");
+                    Platform.runLater(this::refreshAuctions);
+                }
+            } catch (Exception e) {
+                // Ignore malformed messages
+            }
+        };
+        ctx.addMessageListener(messageListener);
     }
 
     private void showAuctionDetails(Auction auction) {

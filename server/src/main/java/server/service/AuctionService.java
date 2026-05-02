@@ -24,7 +24,7 @@ import shared.network.Response;
 import server.controller.ClientHandler;
 
 public class AuctionService {
-    private final ConcurrentHashMap<String, Auction> auctions = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<String, Auction> auctions = new ConcurrentHashMap<>();
     private static final WalletService walletService = new WalletService();
     private static final UserService userService = new UserService();
     private static final ExecutorService asyncExecutor = Executors.newFixedThreadPool(2);
@@ -46,7 +46,6 @@ public class AuctionService {
                              "start_time, end_time, winner_id, auction_id " +
                              "FROM items WHERE auction_id IS NOT NULL")) {
 
-            UserService userService = new UserService();
             while (rs.next()) {
                 String auctionId = "Unknown";
                 try {
@@ -74,7 +73,7 @@ public class AuctionService {
                         continue;
                     }
 
-                    // Create auction and restore state
+                    // Tạo auction và khôi phục state
                     Auction auction = new Auction(auctionId, item, startPrice, (Seller) seller, startTime, endTime);
                     auction.setFinishCallback(a -> finalizeAuction(a));
 
@@ -266,6 +265,7 @@ public class AuctionService {
         auction.setFinishCallback(a -> finalizeAuction(a));
         auction.setBanChecker(username -> userService.isUserBanned(username));
         auctions.put(id, auction);
+        System.out.println("✅ [MEMORY] Added new auction to map. Current total in memory: " + auctions.size());
 
         // Lưu item và auction vào database
         int dbId = saveItemAndAuctionToDatabase(item, seller, startPrice, startTime, endTime, id);
@@ -273,7 +273,6 @@ public class AuctionService {
             auctions.remove(id); // remove from in-memory map if DB save failed
             throw new RuntimeException("Failed to save auction to database.");
         }
-
 
         return auction;
     }
@@ -366,10 +365,89 @@ public class AuctionService {
 
     // Lấy tất cả phiên đấu giá và cập nhật trạng thái nếu cần
     public List<Auction> getAllAuctions() {
+        syncWithDatabase(); // Luôn đồng bộ với DB trước khi trả về cho Client
+        System.out.println("🔍 [QUERY] Sync completed. Client requested all auctions. Total: " + auctions.size());
         for (Auction auction : auctions.values()) {
             auction.updateStatus();
         }
         return new ArrayList<>(auctions.values());
+    }
+
+    /**
+     * Đồng bộ hóa dữ liệu từ Database vào RAM. 
+     * Giúp nhiều Server chạy song song vẫn nhìn thấy dữ liệu của nhau.
+     */
+    private void syncWithDatabase() {
+        try (Connection conn = DatabaseConfig.getDataSource().getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(
+                     "SELECT id, current_price, auction_status, auction_id FROM items WHERE auction_id IS NOT NULL")) {
+
+            while (rs.next()) {
+                String auctionId = rs.getString("auction_id");
+                BigDecimal dbPrice = rs.getBigDecimal("current_price");
+                String dbStatus = rs.getString("auction_status");
+
+                if (auctions.containsKey(auctionId)) {
+                    // Nếu đã có trong RAM, cập nhật giá và trạng thái mới nhất từ DB
+                    Auction auction = auctions.get(auctionId);
+                    if (dbPrice != null && dbPrice.compareTo(auction.getCurrentPrice()) > 0) {
+                        auction.setCurrentPriceForDBRestore(dbPrice);
+                    }
+                    if (dbStatus != null) {
+                        auction.setStatusForDBRestore(AuctionStatus.valueOf(dbStatus));
+                    }
+                } else {
+                    // Nếu chưa có trong RAM (do Server khác tạo), tiến hành nạp mới hoàn toàn
+                    loadSingleAuctionFromDB(conn, auctionId);
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("Error during DB sync: " + e.getMessage());
+        }
+    }
+
+    private void loadSingleAuctionFromDB(Connection conn, String targetAuctionId) {
+        String sql = "SELECT id, seller_id, base_price, current_price, auction_status, " +
+                     "start_time, end_time, winner_id, auction_id " +
+                     "FROM items WHERE auction_id = ?";
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, targetAuctionId);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    int itemId = rs.getInt("id");
+                    int sellerId = rs.getInt("seller_id");
+                    BigDecimal startPrice = rs.getBigDecimal("base_price");
+                    BigDecimal currentPrice = rs.getBigDecimal("current_price");
+                    String statusStr = rs.getString("auction_status");
+                    Instant startTime = rs.getTimestamp("start_time").toInstant();
+                    Instant endTime = rs.getTimestamp("end_time").toInstant();
+
+                    Item item = loadItemFromDatabase(conn, itemId);
+                    User seller = userService.getUser(getUsernameFromId(conn, sellerId));
+
+                    if (item != null && seller instanceof Seller) {
+                        Auction auction = new Auction(targetAuctionId, item, startPrice, (Seller) seller, startTime, endTime);
+                        auction.setFinishCallback(a -> finalizeAuction(a));
+                        auction.setBanChecker(username -> userService.isUserBanned(username));
+                        
+                        if (currentPrice != null && currentPrice.compareTo(startPrice) > 0) {
+                            auction.setCurrentPriceForDBRestore(currentPrice);
+                        }
+                        auction.setStatusForDBRestore(AuctionStatus.valueOf(statusStr));
+                        
+                        // Load bid history & auto-bids
+                        loadBidHistoryForAuction(conn, auction, userService);
+                        loadAutoBidsForAuction(conn, auction, userService);
+
+                        auctions.put(targetAuctionId, auction);
+                        System.out.println("🆕 [SYNC] Loaded new auction from DB: " + targetAuctionId);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("Error loading single auction during sync: " + e.getMessage());
+        }
     }
 
     // Thanh toán tiền đấu giá khi phiên đấu giá kết thúc. Được gọi bởi Auction.finishCallback.
