@@ -162,7 +162,7 @@ public class AuctionService {
                         item.setMinIncrement(minIncrement);
                     } else {
                         // Mặc định nếu min_increment bị thiếu
-                        item.setMinIncrement(new BigDecimal("10000"));
+                        throw new RuntimeException("min_increment is null for item " + itemId);
                     }
                     item.setDbId(itemId);
                 }

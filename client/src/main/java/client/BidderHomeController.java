@@ -26,6 +26,12 @@ import shared.models.Auction;
 import shared.network.Request;
 import shared.network.Response;
 import shared.utils.GsonUtils;
+import shared.models.Item;
+import shared.models.Electronic;
+import shared.models.Vehicle;
+import shared.models.Art;
+import shared.models.Fashion;
+import shared.models.Collectible;
 
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -40,6 +46,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
+import shared.enums.BankList;
 
 public class BidderHomeController {
     @FXML
@@ -61,12 +68,6 @@ public class BidderHomeController {
 
     private Consumer<String> messageListener;
     private final ObservableList<Auction> allAuctions = FXCollections.observableArrayList();
-
-    private static final List<String> BANK_NAMES = Arrays.asList(
-            "Vietcombank", "Techcombank", "BIDV", "Agribank", "VPBank",
-            "MBBank", "ACB", "Sacombank", "Eximbank", "HDBank",
-            "TPBank", "VIB", "SeABank", "SHB", "OCB",
-            "MSB", "LienVietPostBank", "BacABank", "VietBank", "PVcomBank");
 
     @FXML
     public void initialize() {
@@ -185,7 +186,7 @@ public class BidderHomeController {
             imageView.setImage(new Image(auction.getItem().getImageUrl(), 150, 150, true, true));
         }
         nameLabel.setText(auction.getItem().getName());
-        priceLabel.setText("Current Bid: " + auction.getCurrentPrice() + " VND");
+        priceLabel.setText("Current Bid: " + auction.getCurrentPrice() + "$");
         statusLabel.setText(auction.getStatus().toString());
         startsAtLabel.setText("Starts: " + formatEndTime(auction.getStartTime()));
         endsInLabel.setText("Ends: " + formatEndTime(auction.getEndTime()));
@@ -245,6 +246,43 @@ public class BidderHomeController {
         detailsGrid.add(new Label(formatEndTime(auction.getEndTime())), 1, rowIndex++);
         detailsGrid.add(new Label("Status:"), 0, rowIndex);
         detailsGrid.add(new Label(auction.getStatus().toString()), 1, rowIndex++);
+        detailsGrid.add(new Label("Seller:"), 0, rowIndex);
+        detailsGrid.add(new Label(auction.getSeller().getUsername()), 1, rowIndex++);
+
+        Item item = auction.getItem();
+        if (item instanceof Electronic) {
+            Electronic electronic = (Electronic) item;
+            detailsGrid.add(new Label("Brand:"), 0, rowIndex);
+            detailsGrid.add(new Label(electronic.getBrand()), 1, rowIndex++);
+            detailsGrid.add(new Label("Item Status:"), 0, rowIndex);
+            detailsGrid.add(new Label(electronic.getStatus().toString()), 1, rowIndex++);
+        } else if (item instanceof Vehicle) {
+            Vehicle vehicle = (Vehicle) item;
+            detailsGrid.add(new Label("Brand:"), 0, rowIndex);
+            detailsGrid.add(new Label(vehicle.getBrand()), 1, rowIndex++);
+            detailsGrid.add(new Label("Model Year:"), 0, rowIndex);
+            detailsGrid.add(new Label(String.valueOf(vehicle.getModel())), 1, rowIndex++);
+            detailsGrid.add(new Label("KM Traveled:"), 0, rowIndex);
+            detailsGrid.add(new Label(String.valueOf(vehicle.getKMTravel())), 1, rowIndex++);
+        } else if (item instanceof Art) {
+            Art art = (Art) item;
+            detailsGrid.add(new Label("Artist:"), 0, rowIndex);
+            detailsGrid.add(new Label(art.getArtist()), 1, rowIndex++);
+            detailsGrid.add(new Label("Year Created:"), 0, rowIndex);
+            detailsGrid.add(new Label(String.valueOf(art.getYearCreated())), 1, rowIndex++);
+            detailsGrid.add(new Label("Original:"), 0, rowIndex);
+            detailsGrid.add(new Label(art.getIsOriginal() ? "Yes" : "No"), 1, rowIndex++);
+        } else if (item instanceof Fashion) {
+            Fashion fashion = (Fashion) item;
+            detailsGrid.add(new Label("Brand:"), 0, rowIndex);
+            detailsGrid.add(new Label(fashion.getBrand()), 1, rowIndex++);
+            detailsGrid.add(new Label("Item Status:"), 0, rowIndex);
+            detailsGrid.add(new Label(fashion.getStatus().toString()), 1, rowIndex++);
+        } else if (item instanceof Collectible) {
+            Collectible collectible = (Collectible) item;
+            detailsGrid.add(new Label("Year Created:"), 0, rowIndex);
+            detailsGrid.add(new Label(String.valueOf(collectible.getYearCreated())), 1, rowIndex++);
+        }
 
         // Action buttons
         HBox actionBox = new HBox(10);
@@ -301,11 +339,11 @@ public class BidderHomeController {
         amountField.setPromptText("Enter amount");
         amountField.getStyleClass().add("dashboard-input");
 
-        ComboBox<String> bankNameComboBox = new ComboBox<>();
+        ComboBox<BankList> bankNameComboBox = new ComboBox<>();
         bankNameComboBox.setPromptText("Select bank name");
         bankNameComboBox.setEditable(true);
         bankNameComboBox.getStyleClass().add("dashboard-choicebox");
-        ObservableList<String> bankOptions = FXCollections.observableArrayList(BANK_NAMES);
+        ObservableList<BankList> bankOptions = FXCollections.observableArrayList(BankList.values());
         bankNameComboBox.setItems(bankOptions);
 
         // Autocomplete filter for the ComboBox
@@ -313,8 +351,8 @@ public class BidderHomeController {
             if (newText == null || newText.isEmpty()) {
                 bankNameComboBox.setItems(bankOptions);
             } else {
-                List<String> filteredList = BANK_NAMES.stream()
-                        .filter(s -> s.toLowerCase().contains(newText.toLowerCase()))
+                List<BankList> filteredList = Arrays.stream(BankList.values())
+                        .filter(s -> s.name().toLowerCase().contains(newText.toLowerCase()))
                         .collect(Collectors.toList());
                 bankNameComboBox.setItems(FXCollections.observableArrayList(filteredList));
                 bankNameComboBox.show();
@@ -344,9 +382,12 @@ public class BidderHomeController {
         // Convert the result to a string array
         dialog.setResultConverter(buttonType -> {
             if (buttonType == ButtonType.OK) {
-                String selectedBank = bankNameComboBox.getSelectionModel().getSelectedItem();
-                if (selectedBank == null && !bankNameComboBox.getEditor().getText().isEmpty()) {
-                    selectedBank = bankNameComboBox.getEditor().getText();
+                Object value = bankNameComboBox.getValue();
+                String selectedBank = "";
+                if (value instanceof BankList) {
+                    selectedBank = ((BankList) value).name();
+                } else if (value != null) {
+                    selectedBank = value.toString();
                 }
                 return amountField.getText() + "," + selectedBank + "," + accountNumberField.getText();
             }
@@ -404,19 +445,19 @@ public class BidderHomeController {
         amountField.setPromptText("Enter amount");
         amountField.getStyleClass().add("dashboard-input");
 
-        ComboBox<String> bankNameComboBox = new ComboBox<>();
+        ComboBox<BankList> bankNameComboBox = new ComboBox<>();
         bankNameComboBox.setPromptText("Select bank name");
         bankNameComboBox.setEditable(true);
         bankNameComboBox.getStyleClass().add("dashboard-choicebox");
-        ObservableList<String> bankOptions = FXCollections.observableArrayList(BANK_NAMES);
+        ObservableList<BankList> bankOptions = FXCollections.observableArrayList(BankList.values());
         bankNameComboBox.setItems(bankOptions);
 
         bankNameComboBox.getEditor().textProperty().addListener((obs, oldText, newText) -> {
             if (newText == null || newText.isEmpty()) {
                 bankNameComboBox.setItems(bankOptions);
             } else {
-                List<String> filteredList = BANK_NAMES.stream()
-                        .filter(s -> s.toLowerCase().contains(newText.toLowerCase()))
+                List<BankList> filteredList = Arrays.stream(BankList.values())
+                        .filter(s -> s.name().toLowerCase().contains(newText.toLowerCase()))
                         .collect(Collectors.toList());
                 bankNameComboBox.setItems(FXCollections.observableArrayList(filteredList));
             }
@@ -440,9 +481,12 @@ public class BidderHomeController {
 
         dialog.setResultConverter(buttonType -> {
             if (buttonType == ButtonType.OK) {
-                String selectedBank = bankNameComboBox.getSelectionModel().getSelectedItem();
-                if (selectedBank == null && !bankNameComboBox.getEditor().getText().isEmpty()) {
-                    selectedBank = bankNameComboBox.getEditor().getText();
+                Object value = bankNameComboBox.getValue();
+                String selectedBank = "";
+                if (value instanceof BankList) {
+                    selectedBank = ((BankList) value).name();
+                } else if (value != null) {
+                    selectedBank = value.toString();
                 }
                 return amountField.getText() + "," + selectedBank + "," + accountNumberField.getText();
             }

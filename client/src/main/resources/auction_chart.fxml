@@ -29,7 +29,7 @@
                 <CategoryAxis label="Time of Bid"/>
             </xAxis>
             <yAxis>
-                <NumberAxis label="Price (VND)"/>
+                <NumberAxis label="Price ($)"/>
             </yAxis>
         </LineChart>
     </VBox>

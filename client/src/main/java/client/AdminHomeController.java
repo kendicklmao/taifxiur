@@ -17,6 +17,12 @@ import shared.models.User;
 import shared.network.Request;
 import shared.network.Response;
 import shared.utils.GsonUtils;
+import shared.models.Item;
+import shared.models.Electronic;
+import shared.models.Vehicle;
+import shared.models.Art;
+import shared.models.Fashion;
+import shared.models.Collectible;
 
 import java.lang.reflect.Type;
 import java.util.HashMap;
@@ -127,6 +133,43 @@ public class AdminHomeController {
         detailsGrid.add(new Label(formatTime(auction.getEndTime())), 1, rowIndex++);
         detailsGrid.add(new Label("Status:"), 0, rowIndex);
         detailsGrid.add(new Label(auction.getStatus().toString()), 1, rowIndex++);
+        detailsGrid.add(new Label("Seller:"), 0, rowIndex);
+        detailsGrid.add(new Label(auction.getSeller().getUsername()), 1, rowIndex++);
+
+        Item item = auction.getItem();
+        if (item instanceof Electronic) {
+            Electronic electronic = (Electronic) item;
+            detailsGrid.add(new Label("Brand:"), 0, rowIndex);
+            detailsGrid.add(new Label(electronic.getBrand()), 1, rowIndex++);
+            detailsGrid.add(new Label("Item Status:"), 0, rowIndex);
+            detailsGrid.add(new Label(electronic.getStatus().toString()), 1, rowIndex++);
+        } else if (item instanceof Vehicle) {
+            Vehicle vehicle = (Vehicle) item;
+            detailsGrid.add(new Label("Brand:"), 0, rowIndex);
+            detailsGrid.add(new Label(vehicle.getBrand()), 1, rowIndex++);
+            detailsGrid.add(new Label("Model Year:"), 0, rowIndex);
+            detailsGrid.add(new Label(String.valueOf(vehicle.getModel())), 1, rowIndex++);
+            detailsGrid.add(new Label("KM Traveled:"), 0, rowIndex);
+            detailsGrid.add(new Label(String.valueOf(vehicle.getKMTravel())), 1, rowIndex++);
+        } else if (item instanceof Art) {
+            Art art = (Art) item;
+            detailsGrid.add(new Label("Artist:"), 0, rowIndex);
+            detailsGrid.add(new Label(art.getArtist()), 1, rowIndex++);
+            detailsGrid.add(new Label("Year Created:"), 0, rowIndex);
+            detailsGrid.add(new Label(String.valueOf(art.getYearCreated())), 1, rowIndex++);
+            detailsGrid.add(new Label("Original:"), 0, rowIndex);
+            detailsGrid.add(new Label(art.getIsOriginal() ? "Yes" : "No"), 1, rowIndex++);
+        } else if (item instanceof Fashion) {
+            Fashion fashion = (Fashion) item;
+            detailsGrid.add(new Label("Brand:"), 0, rowIndex);
+            detailsGrid.add(new Label(fashion.getBrand()), 1, rowIndex++);
+            detailsGrid.add(new Label("Item Status:"), 0, rowIndex);
+            detailsGrid.add(new Label(fashion.getStatus().toString()), 1, rowIndex++);
+        } else if (item instanceof Collectible) {
+            Collectible collectible = (Collectible) item;
+            detailsGrid.add(new Label("Year Created:"), 0, rowIndex);
+            detailsGrid.add(new Label(String.valueOf(collectible.getYearCreated())), 1, rowIndex++);
+        }
 
         Button terminateButton = new Button("Terminate Auction");
         terminateButton.getStyleClass().add("dashboard-btn-logout");
@@ -184,7 +227,7 @@ public class AdminHomeController {
                             "📦 " + item.getItem().getName() +
                                     " | ID: " + item.getId().substring(0, 8) + "..." +
                                     " | Seller: " + item.getSeller().getUsername() +
-                                    " | Price: " + item.getCurrentPrice() +
+                                    " | Price: $" + item.getCurrentPrice() +
                                     " | Status: " + item.getStatus() +
                                     " | Start: " + formatTime(item.getStartTime()) +
                                     " | End: " + formatTime(item.getEndTime())

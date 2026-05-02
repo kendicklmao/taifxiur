@@ -84,7 +84,7 @@ public abstract class Item implements Serializable {
 
     public void setMinIncrement(BigDecimal minIncrement) {
         if (minIncrement != null && minIncrement.compareTo(BigDecimal.ZERO) <= 0) {
-            this.minIncrement = new BigDecimal("1000"); // Mặc định 1000 nếu số không hợp lệ
+            throw new IllegalArgumentException("Min increment must be greater than zero");
         } else {
             this.minIncrement = minIncrement;
         }

@@ -15,6 +15,12 @@ import org.imgscalr.Scalr;
 import shared.models.Auction;
 import shared.network.Request;
 import shared.network.Response;
+import shared.models.Item;
+import shared.models.Electronic;
+import shared.models.Vehicle;
+import shared.models.Art;
+import shared.models.Fashion;
+import shared.models.Collectible;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
@@ -43,6 +49,7 @@ import com.google.gson.reflect.TypeToken;
 import shared.enums.Category;
 import shared.enums.ItemStatus;
 import shared.utils.GsonUtils;
+import shared.enums.BankList;
 
 public class SellerHomeController {
 
@@ -93,11 +100,6 @@ public class SellerHomeController {
     private final AppContext ctx = AppContext.getInstance();
     private final IAlertService alertService = new AlertServiceImpl();
     private Consumer<String> messageListener;
-    private static final List<String> BANK_NAMES = Arrays.asList(
-            "Vietcombank", "Techcombank", "BIDV", "Agribank", "VPBank",
-            "MBBank", "ACB", "Sacombank", "Eximbank", "HDBank",
-            "TPBank", "VIB", "SeABank", "SHB", "OCB",
-            "MSB", "LienVietPostBank", "BacABank", "VietBank", "PVcomBank");
 
     @FXML
     public void initialize() {
@@ -226,7 +228,7 @@ public class SellerHomeController {
             imageView.setImage(new Image(auction.getItem().getImageUrl(), 150, 150, true, true));
         }
         nameLabel.setText(auction.getItem().getName());
-        priceLabel.setText("Current Price: " + auction.getCurrentPrice());
+        priceLabel.setText("Current Price: " + auction.getCurrentPrice() + "$");
         statusLabel.setText("Status: " + auction.getStatus());
         startsAtLabel.setText("Starts: " + formatTime(auction.getStartTime()));
         endsAtLabel.setText("Ends: " + formatTime(auction.getEndTime()));
@@ -286,6 +288,43 @@ public class SellerHomeController {
         detailsGrid.add(new Label(formatTime(auction.getEndTime())), 1, rowIndex++);
         detailsGrid.add(new Label("Status:"), 0, rowIndex);
         detailsGrid.add(new Label(auction.getStatus().toString()), 1, rowIndex++);
+        detailsGrid.add(new Label("Seller:"), 0, rowIndex);
+        detailsGrid.add(new Label(auction.getSeller().getUsername()), 1, rowIndex++);
+
+        Item item = auction.getItem();
+        if (item instanceof Electronic) {
+            Electronic electronic = (Electronic) item;
+            detailsGrid.add(new Label("Brand:"), 0, rowIndex);
+            detailsGrid.add(new Label(electronic.getBrand()), 1, rowIndex++);
+            detailsGrid.add(new Label("Item Status:"), 0, rowIndex);
+            detailsGrid.add(new Label(electronic.getStatus().toString()), 1, rowIndex++);
+        } else if (item instanceof Vehicle) {
+            Vehicle vehicle = (Vehicle) item;
+            detailsGrid.add(new Label("Brand:"), 0, rowIndex);
+            detailsGrid.add(new Label(vehicle.getBrand()), 1, rowIndex++);
+            detailsGrid.add(new Label("Model Year:"), 0, rowIndex);
+            detailsGrid.add(new Label(String.valueOf(vehicle.getModel())), 1, rowIndex++);
+            detailsGrid.add(new Label("KM Traveled:"), 0, rowIndex);
+            detailsGrid.add(new Label(String.valueOf(vehicle.getKMTravel())), 1, rowIndex++);
+        } else if (item instanceof Art) {
+            Art art = (Art) item;
+            detailsGrid.add(new Label("Artist:"), 0, rowIndex);
+            detailsGrid.add(new Label(art.getArtist()), 1, rowIndex++);
+            detailsGrid.add(new Label("Year Created:"), 0, rowIndex);
+            detailsGrid.add(new Label(String.valueOf(art.getYearCreated())), 1, rowIndex++);
+            detailsGrid.add(new Label("Original:"), 0, rowIndex);
+            detailsGrid.add(new Label(art.getIsOriginal() ? "Yes" : "No"), 1, rowIndex++);
+        } else if (item instanceof Fashion) {
+            Fashion fashion = (Fashion) item;
+            detailsGrid.add(new Label("Brand:"), 0, rowIndex);
+            detailsGrid.add(new Label(fashion.getBrand()), 1, rowIndex++);
+            detailsGrid.add(new Label("Item Status:"), 0, rowIndex);
+            detailsGrid.add(new Label(fashion.getStatus().toString()), 1, rowIndex++);
+        } else if (item instanceof Collectible) {
+            Collectible collectible = (Collectible) item;
+            detailsGrid.add(new Label("Year Created:"), 0, rowIndex);
+            detailsGrid.add(new Label(String.valueOf(collectible.getYearCreated())), 1, rowIndex++);
+        }
 
         Button terminateButton = new Button("Terminate Auction");
         terminateButton.getStyleClass().add("dashboard-btn-logout");
@@ -692,19 +731,19 @@ public class SellerHomeController {
         amountField.setPromptText("Enter amount");
         amountField.getStyleClass().add("dashboard-input");
 
-        ComboBox<String> bankNameComboBox = new ComboBox<>();
+        ComboBox<BankList> bankNameComboBox = new ComboBox<>();
         bankNameComboBox.setPromptText("Select bank name");
         bankNameComboBox.setEditable(true);
         bankNameComboBox.getStyleClass().add("dashboard-choicebox");
-        ObservableList<String> bankOptions = FXCollections.observableArrayList(BANK_NAMES);
+        ObservableList<BankList> bankOptions = FXCollections.observableArrayList(BankList.values());
         bankNameComboBox.setItems(bankOptions);
 
         bankNameComboBox.getEditor().textProperty().addListener((obs, oldText, newText) -> {
             if (newText == null || newText.isEmpty()) {
                 bankNameComboBox.setItems(bankOptions);
             } else {
-                List<String> filteredList = BANK_NAMES.stream()
-                        .filter(s -> s.toLowerCase().contains(newText.toLowerCase()))
+                List<BankList> filteredList = Arrays.stream(BankList.values())
+                        .filter(s -> s.name().toLowerCase().contains(newText.toLowerCase()))
                         .collect(Collectors.toList());
                 bankNameComboBox.setItems(FXCollections.observableArrayList(filteredList));
             }
@@ -727,11 +766,14 @@ public class SellerHomeController {
 
         dialog.setResultConverter(buttonType -> {
             if (buttonType == ButtonType.OK) {
-                String selectedBank = bankNameComboBox.getSelectionModel().getSelectedItem();
-                if (selectedBank == null && !bankNameComboBox.getEditor().getText().isEmpty()) {
-                    selectedBank = bankNameComboBox.getEditor().getText();
+                Object value = bankNameComboBox.getValue();
+                String bankName = "";
+                if (value instanceof BankList) {
+                    bankName = ((BankList) value).name();
+                } else if (value != null) {
+                    bankName = value.toString();
                 }
-                return amountField.getText() + "," + selectedBank + "," + accountNumberField.getText();
+                return amountField.getText() + "," + bankName + "," + accountNumberField.getText();
             }
             return null;
         });
