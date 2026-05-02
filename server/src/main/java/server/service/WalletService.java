@@ -51,25 +51,20 @@ public class WalletService {
         bidderUsername = Validator.normalizeAndLowercase(bidderUsername);
 
         try (Connection conn = DatabaseConfig.getDataSource().getConnection();
-                PreparedStatement pstmt = conn.prepareStatement(
-                        """
-                                INSERT INTO deposit_requests (id, bidder_id, amount, status, bank_name, account_number, created_at, updated_at)
-                                VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-                                """)) {
+             PreparedStatement pstmt = conn.prepareStatement(
+                     "INSERT INTO deposit_requests (id, bidder_id, amount, bank_name, account_number, status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)")) {
 
             Integer bidderId = getUserIdByUsernameAndRole(conn, bidderUsername, "BIDDER");
             if (bidderId == null) {
                 return "Bidder not found";
             }
 
-            ensureWalletExists(conn, bidderId);
-
             pstmt.setString(1, UUID.randomUUID().toString());
             pstmt.setInt(2, bidderId);
             pstmt.setBigDecimal(3, amount);
-            pstmt.setString(4, RequestStatus.PENDING.name());
-            pstmt.setString(5, bankName);
-            pstmt.setString(6, accountNumber);
+            pstmt.setString(4, bankName);
+            pstmt.setString(5, accountNumber);
+            pstmt.setString(6, RequestStatus.PENDING.name());
             pstmt.executeUpdate();
             return null;
         } catch (SQLException e) {
