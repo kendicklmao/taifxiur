@@ -19,7 +19,11 @@ public class UserService {
     private static final ConcurrentHashMap<String, Boolean> loggedIn = new ConcurrentHashMap<>(); // Lưu trạng thái đăng nhập
     private static final int MAX_ATTEMPTS = 5; // Số lượt đăng nhập thất bại tối đa
     private static final long BASE_LOCK_SECONDS = 2; // Số giây cơ sở để vô hiệu hóa nếu đăng nhập thất bại
-    private static final WalletService walletService = new WalletService();
+    private WalletService walletService;
+
+    public void setWalletService(WalletService walletService) {
+        this.walletService = walletService;
+    }
 
     // Khởi tạo người dùng mặc định trong cơ sở dữ liệu
     public UserService() {

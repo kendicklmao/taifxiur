@@ -1,9 +1,8 @@
 package server.service;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.*;
 import server.database.DatabaseConfig;
+import server.database.DatabaseInitializer;
 import shared.enums.Role;
 
 import static org.junit.Assert.assertEquals;
@@ -11,17 +10,41 @@ import static org.junit.Assert.assertNotNull;
 
 public class UserServiceTest {
 
-    private UserService userService;
+    private static UserService userService;
+    private static WalletService walletService;
+
+    @BeforeClass
+    public static void setUpClass() throws Exception {
+        DatabaseInitializer.initializeDatabase();
+        userService = new UserService();
+        walletService = new WalletService(userService);
+        userService.setWalletService(walletService);
+    }
 
     @Before
     public void setUp() {
-        userService = new UserService();
+        cleanupDatabase();
         userService.initializeDefaultUsers();
     }
 
     @After
     public void tearDown() {
+        cleanupDatabase();
+    }
+
+    @AfterClass
+    public static void tearDownClass() {
         DatabaseConfig.closeDataSource();
+    }
+
+    private void cleanupDatabase() {
+        try (java.sql.Connection conn = DatabaseConfig.getDataSource().getConnection();
+             java.sql.Statement stmt = conn.createStatement()) {
+            stmt.executeUpdate("DELETE FROM wallets");
+            stmt.executeUpdate("DELETE FROM users");
+        } catch (java.sql.SQLException e) {
+            e.printStackTrace();
+        }
     }
 
     @Test

@@ -16,6 +16,12 @@ import java.util.Map;
 import java.util.UUID;
 
 public class WalletService {
+    private final UserService userService;
+
+    public WalletService(UserService userService) {
+        this.userService = userService;
+    }
+
     public BigDecimal getWalletBalance(String username) {
         if (!Validator.isValidUsername(username)) {
             return null;
@@ -37,8 +43,8 @@ public class WalletService {
         }
     }
 
-    public String createDepositRequest(String bidderUsername, BigDecimal amount, String bankName, String accountNumber) {
-        if (!Validator.isValidUsername(bidderUsername)) {
+    public String createDepositRequest(String username, BigDecimal amount, String bankName, String accountNumber) {
+        if (!Validator.isValidUsername(username)) {
             return "Invalid username";
         }
         if (!isPositiveAmount(amount)) {
@@ -48,19 +54,20 @@ public class WalletService {
             return "Bank name and account number are required";
         }
 
-        bidderUsername = Validator.normalizeAndLowercase(bidderUsername);
+        username = Validator.normalizeAndLowercase(username);
 
         try (Connection conn = DatabaseConfig.getDataSource().getConnection();
              PreparedStatement pstmt = conn.prepareStatement(
                      "INSERT INTO deposit_requests (id, bidder_id, amount, bank_name, account_number, status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)")) {
 
-            Integer bidderId = getUserIdByUsernameAndRole(conn, bidderUsername, "BIDDER");
-            if (bidderId == null) {
-                return "Bidder not found";
+            // Sửa lỗi: Cho phép bất kỳ người dùng nào cũng có thể nạp tiền
+            Integer userId = getUserIdByUsername(conn, username);
+            if (userId == null) {
+                return "User not found";
             }
 
             pstmt.setString(1, UUID.randomUUID().toString());
-            pstmt.setInt(2, bidderId);
+            pstmt.setInt(2, userId);
             pstmt.setBigDecimal(3, amount);
             pstmt.setString(4, bankName);
             pstmt.setString(5, accountNumber);

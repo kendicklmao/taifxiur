@@ -16,7 +16,8 @@ public class BannedPaymentTest {
     @Before
     public void setUp() {
         userService = new UserService();
-        walletService = new WalletService();
+        walletService = new WalletService(userService);
+        userService.setWalletService(walletService);
         userService.initializeDefaultUsers();
     }
 
@@ -36,7 +37,7 @@ public class BannedPaymentTest {
         userService.register(seller, "Pass@123", seller + "@test.com", "q", "a", "q", "a", Role.SELLER);
 
         // 2. Deposit money into the bidder's wallet
-        walletService.createDepositRequest(bidder, new BigDecimal("1000"));
+        walletService.createDepositRequest(bidder, new BigDecimal("1000"), "Test Bank", "12345");
 
         // Get the ID of the request just created to approve it
         String requestId = walletService.getPendingDepositRequests().stream()

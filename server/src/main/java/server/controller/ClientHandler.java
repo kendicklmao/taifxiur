@@ -5,6 +5,7 @@ import com.google.gson.Gson;
 import server.service.AuctionService;
 import server.service.StorageService;
 import server.service.UserService;
+import server.service.WalletService;
 import shared.utils.GsonUtils;
 import shared.enums.AuctionStatus;
 import shared.enums.ItemStatus;
@@ -38,20 +39,22 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public class ClientHandler implements Runnable {
     private static final List<ClientHandler> activeClients = new CopyOnWriteArrayList<>();
 
-    private static final AuctionService auctionService = new AuctionService();
-    private static final StorageService storageService = new StorageService();
-    private static final UserService userService = new UserService();
+    private final AuctionService auctionService;
+    private final StorageService storageService;
+    private final UserService userService;
+    private final WalletService walletService;
 
     private final Socket socket;
     private final Gson gson = GsonUtils.createGson();
     private PrintWriter out;
     private String loggedInUsername;
 
-    public ClientHandler(Socket socket) {
+    public ClientHandler(Socket socket, UserService userService, WalletService walletService, AuctionService auctionService, StorageService storageService) {
         this.socket = socket;
-    }
-
-    public static void initializeServices() {
+        this.userService = userService;
+        this.walletService = walletService;
+        this.auctionService = auctionService;
+        this.storageService = storageService;
     }
 
     @Override
@@ -244,9 +247,8 @@ public class ClientHandler implements Runnable {
                             broadcast(gson.toJson(updateResponse));
                             return new Response("SUCCESS", "Bid placed successfully");
                         } else {
-                            // Provide more detailed feedback to the client to aid debugging
-                            server.service.WalletService ws = new server.service.WalletService();
-                            BigDecimal balance = ws.getWalletBalance(pUsername);
+                            // Sửa lỗi: Sử dụng walletService đã được tiêm vào
+                            BigDecimal balance = this.walletService.getWalletBalance(pUsername);
                             // Log diagnostic info for debugging
                             System.out.println("PLACE_BID debug -> user=" + pUsername + " requested=" + pAmount
                                     + " balance=" + balance);

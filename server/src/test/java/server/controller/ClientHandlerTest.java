@@ -1,61 +1,98 @@
 package server.controller;
 
 import com.google.gson.Gson;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.*;
 import server.database.DatabaseConfig;
+import server.database.DatabaseInitializer;
+import server.service.AuctionService;
+import server.service.StorageService;
 import server.service.UserService;
+import server.service.WalletService;
 import shared.network.Request;
 import shared.network.Response;
 import shared.utils.GsonUtils;
 
 import java.io.*;
+import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.HashMap;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 public class ClientHandlerTest {
 
-    private ClientHandler clientHandler;
-    private Socket socket;
+    private static ServerSocket serverSocket;
+    private static Thread serverThread;
+    private static UserService userService;
+    private static WalletService walletService;
+    private static AuctionService auctionService;
+    private static StorageService storageService;
+
+    private Socket clientSocket;
+    private PrintWriter out;
+    private BufferedReader in;
     private Gson gson;
-    private PipedOutputStream clientOutput;
-    private ByteArrayOutputStream serverOutput;
-    private Thread clientHandlerThread;
+
+    @BeforeClass
+    public static void setUpClass() throws Exception {
+        DatabaseInitializer.initializeDatabase();
+        userService = new UserService();
+        walletService = new WalletService(userService);
+        auctionService = new AuctionService(userService, walletService);
+        storageService = new StorageService();
+        userService.setWalletService(walletService);
+
+        serverSocket = new ServerSocket(0); // Use a random free port
+        serverThread = new Thread(() -> {
+            try {
+                while (!Thread.currentThread().isInterrupted()) {
+                    Socket socket = serverSocket.accept();
+                    ClientHandler clientHandler = new ClientHandler(socket, userService, walletService, auctionService, storageService);
+                    new Thread(clientHandler).start();
+                }
+            } catch (IOException e) {
+                // Socket closed, which is expected
+            }
+        });
+        serverThread.start();
+    }
 
     @Before
     public void setUp() throws Exception {
-        socket = mock(Socket.class);
-        gson = GsonUtils.createGson();
-
-        clientOutput = new PipedOutputStream();
-        PipedInputStream serverInput = new PipedInputStream(clientOutput);
-        when(socket.getInputStream()).thenReturn(serverInput);
-
-        serverOutput = new ByteArrayOutputStream();
-        when(socket.getOutputStream()).thenReturn(serverOutput);
-
-        clientHandler = new ClientHandler(socket);
-
-        clientHandlerThread = new Thread(clientHandler);
-        clientHandlerThread.start();
-
-        UserService userService = new UserService();
+        cleanupDatabase();
         userService.initializeDefaultUsers();
+
+        clientSocket = new Socket("localhost", serverSocket.getLocalPort());
+        out = new PrintWriter(clientSocket.getOutputStream(), true);
+        in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+        gson = GsonUtils.createGson();
     }
 
     @After
     public void tearDown() throws IOException {
-        clientHandlerThread.interrupt();
-        clientOutput.close();
-        serverOutput.close();
+        cleanupDatabase();
+        if (clientSocket != null) clientSocket.close();
+    }
+
+    @AfterClass
+    public static void tearDownClass() throws IOException {
+        serverThread.interrupt();
+        serverSocket.close();
         DatabaseConfig.closeDataSource();
+    }
+
+    private void cleanupDatabase() {
+        try (java.sql.Connection conn = DatabaseConfig.getDataSource().getConnection();
+             java.sql.Statement stmt = conn.createStatement()) {
+            stmt.executeUpdate("DELETE FROM bids");
+            stmt.executeUpdate("DELETE FROM auto_bids");
+            stmt.executeUpdate("DELETE FROM items");
+            stmt.executeUpdate("DELETE FROM wallets");
+            stmt.executeUpdate("DELETE FROM users");
+        } catch (java.sql.SQLException e) {
+            e.printStackTrace();
+        }
     }
 
     @Test
@@ -64,14 +101,10 @@ public class ClientHandlerTest {
         data.put("username", "bidder");
         data.put("password", "Admin@123");
         Request request = new Request("LOGIN", data);
-        String requestJson = gson.toJson(request) + "\n";
+        String requestJson = gson.toJson(request);
 
-        clientOutput.write(requestJson.getBytes());
-        clientOutput.flush();
-
-        Thread.sleep(500);
-
-        String responseJson = serverOutput.toString().trim();
+        out.println(requestJson);
+        String responseJson = in.readLine();
         Response response = gson.fromJson(responseJson, Response.class);
 
         assertEquals("SUCCESS", response.getStatus());
@@ -84,14 +117,10 @@ public class ClientHandlerTest {
         data.put("username", "bidder");
         data.put("password", "WrongPassword");
         Request request = new Request("LOGIN", data);
-        String requestJson = gson.toJson(request) + "\n";
+        String requestJson = gson.toJson(request);
 
-        clientOutput.write(requestJson.getBytes());
-        clientOutput.flush();
-
-        Thread.sleep(500);
-
-        String responseJson = serverOutput.toString().trim();
+        out.println(requestJson);
+        String responseJson = in.readLine();
         Response response = gson.fromJson(responseJson, Response.class);
 
         assertEquals("FAIL", response.getStatus());
@@ -111,14 +140,10 @@ public class ClientHandlerTest {
         data.put("a2", "a");
         data.put("role", "BIDDER");
         Request request = new Request("REGISTER", data);
-        String requestJson = gson.toJson(request) + "\n";
+        String requestJson = gson.toJson(request);
 
-        clientOutput.write(requestJson.getBytes());
-        clientOutput.flush();
-
-        Thread.sleep(500);
-
-        String responseJson = serverOutput.toString().trim();
+        out.println(requestJson);
+        String responseJson = in.readLine();
         Response response = gson.fromJson(responseJson, Response.class);
 
         assertEquals("SUCCESS", response.getStatus());

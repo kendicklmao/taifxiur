@@ -3,7 +3,10 @@ package server;
 import server.controller.ClientHandler;
 import server.database.DatabaseConfig;
 import server.database.DatabaseInitializer;
+import server.service.AuctionService;
+import server.service.StorageService;
 import server.service.UserService;
+import server.service.WalletService;
 
 import java.io.IOException;
 import java.net.ServerSocket;
@@ -14,6 +17,12 @@ public class ServerApplication {
     // Port này để cho server listen và client connect vào
     private static final int PORT = 54321;
 
+    // Static services shared across all client handlers
+    private static UserService userService;
+    private static WalletService walletService;
+    private static AuctionService auctionService;
+    private static StorageService storageService;
+
     public static void main(String[] args) {
         // Đặt Java networking preferences để có IPv4/IPv6 tương thích hơn
         System.setProperty("java.net.preferIPv4Stack", "false");
@@ -23,8 +32,16 @@ public class ServerApplication {
         // Khởi tạo connection pool và schema cơ sở dữ liệu
         try {
             DatabaseInitializer.initializeDatabase();
-            // Khởi tạo user mặc định
-            UserService userService = new UserService();
+
+            // Khởi tạo services với dependency injection
+            userService = new UserService();
+            walletService = new WalletService(userService);
+            auctionService = new AuctionService(userService, walletService);
+            storageService = new StorageService();
+
+            // Break circular dependency
+            userService.setWalletService(walletService);
+
             userService.initializeDefaultUsers();
             
             System.out.println("Database initialization completed");
@@ -32,7 +49,6 @@ public class ServerApplication {
             // Khởi tạo trước AuctionService để tải tất cả các phiên đấu giá từ DB
             // Điều này ngăn client đầu tiên bị time out trong quá trình kết nối
             System.out.println("Loading auctions into memory...");
-            server.controller.ClientHandler.initializeServices();
             System.out.println("All services initialized.");
         } catch (Exception e) {
             System.err.println("Failed to initialize database: " + e.getMessage());
@@ -46,7 +62,7 @@ public class ServerApplication {
             while (true) {
                 Socket clientSocket = serverSocket.accept();
                 System.out.println("New client connected: " + clientSocket.getInetAddress());
-                new Thread(new ClientHandler(clientSocket)).start();
+                new Thread(new ClientHandler(clientSocket, userService, walletService, auctionService, storageService)).start();
             }
 
         } catch (IOException e) {
