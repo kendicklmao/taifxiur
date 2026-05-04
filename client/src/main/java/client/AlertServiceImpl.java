@@ -1,5 +1,6 @@
 package client;
 
+import javafx.application.Platform;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
@@ -13,11 +14,16 @@ import javafx.stage.Window;
 public class AlertServiceImpl implements IAlertService {
     @Override
     public void showAlert(String title, String message, Node ownerNode) {
+        Window ownerWindow = ownerNode != null ? ownerNode.getScene().getWindow() : null;
+        showAlert(title, message, ownerWindow);
+    }
+
+    @Override
+    public void showAlert(String title, String message, Window ownerWindow) {
         Dialog<Void> dialog = new Dialog<>();
 
         // Set the owner of the dialog so it appears on top
-        if (ownerNode != null) {
-            Window ownerWindow = ownerNode.getScene().getWindow();
+        if (ownerWindow != null) {
             dialog.initOwner(ownerWindow);
         }
 
@@ -56,22 +62,6 @@ public class AlertServiceImpl implements IAlertService {
         closeButton.setVisible(false);
         closeButton.setManaged(false);
 
-        // Manually center the dialog on its owner
-        dialog.setOnShown(e -> {
-            Window owner = dialog.getOwner();
-            if (owner != null) {
-                double ownerX = owner.getX();
-                double ownerY = owner.getY();
-                double ownerWidth = owner.getWidth();
-                double ownerHeight = owner.getHeight();
-
-                double dialogWidth = dialog.getWidth();
-                double dialogHeight = dialog.getHeight();
-
-                dialog.setX(ownerX + (ownerWidth - dialogWidth) / 2);
-                dialog.setY(ownerY + (ownerHeight - dialogHeight) / 2);
-            }
-        });
 
         dialog.showAndWait();
     }

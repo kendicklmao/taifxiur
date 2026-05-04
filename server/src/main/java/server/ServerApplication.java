@@ -11,6 +11,10 @@ import server.service.WalletService;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 
 public class ServerApplication {
 
@@ -42,7 +46,15 @@ public class ServerApplication {
             // Break circular dependency
             userService.setWalletService(walletService);
 
-            userService.initializeDefaultUsers();
+            try (Connection conn = DatabaseConfig.getDataSource().getConnection();
+                 PreparedStatement pstmt = conn.prepareStatement("SELECT 1 FROM users LIMIT 1")) {
+                ResultSet rs = pstmt.executeQuery();
+                if (!rs.next()) {
+                    userService.initializeDefaultUsers();
+                }
+            } catch (SQLException e) {
+                System.err.println("Error checking for existing users: " + e.getMessage());
+            }
             
             System.out.println("Database initialization completed");
             
