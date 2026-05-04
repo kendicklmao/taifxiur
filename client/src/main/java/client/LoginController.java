@@ -71,7 +71,7 @@ public class LoginController {
                 }
                 ctx.setCurrentUser(currentUser);
 
-                alertService.showAlert("Success", "Login successful with role: " + role, usernameField.getScene().getWindow());
+                alertService.showAlert("Success", "Login successful with role: " + role, usernameField);
                 if (role.equals("BIDDER")) {
                     navigator.switchScene("bidder_home.fxml");
                 } else if (role.equals("SELLER")) {
@@ -80,14 +80,14 @@ public class LoginController {
                     navigator.switchScene("admin_home.fxml");
                 }
             } else if ("ACCOUNT_DISABLED".equals(res.getStatus())) {
-                alertService.showAlert("Account Disabled", res.getMessage(), usernameField.getScene().getWindow());
+                alertService.showAlert("Account Disabled", res.getMessage(), usernameField);
                 disableLoginFor(60);
             } else {
-                alertService.showAlert("Error", res.getMessage(), usernameField.getScene().getWindow());
+                alertService.showAlert("Error", res.getMessage(), usernameField);
             }
 
         } catch (Exception e) {
-            alertService.showAlert("Error", "Cannot connect to Server!", usernameField.getScene().getWindow());
+            alertService.showAlert("Error", "Cannot connect to Server!", usernameField);
             e.printStackTrace();
         }
     }

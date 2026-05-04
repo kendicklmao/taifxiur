@@ -50,7 +50,7 @@ public class UserServiceTest {
     @Test
     public void testAdminCannotBanAdmin() {
         // Admin1 tries to ban Admin2
-        String result = userService.banUser("admin1", "admin");
+        String result = userService.banUser("admin", "admin");
         // Check that the result is the expected error message
         assertEquals("Cannot ban an administrator", result);
     }
@@ -71,6 +71,6 @@ public class UserServiceTest {
 
     @Test
     public void testLoginUser() {
-        assertNotNull(userService.login("bidder", "Admin@123"));
+        assertNotNull(userService.login("bidder", "Bidder@123"));
     }
 }

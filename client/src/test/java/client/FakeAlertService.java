@@ -1,6 +1,7 @@
 package client;
 
 import javafx.scene.Node;
+import javafx.stage.Window;
 
 public class FakeAlertService implements IAlertService {
     private String lastTitle;
@@ -9,6 +10,13 @@ public class FakeAlertService implements IAlertService {
 
     @Override
     public void showAlert(String title, String message, Node ownerNode) {
+        this.lastTitle = title;
+        this.lastMessage = message;
+        this.callCount++;
+    }
+
+    @Override
+    public void showAlert(String title, String message, Window ownerWindow) {
         this.lastTitle = title;
         this.lastMessage = message;
         this.callCount++;

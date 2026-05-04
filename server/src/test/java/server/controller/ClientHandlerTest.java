@@ -99,7 +99,7 @@ public class ClientHandlerTest {
     public void testLoginSuccess() throws Exception {
         Map<String, String> data = new HashMap<>();
         data.put("username", "bidder");
-        data.put("password", "Admin@123");
+        data.put("password", "Bidder@123");
         Request request = new Request("LOGIN", data);
         String requestJson = gson.toJson(request);
 

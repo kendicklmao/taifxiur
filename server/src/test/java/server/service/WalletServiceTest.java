@@ -49,8 +49,7 @@ public class WalletServiceTest {
             // Thứ tự xóa quan trọng nếu có ràng buộc khóa ngoại
             stmt.executeUpdate("DELETE FROM deposit_requests");
             stmt.executeUpdate("DELETE FROM withdraw_requests");
-            stmt.executeUpdate("DELETE FROM wallets");
-            stmt.executeUpdate("DELETE FROM users");
+            stmt.executeUpdate("UPDATE wallets SET balance = 0");
         } catch (java.sql.SQLException e) {
             e.printStackTrace();
         }

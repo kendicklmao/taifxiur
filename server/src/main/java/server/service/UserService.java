@@ -34,6 +34,12 @@ public class UserService {
             System.out.println("Initializing default admin user...");
             register("admin", "Admin@123", "admin@example.com", "What is your favorite color?", "Blue", "What is your pet's name?", "Buddy", Role.ADMIN);
         }
+        if (!exists("bidder")) {
+            register("bidder", "Bidder@123", "bidder@example.com", "q1", "a1", "q2", "a2", Role.BIDDER);
+        }
+        if (!exists("seller")) {
+            register("seller", "Seller@123", "seller@example.com", "q1", "a1", "q2", "a2", Role.SELLER);
+        }
     }
 
     // Đăng ký người dùng mới trong cơ sở dữ liệu
