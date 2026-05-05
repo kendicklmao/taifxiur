@@ -1,19 +1,19 @@
 package server.service;
 
-import org.junit.*;
+import org.junit.jupiter.api.*;
 import server.database.DatabaseConfig;
 import server.database.DatabaseInitializer;
 import shared.enums.Role;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 public class UserServiceTest {
 
     private static UserService userService;
     private static WalletService walletService;
 
-    @BeforeClass
+    @BeforeAll
     public static void setUpClass() throws Exception {
         DatabaseInitializer.initializeDatabase();
         userService = new UserService();
@@ -21,18 +21,18 @@ public class UserServiceTest {
         userService.setWalletService(walletService);
     }
 
-    @Before
+    @BeforeEach
     public void setUp() {
         cleanupDatabase();
         userService.initializeDefaultUsers();
     }
 
-    @After
+    @AfterEach
     public void tearDown() {
         cleanupDatabase();
     }
 
-    @AfterClass
+    @AfterAll
     public static void tearDownClass() {
         DatabaseConfig.closeDataSource();
     }

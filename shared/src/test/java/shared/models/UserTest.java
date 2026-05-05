@@ -1,9 +1,9 @@
 package shared.models;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import shared.enums.Role;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import java.math.BigDecimal;
 
 /**
@@ -14,7 +14,7 @@ public class UserTest {
     private Seller seller;
     private Admin admin;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         bidder = new Bidder("bidder_user", "Password@123", "bidder@test.com",
                             "What is your pet name?", "Fluffy",
@@ -202,7 +202,7 @@ public class UserTest {
     public void testVerifySecurityAnswersCorrect() {
         // Test with exact answers provided during construction
         boolean result = bidder.verifySecurityAnswers("Fluffy", "Jane");
-        assertTrue("Security answers should match", result);
+        assertTrue(result, "Security answers should match");
     }
 
     /**

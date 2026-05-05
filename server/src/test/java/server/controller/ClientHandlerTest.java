@@ -1,7 +1,7 @@
 package server.controller;
 
 import com.google.gson.Gson;
-import org.junit.*;
+import org.junit.jupiter.api.*;
 import server.database.DatabaseConfig;
 import server.database.DatabaseInitializer;
 import server.service.AuctionService;
@@ -18,7 +18,7 @@ import java.net.Socket;
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class ClientHandlerTest {
 
@@ -34,7 +34,7 @@ public class ClientHandlerTest {
     private BufferedReader in;
     private Gson gson;
 
-    @BeforeClass
+    @BeforeAll
     public static void setUpClass() throws Exception {
         DatabaseInitializer.initializeDatabase();
         userService = new UserService();
@@ -58,7 +58,7 @@ public class ClientHandlerTest {
         serverThread.start();
     }
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         cleanupDatabase();
         userService.initializeDefaultUsers();
@@ -69,13 +69,13 @@ public class ClientHandlerTest {
         gson = GsonUtils.createGson();
     }
 
-    @After
+    @AfterEach
     public void tearDown() throws IOException {
         cleanupDatabase();
         if (clientSocket != null) clientSocket.close();
     }
 
-    @AfterClass
+    @AfterAll
     public static void tearDownClass() throws IOException {
         serverThread.interrupt();
         serverSocket.close();

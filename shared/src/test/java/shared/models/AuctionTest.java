@@ -1,7 +1,7 @@
 package shared.models;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import shared.enums.AuctionStatus;
 import shared.enums.ItemStatus;
 
@@ -10,7 +10,7 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Unit tests for Auction class
@@ -22,7 +22,7 @@ public class AuctionTest {
     private Electronic item;
     private Auction auction;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         seller = new Seller("seller123", "Pass@123", "s@mail.com", "q", "a", "q", "a");
         bidder1 = new Bidder("bidder1", "Pass@123", "b1@mail.com", "q", "a", "q", "a");
