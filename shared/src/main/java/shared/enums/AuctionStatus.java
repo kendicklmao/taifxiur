@@ -1,6 +1,7 @@
 package shared.enums;
 
-public enum AuctionStatus { //các trạng thái của phiên giao dịch
+// Các trạng thái của phiên giao dịch
+public enum AuctionStatus {
     OPEN,
     RUNNING,
     FINISHED,
