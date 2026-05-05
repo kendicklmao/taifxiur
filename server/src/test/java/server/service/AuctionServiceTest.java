@@ -31,7 +31,7 @@ public class AuctionServiceTest {
         // để tránh lỗi "min_increment is null"
         cleanupDatabaseOnce(); 
         userService = new UserService();
-        walletService = new WalletService(userService);
+        walletService = new WalletService();
         auctionService = new AuctionService(userService, walletService);
         userService.setWalletService(walletService);
     }

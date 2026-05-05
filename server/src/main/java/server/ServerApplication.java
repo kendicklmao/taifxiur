@@ -39,7 +39,7 @@ public class ServerApplication {
 
             // Khởi tạo services với dependency injection
             userService = new UserService();
-            walletService = new WalletService(userService);
+            walletService = new WalletService();
             auctionService = new AuctionService(userService, walletService);
             storageService = new StorageService();
 

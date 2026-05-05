@@ -16,10 +16,7 @@ import java.util.Map;
 import java.util.UUID;
 
 public class WalletService {
-    private final UserService userService;
-
-    public WalletService(UserService userService) {
-        this.userService = userService;
+    public WalletService() {
     }
 
     public BigDecimal getWalletBalance(String username) {

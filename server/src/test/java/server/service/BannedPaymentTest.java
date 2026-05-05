@@ -16,7 +16,7 @@ public class BannedPaymentTest {
     @BeforeEach
     public void setUp() {
         userService = new UserService();
-        walletService = new WalletService(userService);
+        walletService = new WalletService();
         userService.setWalletService(walletService);
         userService.initializeDefaultUsers();
     }

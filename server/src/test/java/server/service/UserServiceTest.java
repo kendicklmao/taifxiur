@@ -17,7 +17,7 @@ public class UserServiceTest {
     public static void setUpClass() throws Exception {
         DatabaseInitializer.initializeDatabase();
         userService = new UserService();
-        walletService = new WalletService(userService);
+        walletService = new WalletService();
         userService.setWalletService(walletService);
     }
 

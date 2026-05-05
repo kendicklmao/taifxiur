@@ -38,7 +38,7 @@ public class ClientHandlerTest {
     public static void setUpClass() throws Exception {
         DatabaseInitializer.initializeDatabase();
         userService = new UserService();
-        walletService = new WalletService(userService);
+        walletService = new WalletService();
         auctionService = new AuctionService(userService, walletService);
         storageService = new StorageService();
         userService.setWalletService(walletService);

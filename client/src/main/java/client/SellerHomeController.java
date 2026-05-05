@@ -675,10 +675,6 @@ public class SellerHomeController {
         Navigator.switchSceneStatic("login.fxml");
     }
 
-    // ================= ALERT =================
-    private void showAlert(String title, String message) {
-        alertService.showAlert(title, message, welcomeLabel);
-    }
 
     private String formatTime(java.time.Instant instant) {
         if (instant == null)

@@ -542,52 +542,6 @@ public class BidderHomeController {
     }
 
 
-    private void showBidOptionsDialog(Auction auction) {
-        Dialog<String> dialog = new Dialog<>();
-        dialog.setTitle("Auction Options");
-        dialog.setHeaderText("Choose an action for: " + auction.getItem().getName());
-
-        // Apply custom dialog styling
-        dialog.getDialogPane().getStylesheets().add(getClass().getResource("/styles.css").toExternalForm());
-        dialog.getDialogPane().getStyleClass().add("my-dialog");
-
-        // Create buttons
-        ButtonType placeBidType = new ButtonType("Place Bid", ButtonBar.ButtonData.YES);
-        ButtonType autoBidType = new ButtonType("Auto Bid", ButtonBar.ButtonData.NO);
-        ButtonType viewChartType = new ButtonType("View Chart", ButtonBar.ButtonData.HELP_2);
-        ButtonType cancelType = new ButtonType("Cancel", ButtonBar.ButtonData.CANCEL_CLOSE);
-
-        // Add buttons based on auction status
-        dialog.getDialogPane().getButtonTypes().add(viewChartType);
-        if ("RUNNING".equals(auction.getStatus().toString())) {
-            dialog.getDialogPane().getButtonTypes().addAll(placeBidType, autoBidType);
-        }
-        dialog.getDialogPane().getButtonTypes().add(cancelType);
-
-
-        dialog.setResultConverter(dialogButton -> {
-            if (dialogButton == placeBidType) return "PLACE_BID";
-            if (dialogButton == autoBidType) return "AUTO_BID";
-            if (dialogButton == viewChartType) return "VIEW_CHART";
-            return null;
-        });
-
-        dialog.showAndWait().ifPresent(result -> {
-            if (result == null) return;
-            switch (result) {
-                case "PLACE_BID":
-                    showBidAmountDialog(auction, false);
-                    break;
-                case "AUTO_BID":
-                    showBidAmountDialog(auction, true);
-                    break;
-                case "VIEW_CHART":
-                    showPriceChart(auction);
-                    break;
-            }
-        });
-    }
-
     private void showPriceChart(Auction auction) {
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/auction_chart.fxml"));

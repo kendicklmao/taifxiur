@@ -6,7 +6,6 @@ import shared.enums.Category;
 import shared.enums.ItemStatus;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -16,13 +15,10 @@ import static org.junit.jupiter.api.Assertions.*;
 public class ItemTest {
     private Seller seller;
     private Electronic electronic;
-    private LocalDateTime fixedTime;
 
     @BeforeEach
     public void setUp() {
-        seller = new Seller("seller1", "Password@123", "seller@test.com",
-                "Q1", "A1", "Q2", "A2");
-        fixedTime = LocalDateTime.of(2024, 1, 1, 12, 0);
+        seller = new Seller("seller1", "Password@123", "seller@test.com", "Q1", "A1", "Q2", "A2");
         electronic = new Electronic("iPhone 15", "Latest iPhone model", seller, new BigDecimal("1000"), "Apple", ItemStatus.NEW);
         electronic.setMinIncrement(new BigDecimal("100000"));
     }
