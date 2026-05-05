@@ -1,6 +1,7 @@
 package shared.enums;
 
-public enum Category { //các loại mặt hàng
+// Các loại mặt hàng
+public enum Category {
     ELECTRONICS,
     FASHIONS,
     VEHICLES,

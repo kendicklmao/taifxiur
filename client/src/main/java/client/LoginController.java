@@ -80,8 +80,9 @@ public class LoginController {
                     navigator.switchScene("admin_home.fxml");
                 }
             } else if ("ACCOUNT_DISABLED".equals(res.getStatus())) {
-                alertService.showAlert("Account Disabled", res.getMessage(), usernameField);
-                disableLoginFor(60);
+                int seconds = Integer.parseInt(res.getMessage());
+                alertService.showAlert("Account Disabled", "Account is temporarily locked. Please try again in " + seconds + " seconds.", usernameField);
+                disableLoginFor(seconds);
             } else {
                 alertService.showAlert("Error", res.getMessage(), usernameField);
             }

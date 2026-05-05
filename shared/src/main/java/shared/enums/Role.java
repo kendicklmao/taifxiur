@@ -1,6 +1,7 @@
 package shared.enums;
 
-public enum Role {//các loại tài khoản
+// Các loại tài khoản
+public enum Role {
     BIDDER,
     SELLER,
     ADMIN

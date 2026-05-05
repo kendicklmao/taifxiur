@@ -1,5 +1,6 @@
 package shared.enums;
 
+// Danh sách ngân hàng
 public enum BankList {
     VIETCOMBANK,
     VIETINBANK,

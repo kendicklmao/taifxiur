@@ -4,7 +4,6 @@ import shared.enums.Category;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 
 // Lớp các mặt hàng
 public abstract class Item implements Serializable {

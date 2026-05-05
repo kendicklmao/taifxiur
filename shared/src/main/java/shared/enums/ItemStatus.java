@@ -1,6 +1,7 @@
 package shared.enums;
 
-public enum ItemStatus {// trạng thái của mặt hàng
+// Trạng thái của mặt hàng
+public enum ItemStatus {
     NEW,
     LIKENEW,
     USED

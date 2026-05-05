@@ -4,6 +4,8 @@ import com.google.gson.Gson;
 
 import server.service.AuctionService;
 import server.service.StorageService;
+import server.service.UserAlreadyLoggedInException;
+import server.service.UserLockedException;
 import server.service.UserService;
 import server.service.WalletService;
 import shared.utils.GsonUtils;
@@ -101,7 +103,7 @@ public class ClientHandler implements Runnable {
     }
 
     public static void broadcast(String message) {
-        for (ClientHandler client : activeClients) {
+        for (ClientHandler client: activeClients) {
             client.sendMessage(message);
         }
     }
@@ -112,6 +114,7 @@ public class ClientHandler implements Runnable {
             return new Response("FAIL", "Invalid action");
 
         switch (action) {
+            
             case "LOGIN":
                 String user = request.getData().get("username");
                 String pass = request.getData().get("password");
@@ -122,14 +125,15 @@ public class ClientHandler implements Runnable {
                     }
                     User loggedInUser = userService.login(user, pass);
                     if (loggedInUser != null) {
-                        this.loggedInUsername = loggedInUser.getUsername(); // Track logged in username
-                        return new Response("SUCCESS",
-                                loggedInUser.getRole().toString() + "," + loggedInUser.getUsername());
+                        this.loggedInUsername = loggedInUser.getUsername();
+                        return new Response("SUCCESS", loggedInUser.getRole().toString() + "," + loggedInUser.getUsername());
                     } else {
                         return new Response("FAIL", "Invalid username or password");
                     }
-                } catch (server.service.UserAlreadyLoggedInException e) {
+                } catch (UserAlreadyLoggedInException e) {
                     return new Response("FAIL", e.getMessage());
+                } catch (UserLockedException e) {
+                    return new Response("ACCOUNT_DISABLED", String.valueOf(e.getSecondsRemaining()));
                 }
 
             case "REGISTER":
@@ -149,8 +153,7 @@ public class ClientHandler implements Runnable {
                     return new Response("SUCCESS", "Registered successfully");
                 } else {
                     System.out.println("DEBUG: Registration failed for user: " + rUser);
-                    return new Response("FAIL",
-                            "Username is already taken or is invalid (check server logs for details)");
+                    return new Response("FAIL", "Username is already taken or is invalid (check server logs for details)");
                 }
 
             case "FORGOT_PASSWORD_INIT":

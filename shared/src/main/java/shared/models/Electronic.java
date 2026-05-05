@@ -5,8 +5,8 @@ import shared.enums.ItemStatus;
 
 import java.math.BigDecimal;
 
-
-public class Electronic extends Item { // Mặt hàng điện tử
+// Mặt hàng điện tử
+public class Electronic extends Item {
     private final String brand; // Hãng
     private final ItemStatus status; // Trạng thái mặt hàng (New, Like New, Used)
 

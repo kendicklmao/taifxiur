@@ -59,7 +59,6 @@ public class AuctionService {
                     String statusStr = rs.getString("auction_status");
                     Instant startTime = rs.getTimestamp("start_time").toInstant();
                     Instant endTime = rs.getTimestamp("end_time").toInstant();
-                    Integer winnerId = rs.getObject("winner_id") != null ? rs.getInt("winner_id") : null;
 
                     // Load item
                     Item item = loadItemFromDatabase(conn, itemId);

@@ -4,10 +4,11 @@ import shared.enums.Category;
 
 import java.math.BigDecimal;
 
-public class Art extends Item { //tác phẩm nghệ thuật
-    private final String artist; //tên tác giả
-    private final int yearCreated; //năm sản xuất
-    private final boolean isOriginal; //có là bản gốc hay không?
+// Tác phẩm nghệ thuật
+public class Art extends Item {
+    private final String artist; // Tên tác giả
+    private final int yearCreated; // Năm sản xuất
+    private final boolean isOriginal; // Có là bản gốc hay không?
 
     public Art(String name, String description, Seller seller, BigDecimal startingPrice, String artist, int yearCreated, boolean isOriginal) {
         super(name, description, seller, Category.ARTS, startingPrice);
@@ -28,9 +29,8 @@ public class Art extends Item { //tác phẩm nghệ thuật
         return yearCreated;
     }
 
-
-
-    public boolean isValid() { //kiểm tra thông số có logic không?
+    // Kiểm tra thông số có logic không?
+    public boolean isValid() {
         return super.isValid() && yearCreated >= 0;
     }
 }

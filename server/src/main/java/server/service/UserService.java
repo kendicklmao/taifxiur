@@ -144,7 +144,8 @@ public class UserService {
         if (lockUntil.containsKey(username)) {
             Instant unlockTime = lockUntil.get(username);
             if (now.isBefore(unlockTime)) {
-                return null;
+                long secondsRemaining = java.time.Duration.between(now, unlockTime).getSeconds();
+                throw new UserLockedException(secondsRemaining);
             } else {
                 lockUntil.remove(username);
                 failedAttempts.remove(username);
@@ -168,26 +169,25 @@ public class UserService {
 
             String storedHash = rs.getString("password");
             String storedSalt = rs.getString("password_salt");
-            boolean isBanned = rs.getBoolean("is_banned");
             String roleStr = rs.getString("role");
             int userId = rs.getInt("id");
-
-            if (isBanned) {
-                return null;
-            }
 
             // Kiểm tra mật khẩu bằng cách băm thử với Salt đã lưu
             String inputHash = shared.utils.Hash.formula(password, storedSalt);
             if (storedHash.equals(inputHash)) {
                 System.out.println("DEBUG LOGIN: Password correct for " + username);
+                
+                // Kiểm tra xem user đã đăng nhập chưa (tránh đăng nhập 2 lần)
                 if (loggedIn.putIfAbsent(username, true) != null) {
                     System.out.println("DEBUG LOGIN: User already logged in!");
-                    throw new UserAlreadyLoggedInException(
-                            "User " + username + " is already logged in from another device");
+                    throw new UserAlreadyLoggedInException("User " + username + " is already logged in from another device");
                 }
+
+                // Đặt lại số lần thử và xóa khóa khi đăng nhập thành công
                 failedAttempts.remove(username);
                 lockUntil.remove(username);
 
+                // Lưu lịch sử đăng nhập của admin
                 if ("ADMIN".equals(roleStr)) {
                     logAdminLogin(userId, "SUCCESS");
                 }
@@ -705,25 +705,6 @@ public class UserService {
         }
         return logs;
     }
-
-    private void ensureWalletForUsername(String username) {
-        username = Validator.normalizeAndLowercase(username);
-        if (username == null) {
-            return;
-        }
-
-        try (Connection conn = DatabaseConfig.getDataSource().getConnection();
-             PreparedStatement pstmt = conn.prepareStatement("SELECT id FROM users WHERE username = ?")) {
-            pstmt.setString(1, username);
-            ResultSet rs = pstmt.executeQuery();
-            if (rs.next()) {
-                ensureWalletExists(conn, rs.getInt("id"));
-            }
-        } catch (SQLException e) {
-            System.err.println("Error ensuring wallet for user " + username + ": " + e.getMessage());
-        }
-    }
-
     private void ensureWalletExists(Connection conn, int userId) throws SQLException {
         try (PreparedStatement pstmt = conn.prepareStatement(
                 """
