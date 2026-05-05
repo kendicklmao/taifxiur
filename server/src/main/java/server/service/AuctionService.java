@@ -25,13 +25,15 @@ import server.controller.ClientHandler;
 
 public class AuctionService {
     private static final ConcurrentHashMap<String, Auction> auctions = new ConcurrentHashMap<>();
-    private static final WalletService walletService = new WalletService();
-    private static final UserService userService = new UserService();
+    private final WalletService walletService;
+    private final UserService userService;
     private static final ExecutorService asyncExecutor = Executors.newFixedThreadPool(2);
     // Cache để tránh lặp lại query DB
     private static final Map<String, Integer> userIdCache = new ConcurrentHashMap<>();
 
-    public AuctionService() {
+    public AuctionService(UserService userService, WalletService walletService) {
+        this.userService = userService;
+        this.walletService = walletService;
         // Tải tất cả các phiên đấu giá từ cơ sở dữ liệu khi server khởi động
         initializeAuctionsFromDatabase();
     }
@@ -727,5 +729,10 @@ public class AuctionService {
                 System.err.println("Error updating auction price: " + e.getMessage());
             }
         });
+    }
+
+    // Thêm phương thức này để lớp test có thể gọi
+    public void clearCache() {
+        userIdCache.clear();
     }
 }

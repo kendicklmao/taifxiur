@@ -707,7 +707,7 @@ public class BidderHomeController {
     }
 
     private void showAlert(String title, String message) {
-        alertService.showAlert(title, message, welcomeLabel);
+        alertService.showAlert(title, message, welcomeLabel.getScene().getWindow());
     }
 
     private String formatEndTime(Instant endTime) {

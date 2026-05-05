@@ -10,7 +10,16 @@ public class DatabaseInitializer {
     public static void initializeDatabase() throws Exception {
         try (Connection conn = DatabaseConfig.getDataSource().getConnection();
                 Statement stmt = conn.createStatement()) {
+
+            if (isDatabaseInitialized(conn)) {
+                System.out.println("Database already initialized. Skipping schema creation.");
+                return;
+            }
+
             System.out.println("Initializing database schema...");
+
+            // Tạo bảng db_version để theo dõi phiên bản schema
+            createDbVersionTable(stmt);
 
             // Tạo bảng users
             createUsersTable(stmt);
@@ -42,12 +51,43 @@ public class DatabaseInitializer {
             // Tạo bảng wallet_holds
             createWalletHoldsTable(stmt);
 
+            // Đánh dấu là đã khởi tạo
+            stampDatabaseVersion(conn);
+
             System.out.println("Database schema initialized successfully");
 
         } catch (SQLException e) {
             System.err.println("SQL error initializing database: " + e.getMessage());
             e.printStackTrace();
             throw new RuntimeException("Database initialization failed: " + e.getMessage(), e);
+        }
+    }
+
+    private static boolean isDatabaseInitialized(Connection conn) {
+        try (Statement stmt = conn.createStatement()) {
+            // Kiểm tra sự tồn tại của bảng db_version
+            stmt.executeQuery("SELECT 1 FROM db_version WHERE version = 1");
+            return true; // Nếu không có lỗi, bảng đã tồn tại và có version = 1
+        } catch (SQLException e) {
+            return false; // Bảng không tồn tại hoặc có lỗi
+        }
+    }
+
+    private static void createDbVersionTable(Statement stmt) throws SQLException {
+        String sql = """
+                CREATE TABLE IF NOT EXISTS db_version (
+                    version INTEGER PRIMARY KEY,
+                    initialized_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+                """;
+        stmt.execute(sql);
+        System.out.println("db_version table created or checked.");
+    }
+
+    private static void stampDatabaseVersion(Connection conn) throws SQLException {
+        try (Statement stmt = conn.createStatement()) {
+            stmt.executeUpdate("INSERT INTO db_version (version) VALUES (1)");
+            System.out.println("Database version stamped as 1.");
         }
     }
 

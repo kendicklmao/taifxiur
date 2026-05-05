@@ -19,25 +19,27 @@ public class UserService {
     private static final ConcurrentHashMap<String, Boolean> loggedIn = new ConcurrentHashMap<>(); // Lưu trạng thái đăng nhập
     private static final int MAX_ATTEMPTS = 5; // Số lượt đăng nhập thất bại tối đa
     private static final long BASE_LOCK_SECONDS = 2; // Số giây cơ sở để vô hiệu hóa nếu đăng nhập thất bại
-    private static final WalletService walletService = new WalletService();
+    private WalletService walletService;
+
+    public void setWalletService(WalletService walletService) {
+        this.walletService = walletService;
+    }
 
     // Khởi tạo người dùng mặc định trong cơ sở dữ liệu
     public UserService() {
     }
 
-    // Khởi tạo người dùng mặc định trong cơ sở dữ liệu lần đầu chạy
-    public synchronized void initializeDefaultUsers() {
-        System.out.println("--- INITIALIZING DEFAULT USERS ---");
-        this.register("seller", "Admin@123", "seller@gmail.com", "q", "a", "q", "a", Role.SELLER);
-        this.register("bidder", "Admin@123", "bidder@gmail.com", "q", "a", "q", "a", Role.BIDDER);
-        this.register("bidder1", "Admin@123", "bidder1@gmail.com", "q", "a", "q", "a", Role.BIDDER);
-        this.register("admin", "Admin@123", "supernigga@gmail.com", "q", "a", "q", "a", Role.ADMIN);
-        this.register("admin1", "Admin@123", "admin1@gmail.com", "q", "a", "q", "a", Role.ADMIN);
-        ensureWalletForUsername("seller");
-        ensureWalletForUsername("bidder");
-        ensureWalletForUsername("admin");
-        ensureWalletForUsername("admin1");
-        ensureWalletForUsername("bidder1");
+    public void initializeDefaultUsers() {
+        if (!exists("admin")) {
+            System.out.println("Initializing default admin user...");
+            register("admin", "Admin@123", "admin@example.com", "What is your favorite color?", "Blue", "What is your pet's name?", "Buddy", Role.ADMIN);
+        }
+        if (!exists("bidder")) {
+            register("bidder", "Bidder@123", "bidder@example.com", "q1", "a1", "q2", "a2", Role.BIDDER);
+        }
+        if (!exists("seller")) {
+            register("seller", "Seller@123", "seller@example.com", "q1", "a1", "q2", "a2", Role.SELLER);
+        }
     }
 
     // Đăng ký người dùng mới trong cơ sở dữ liệu

@@ -1,9 +1,8 @@
 package server.service;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.*;
 import server.database.DatabaseConfig;
+import server.database.DatabaseInitializer;
 import shared.enums.AuctionStatus;
 import shared.enums.ItemStatus;
 import shared.models.Auction;
@@ -19,28 +18,79 @@ import static org.junit.Assert.*;
 
 public class AuctionServiceTest {
 
-    private AuctionService auctionService;
-    private UserService userService;
+    private static AuctionService auctionService;
+    private static UserService userService;
+    private static WalletService walletService;
     private Seller seller;
     private Bidder bidder;
 
+    @BeforeClass
+    public static void setUpClass() throws Exception {
+        DatabaseInitializer.initializeDatabase();
+        // Dọn dẹp DB một lần trước khi khởi tạo service
+        // để tránh lỗi "min_increment is null"
+        cleanupDatabaseOnce(); 
+        userService = new UserService();
+        walletService = new WalletService(userService);
+        auctionService = new AuctionService(userService, walletService);
+        userService.setWalletService(walletService);
+    }
+
     @Before
     public void setUp() {
-        auctionService = new AuctionService();
-        userService = new UserService();
+        cleanupDatabase();
+        auctionService.clearCache(); // Xóa cache trước mỗi test
         userService.initializeDefaultUsers();
         seller = (Seller) userService.getUser("seller");
         bidder = (Bidder) userService.getUser("bidder");
+
+        // Ensure bidder has funds for testing
+        walletService.createDepositRequest(bidder.getUsername(), new BigDecimal("1000.00"), "Test Bank", "12345");
+        String requestId = walletService.getPendingDepositRequests().get(0).get("id");
+        walletService.approveDeposit(requestId, "admin");
     }
 
     @After
     public void tearDown() {
+        cleanupDatabase();
+        auctionService.clearCache(); // Xóa cache sau mỗi test
+    }
+
+    @AfterClass
+    public static void tearDownClass() {
         DatabaseConfig.closeDataSource();
+    }
+
+    private void cleanupDatabase() {
+        try (java.sql.Connection conn = DatabaseConfig.getDataSource().getConnection();
+             java.sql.Statement stmt = conn.createStatement()) {
+            stmt.executeUpdate("DELETE FROM bids");
+            stmt.executeUpdate("DELETE FROM auto_bids");
+            stmt.executeUpdate("DELETE FROM items");
+            stmt.executeUpdate("DELETE FROM wallets");
+            stmt.executeUpdate("DELETE FROM users");
+        } catch (java.sql.SQLException e) {
+            e.printStackTrace();
+        }
+    }
+    
+    private static void cleanupDatabaseOnce() {
+        try (java.sql.Connection conn = DatabaseConfig.getDataSource().getConnection();
+             java.sql.Statement stmt = conn.createStatement()) {
+            stmt.executeUpdate("DELETE FROM bids");
+            stmt.executeUpdate("DELETE FROM auto_bids");
+            stmt.executeUpdate("DELETE FROM items");
+            stmt.executeUpdate("DELETE FROM wallets");
+            stmt.executeUpdate("DELETE FROM users");
+        } catch (java.sql.SQLException e) {
+            e.printStackTrace();
+        }
     }
 
     @Test
     public void testCreateAuction() {
-        Electronic item = new Electronic("Test Item", "Description", seller, "Brand", ItemStatus.NEW, null, null);
+        Electronic item = new Electronic("Test Item", "Description", seller, new BigDecimal("10.00"), "Brand", ItemStatus.NEW);
+        item.setMinIncrement(new BigDecimal("10.00")); // Thêm dòng này
         Instant startTime = Instant.now().plus(1, ChronoUnit.HOURS);
         Instant endTime = startTime.plus(1, ChronoUnit.HOURS);
         Auction auction = auctionService.createAuction(seller, item, new BigDecimal("100.00"), startTime, endTime);
@@ -51,26 +101,35 @@ public class AuctionServiceTest {
     
     @Test
     public void testPlaceBid() {
-        Electronic item = new Electronic("Test Item", "Description", seller, "Brand", ItemStatus.NEW, null, null);
-        Instant startTime = Instant.now();
+        Electronic item = new Electronic("Test Item", "Description", seller, new BigDecimal("10.00"), "Brand", ItemStatus.NEW);
+        item.setMinIncrement(new BigDecimal("10.00")); // Thêm dòng này
+        Instant startTime = Instant.now().minus(1, ChronoUnit.MINUTES); // Auction starts immediately
         Instant endTime = startTime.plus(1, ChronoUnit.HOURS);
         Auction auction = auctionService.createAuction(seller, item, new BigDecimal("100.00"), startTime, endTime);
-        auction.setStatus(AuctionStatus.RUNNING);
 
         boolean result = auctionService.placeBid(auction.getId(), bidder, new BigDecimal("150.00"));
         assertTrue(result);
-        assertEquals(0, auction.getCurrentPrice().compareTo(new BigDecimal("150.00")));
+        
+        Auction updatedAuction = auctionService.getAuction(auction.getId());
+        assertEquals(0, updatedAuction.getCurrentPrice().compareTo(new BigDecimal("150.00")));
     }
 
     @Test
     public void testRegisterAutoBid() {
-        Electronic item = new Electronic("Test Item", "Description", seller, "Brand", ItemStatus.NEW, null, null);
-        Instant startTime = Instant.now();
+        Electronic item = new Electronic("Test Item", "Description", seller, new BigDecimal("10.00"), "Brand", ItemStatus.NEW);
+        item.setMinIncrement(new BigDecimal("10.00")); // Thêm dòng này
+        Instant startTime = Instant.now().minus(1, ChronoUnit.MINUTES); // Auction starts immediately
         Instant endTime = startTime.plus(1, ChronoUnit.HOURS);
         Auction auction = auctionService.createAuction(seller, item, new BigDecimal("100.00"), startTime, endTime);
-        auction.setStatus(AuctionStatus.RUNNING);
 
         auctionService.registerAutoBid(auction.getId(), bidder, new BigDecimal("200.00"));
-        assertNotNull(auction.getHighestBidder());
+        
+        Auction updatedAuction = auctionService.getAuction(auction.getId());
+        assertNotNull(updatedAuction.getHighestBidder());
+        assertEquals(bidder.getUsername(), updatedAuction.getHighestBidder().getUsername());
+
+        // Sửa lỗi: Kỳ vọng giá hiện tại là giá khởi điểm + một bước giá
+        BigDecimal expectedPrice = new BigDecimal("100.00").add(item.getMinIncrement());
+        assertEquals(0, updatedAuction.getCurrentPrice().compareTo(expectedPrice));
     }
 }

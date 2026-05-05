@@ -47,17 +47,20 @@ public class Navigator implements INavigator {
             );
 
             Parent root = loader.load();
-            Scene scene = new Scene(root);
+            Scene scene = stage.getScene();
 
-            // Apply global stylesheet
-            if (globalStylesheet != null) {
-                scene.getStylesheets().add(globalStylesheet);
-                System.out.println("✓ Stylesheet applied to scene");
+            if (scene == null) {
+                scene = new Scene(root, width, height);
+                if (globalStylesheet != null) {
+                    scene.getStylesheets().add(globalStylesheet);
+                    System.out.println("✓ Stylesheet applied to scene");
+                } else {
+                    System.err.println("✗ WARNING: globalStylesheet is null!");
+                }
+                stage.setScene(scene);
             } else {
-                System.err.println("✗ WARNING: globalStylesheet is null!");
+                scene.setRoot(root);
             }
-
-            stage.setScene(scene);
 
             Platform.runLater(() -> {
 

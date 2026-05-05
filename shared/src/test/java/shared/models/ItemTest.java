@@ -23,7 +23,7 @@ public class ItemTest {
         seller = new Seller("seller1", "Password@123", "seller@test.com",
                 "Q1", "A1", "Q2", "A2");
         fixedTime = LocalDateTime.of(2024, 1, 1, 12, 0);
-        electronic = new Electronic("iPhone 15", "Latest iPhone model", seller, new BigDecimal("1000"), "Apple", ItemStatus.NEW, fixedTime, fixedTime.plusDays(1));
+        electronic = new Electronic("iPhone 15", "Latest iPhone model", seller, new BigDecimal("1000"), "Apple", ItemStatus.NEW);
         electronic.setMinIncrement(new BigDecimal("100000"));
     }
 
@@ -98,7 +98,7 @@ public class ItemTest {
      */
     @Test
     public void testInvalidItemNullName() {
-        Electronic invalidItem = new Electronic(null, "Description", seller, new BigDecimal("1000"), "Apple", ItemStatus.NEW, fixedTime, fixedTime.plusDays(1));
+        Electronic invalidItem = new Electronic(null, "Description", seller, new BigDecimal("1000"), "Apple", ItemStatus.NEW);
         assertFalse(invalidItem.isValid());
     }
 
@@ -107,7 +107,7 @@ public class ItemTest {
      */
     @Test
     public void testInvalidItemBlankName() {
-        Electronic invalidItem = new Electronic("   ", "Description", seller, new BigDecimal("1000"), "Apple", ItemStatus.NEW, fixedTime, fixedTime.plusDays(1));
+        Electronic invalidItem = new Electronic("   ", "Description", seller, new BigDecimal("1000"), "Apple", ItemStatus.NEW);
         assertFalse(invalidItem.isValid());
     }
 
@@ -116,7 +116,7 @@ public class ItemTest {
      */
     @Test
     public void testInvalidItemNullDescription() {
-        Electronic invalidItem = new Electronic("iPhone", null, seller, new BigDecimal("1000"), "Apple", ItemStatus.NEW, fixedTime, fixedTime.plusDays(1));
+        Electronic invalidItem = new Electronic("iPhone", null, seller, new BigDecimal("1000"), "Apple", ItemStatus.NEW);
         assertFalse(invalidItem.isValid());
     }
 
@@ -125,7 +125,7 @@ public class ItemTest {
      */
     @Test
     public void testInvalidItemBlankDescription() {
-        Electronic invalidItem = new Electronic("iPhone", "   ", seller, new BigDecimal("1000"), "Apple", ItemStatus.NEW, fixedTime, fixedTime.plusDays(1));
+        Electronic invalidItem = new Electronic("iPhone", "   ", seller, new BigDecimal("1000"), "Apple", ItemStatus.NEW);
         assertFalse(invalidItem.isValid());
     }
 
@@ -134,7 +134,7 @@ public class ItemTest {
      */
     @Test
     public void testInvalidItemEmptyName() {
-        Electronic invalidItem = new Electronic("", "Description", seller, new BigDecimal("1000"), "Apple", ItemStatus.NEW, fixedTime, fixedTime.plusDays(1));
+        Electronic invalidItem = new Electronic("", "Description", seller, new BigDecimal("1000"), "Apple", ItemStatus.NEW);
         assertFalse(invalidItem.isValid());
     }
 
@@ -159,7 +159,7 @@ public class ItemTest {
      */
     @Test
     public void testElectronicUsedStatus() {
-        Electronic usedElectronic = new Electronic("Laptop", "Used laptop", seller, new BigDecimal("1000"), "Dell", ItemStatus.USED, fixedTime, fixedTime.plusDays(1));
+        Electronic usedElectronic = new Electronic("Laptop", "Used laptop", seller, new BigDecimal("1000"), "Dell", ItemStatus.USED);
         assertEquals(ItemStatus.USED, usedElectronic.getStatus());
     }
 }
