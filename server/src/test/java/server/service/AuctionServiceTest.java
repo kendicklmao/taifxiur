@@ -1,6 +1,6 @@
 package server.service;
 
-import org.junit.*;
+import org.junit.jupiter.api.*;
 import server.database.DatabaseConfig;
 import server.database.DatabaseInitializer;
 import shared.enums.AuctionStatus;
@@ -14,7 +14,7 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class AuctionServiceTest {
 
@@ -24,7 +24,7 @@ public class AuctionServiceTest {
     private Seller seller;
     private Bidder bidder;
 
-    @BeforeClass
+    @BeforeAll
     public static void setUpClass() throws Exception {
         DatabaseInitializer.initializeDatabase();
         // Dọn dẹp DB một lần trước khi khởi tạo service
@@ -36,7 +36,7 @@ public class AuctionServiceTest {
         userService.setWalletService(walletService);
     }
 
-    @Before
+    @BeforeEach
     public void setUp() {
         cleanupDatabase();
         auctionService.clearCache(); // Xóa cache trước mỗi test
@@ -50,13 +50,13 @@ public class AuctionServiceTest {
         walletService.approveDeposit(requestId, "admin");
     }
 
-    @After
+    @AfterEach
     public void tearDown() {
         cleanupDatabase();
         auctionService.clearCache(); // Xóa cache sau mỗi test
     }
 
-    @AfterClass
+    @AfterAll
     public static void tearDownClass() {
         DatabaseConfig.closeDataSource();
     }

@@ -1,19 +1,19 @@
 package server.service;
 
-import org.junit.After;
-import org.junit.Test;
-import org.junit.Before;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
 import server.database.DatabaseConfig;
 import shared.enums.Role;
 import java.math.BigDecimal;
 import java.util.UUID;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class BannedPaymentTest {
     private UserService userService;
     private WalletService walletService;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         userService = new UserService();
         walletService = new WalletService(userService);
@@ -21,7 +21,7 @@ public class BannedPaymentTest {
         userService.initializeDefaultUsers();
     }
 
-    @After
+    @AfterEach
     public void tearDown() {
         DatabaseConfig.closeDataSource();
     }
@@ -49,7 +49,7 @@ public class BannedPaymentTest {
 
         // 3. Ban the bidder
         userService.banUser(bidder, admin);
-        assertTrue("User should be banned", userService.isUserBanned(bidder));
+        assertTrue(userService.isUserBanned(bidder), "User should be banned");
 
         // 4. Finalize payment for an auction where the banned bidder won
         String result = walletService.finalizePaymentForWinner(

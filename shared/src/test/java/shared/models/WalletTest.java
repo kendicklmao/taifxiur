@@ -1,8 +1,8 @@
 package shared.models;
 
-import org.junit.Before;
-import org.junit.Test;
-import static org.junit.Assert.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
 import java.math.BigDecimal;
 
 /**
@@ -11,7 +11,7 @@ import java.math.BigDecimal;
 public class WalletTest {
     private Wallet wallet;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         wallet = new Wallet();
     }
@@ -40,25 +40,31 @@ public class WalletTest {
     /**
      * Test deposit with null amount throws exception
      */
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testDepositNullAmount() {
-        wallet.deposit(null);
+        assertThrows(IllegalArgumentException.class, () -> {
+            wallet.deposit(null);
+        });
     }
 
     /**
      * Test deposit with zero amount throws exception
      */
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testDepositZeroAmount() {
-        wallet.deposit(BigDecimal.ZERO);
+        assertThrows(IllegalArgumentException.class, () -> {
+            wallet.deposit(BigDecimal.ZERO);
+        });
     }
 
     /**
      * Test deposit with negative amount throws exception
      */
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testDepositNegativeAmount() {
-        wallet.deposit(new BigDecimal("-50.00"));
+        assertThrows(IllegalArgumentException.class, () -> {
+            wallet.deposit(new BigDecimal("-50.00"));
+        });
     }
 
     /**
@@ -86,25 +92,31 @@ public class WalletTest {
     /**
      * Test withdrawal with zero amount throws exception
      */
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testWithdrawZeroAmount() {
-        wallet.withdraw(BigDecimal.ZERO);
+        assertThrows(IllegalArgumentException.class, () -> {
+            wallet.withdraw(BigDecimal.ZERO);
+        });
     }
 
     /**
      * Test withdrawal with negative amount throws exception
      */
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testWithdrawNegativeAmount() {
-        wallet.withdraw(new BigDecimal("-50.00"));
+        assertThrows(IllegalArgumentException.class, () -> {
+            wallet.withdraw(new BigDecimal("-50.00"));
+        });
     }
 
     /**
      * Test withdrawal with null amount throws exception
      */
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testWithdrawNullAmount() {
-        wallet.withdraw(null);
+        assertThrows(IllegalArgumentException.class, () -> {
+            wallet.withdraw(null);
+        });
     }
 
     /**

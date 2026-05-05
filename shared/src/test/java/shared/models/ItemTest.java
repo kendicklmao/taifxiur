@@ -1,14 +1,14 @@
 package shared.models;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import shared.enums.Category;
 import shared.enums.ItemStatus;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Unit tests for Item classes
@@ -18,7 +18,7 @@ public class ItemTest {
     private Electronic electronic;
     private LocalDateTime fixedTime;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         seller = new Seller("seller1", "Password@123", "seller@test.com",
                 "Q1", "A1", "Q2", "A2");

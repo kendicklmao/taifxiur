@@ -1,6 +1,6 @@
 package server.service;
 
-import org.junit.*;
+import org.junit.jupiter.api.*;
 import server.database.DatabaseConfig;
 import server.database.DatabaseInitializer;
 
@@ -8,14 +8,14 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class WalletServiceTest {
 
     private static WalletService walletService;
     private static UserService userService;
 
-    @BeforeClass // Chạy một lần trước tất cả các test trong class này
+    @BeforeAll // Chạy một lần trước tất cả các test trong class này
     public static void setUpClass() throws Exception {
         DatabaseInitializer.initializeDatabase();
         userService = new UserService();
@@ -23,7 +23,7 @@ public class WalletServiceTest {
         userService.setWalletService(walletService);
     }
 
-    @Before // Chạy trước mỗi test
+    @BeforeEach // Chạy trước mỗi test
     public void setUp() {
         // Dọn dẹp DB trước khi chạy để đảm bảo môi trường sạch
         cleanupDatabase();
@@ -31,12 +31,12 @@ public class WalletServiceTest {
         userService.initializeDefaultUsers();
     }
 
-    @After // Chạy sau mỗi test
+    @AfterEach // Chạy sau mỗi test
     public void tearDown() {
         cleanupDatabase(); // Dọn dẹp DB sau mỗi test
     }
 
-    @AfterClass // Chạy một lần sau tất cả các test
+    @AfterAll // Chạy một lần sau tất cả các test
     public static void tearDownClass() {
         DatabaseConfig.closeDataSource();
     }
