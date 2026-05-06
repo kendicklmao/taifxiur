@@ -56,11 +56,11 @@ public class AppContext {
 
     public void connect() throws Exception {
         System.out.println("DEBUG CLIENT: Connecting to server...");
-        // Always disconnect first to ensure clean state
+        // Luôn disconnect trước khi connect để đảm bảo state sạch
         disconnect();
 
         socket = new Socket("localhost", 54321);
-        socket.setTcpNoDelay(true); // Disable Nagle's algorithm for faster small packets
+        socket.setTcpNoDelay(true); // Tắt thuật toán Nagle's algorithm để tăng tốc độ gói nhỏ
         out = new PrintWriter(socket.getOutputStream(), true);
         in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
         

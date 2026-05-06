@@ -231,13 +231,13 @@ public class AdminHomeController {
                     setText(null);
                 } else {
                     setText(
-                            "📦 " + item.getItem().getName() +
-                                    " | ID: " + item.getId().substring(0, 8) + "..." +
-                                    " | Seller: " + item.getSeller().getUsername() +
-                                    " | Price: $" + item.getCurrentPrice() +
-                                    " | Status: " + item.getStatus() +
-                                    " | Start: " + formatTime(item.getStartTime()) +
-                                    " | End: " + formatTime(item.getEndTime())
+                            item.getItem().getName() +
+                            " | ID: " + item.getId() +
+                            " | Seller: " + item.getSeller().getUsername() +
+                            " | Price: $" + item.getCurrentPrice() +
+                            " | Status: " + item.getStatus() +
+                            " | Start: " + formatTime(item.getStartTime()) +
+                            " | End: " + formatTime(item.getEndTime())
                     );
                 }
             }
