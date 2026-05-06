@@ -191,9 +191,7 @@ public class AdminHomeController {
         alert.setHeaderText("Are you sure you want to terminate this auction?");
         alert.setContentText("This action cannot be undone.");
 
-        DialogPane dialogPane = alert.getDialogPane();
-        dialogPane.getStylesheets().add(getClass().getResource("/styles.css").toExternalForm());
-        dialogPane.getStyleClass().add("my-dialog");
+        shared.utils.DialogHelper.applyCustomStyle(alert);
 
         Optional<ButtonType> result = alert.showAndWait();
         if (result.isPresent() && result.get() == ButtonType.OK) {
@@ -397,7 +395,7 @@ public class AdminHomeController {
 
             if ("SUCCESS".equals(response.getStatus())) {
                 alertService.showAlert("Success", "User " + username + " has been banned!", welcomeLabel);
-                userStatusArea.appendText("\n✓ Banned user: " + username);
+                userStatusArea.appendText("\nBanned user: " + username);
                 usernameField.setValue(null);
                 usernameField.getEditor().clear();
                 refreshUsers();
@@ -425,7 +423,7 @@ public class AdminHomeController {
 
             if ("SUCCESS".equals(response.getStatus())) {
                 alertService.showAlert("Success", "User " + username + " has been unbanned!", welcomeLabel);
-                userStatusArea.appendText("\n✓ Unbanned user: " + username);
+                userStatusArea.appendText("\nUnbanned user: " + username);
                 usernameField.setValue(null);
                 usernameField.getEditor().clear();
                 refreshUsers();
@@ -499,9 +497,6 @@ public class AdminHomeController {
     }
 
     private String formatTime(java.time.Instant instant) {
-        if (instant == null) return "Unknown";
-        java.time.LocalDateTime dateTime = java.time.LocalDateTime.ofInstant(instant, java.time.ZoneId.systemDefault());
-        java.time.format.DateTimeFormatter formatter = java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
-        return dateTime.format(formatter);
+        return shared.utils.FormatUtils.formatTime(instant);
     }
 }

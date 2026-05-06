@@ -344,9 +344,7 @@ public class SellerHomeController {
         alert.setHeaderText("Are you sure you want to terminate this auction?");
         alert.setContentText("This action cannot be undone.");
 
-        DialogPane dialogPane = alert.getDialogPane();
-        dialogPane.getStylesheets().add(getClass().getResource("/styles.css").toExternalForm());
-        dialogPane.getStyleClass().add("my-dialog");
+        shared.utils.DialogHelper.applyCustomStyle(alert);
 
         Optional<ButtonType> result = alert.showAndWait();
         if (result.isPresent() && result.get() == ButtonType.OK) {
@@ -677,11 +675,7 @@ public class SellerHomeController {
 
 
     private String formatTime(java.time.Instant instant) {
-        if (instant == null)
-            return "Unknown";
-        java.time.LocalDateTime dateTime = java.time.LocalDateTime.ofInstant(instant, java.time.ZoneId.systemDefault());
-        java.time.format.DateTimeFormatter formatter = java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
-        return dateTime.format(formatter);
+        return shared.utils.FormatUtils.formatTime(instant);
     }
 
     // ================= FETCH ALL AUCTIONS =================
@@ -757,8 +751,7 @@ public class SellerHomeController {
         dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
 
         // Apply custom dialog styling
-        dialog.getDialogPane().getStylesheets().add(getClass().getResource("/styles.css").toExternalForm());
-        dialog.getDialogPane().getStyleClass().add("my-dialog");
+        shared.utils.DialogHelper.applyCustomStyle(dialog);
 
         dialog.setResultConverter(buttonType -> {
             if (buttonType == ButtonType.OK) {

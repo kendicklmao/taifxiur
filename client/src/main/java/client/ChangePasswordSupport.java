@@ -36,10 +36,7 @@ public final class ChangePasswordSupport {
         dialog.setTitle("Change Password");
         dialog.setHeaderText("Update your account password");
 
-        dialog.getDialogPane().getStylesheets().add(
-                ChangePasswordSupport.class.getResource("/styles.css").toExternalForm()
-        );
-        dialog.getDialogPane().getStyleClass().add("my-dialog");
+        shared.utils.DialogHelper.applyCustomStyle(dialog);
 
         PasswordField currentPasswordField = new PasswordField();
         currentPasswordField.setPromptText("Current password");
@@ -203,10 +200,7 @@ public final class ChangePasswordSupport {
         dialog.setTitle(title);
         dialog.setHeaderText(title.toUpperCase());
 
-        dialog.getDialogPane().getStylesheets().add(
-                ChangePasswordSupport.class.getResource("/styles.css").toExternalForm()
-        );
-        dialog.getDialogPane().getStyleClass().add("my-dialog");
+        shared.utils.DialogHelper.applyCustomStyle(dialog);
 
         Label messageLabel = new Label(message);
         messageLabel.setWrapText(true);

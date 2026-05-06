@@ -35,10 +35,7 @@ public class AlertServiceImpl implements IAlertService {
         dialog.setHeaderText(title.toUpperCase());
 
         // Apply the dark theme stylesheet
-        dialog.getDialogPane().getStylesheets().add(
-                getClass().getResource("/styles.css").toExternalForm()
-        );
-        dialog.getDialogPane().getStyleClass().add("my-dialog");
+        shared.utils.DialogHelper.applyCustomStyle(dialog);
 
         // --- Custom Layout for the Alert ---
         Label messageLabel = new Label(message);

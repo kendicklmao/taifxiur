@@ -36,9 +36,6 @@ import shared.models.Collectible;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -375,8 +372,7 @@ public class BidderHomeController {
         dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
 
         // Apply custom dialog styling
-        dialog.getDialogPane().getStylesheets().add(getClass().getResource("/styles.css").toExternalForm());
-        dialog.getDialogPane().getStyleClass().add("my-dialog");
+        shared.utils.DialogHelper.applyCustomStyle(dialog);
 
 
         // Convert the result to a string array
@@ -476,8 +472,7 @@ public class BidderHomeController {
         dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
 
         // Apply custom dialog styling
-        dialog.getDialogPane().getStylesheets().add(getClass().getResource("/styles.css").toExternalForm());
-        dialog.getDialogPane().getStyleClass().add("my-dialog");
+        shared.utils.DialogHelper.applyCustomStyle(dialog);
 
         dialog.setResultConverter(buttonType -> {
             if (buttonType == ButtonType.OK) {
@@ -569,8 +564,7 @@ public class BidderHomeController {
         dialog.setHeaderText("Enter bid amount for: " + auction.getItem().getName());
 
         // Apply custom dialog styling
-        dialog.getDialogPane().getStylesheets().add(getClass().getResource("/styles.css").toExternalForm());
-        dialog.getDialogPane().getStyleClass().add("my-dialog");
+        shared.utils.DialogHelper.applyCustomStyle(dialog);
 
         TextField amountField = new TextField();
         amountField.setPromptText("Enter amount");
@@ -665,12 +659,6 @@ public class BidderHomeController {
     }
 
     private String formatEndTime(Instant endTime) {
-        if (endTime == null) {
-            return "Unknown";
-        }
-
-        LocalDateTime dateTime = LocalDateTime.ofInstant(endTime, ZoneId.systemDefault());
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
-        return dateTime.format(formatter);
+        return shared.utils.FormatUtils.formatTime(endTime);
     }
 }
