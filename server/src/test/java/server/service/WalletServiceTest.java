@@ -43,16 +43,17 @@ public class WalletServiceTest {
 
     // Phương thức dọn dẹp database
     private void cleanupDatabase() {
-        try (java.sql.Connection conn = DatabaseConfig.getDataSource().getConnection();
-             java.sql.Statement stmt = conn.createStatement()) {
-            // Xóa dữ liệu từ các bảng liên quan
-            // Thứ tự xóa quan trọng nếu có ràng buộc khóa ngoại
-            stmt.executeUpdate("DELETE FROM deposit_requests");
-            stmt.executeUpdate("DELETE FROM withdraw_requests");
-            stmt.executeUpdate("UPDATE wallets SET balance = 0");
-        } catch (java.sql.SQLException e) {
-            e.printStackTrace();
-        }
+        // FIXME: Commented out to prevent wiping the actual database during tests
+        // try (java.sql.Connection conn = DatabaseConfig.getDataSource().getConnection();
+        //      java.sql.Statement stmt = conn.createStatement()) {
+        //     // Xóa dữ liệu từ các bảng liên quan
+        //     // Thứ tự xóa quan trọng nếu có ràng buộc khóa ngoại
+        //     stmt.executeUpdate("DELETE FROM deposit_requests");
+        //     stmt.executeUpdate("DELETE FROM withdraw_requests");
+        //     stmt.executeUpdate("UPDATE wallets SET balance = 0");
+        // } catch (java.sql.SQLException e) {
+        //     e.printStackTrace();
+        // }
     }
 
     @Test

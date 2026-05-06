@@ -2,6 +2,7 @@ package client;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
+
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
@@ -11,6 +12,7 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
+
 import shared.models.AdminActionLog;
 import shared.models.Auction;
 import shared.models.User;
@@ -25,10 +27,12 @@ import shared.models.Fashion;
 import shared.models.Collectible;
 
 import java.lang.reflect.Type;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 public class AdminHomeController {
@@ -45,26 +49,29 @@ public class AdminHomeController {
     private final AppContext ctx = AppContext.getInstance();
     private final Gson gson = GsonUtils.createGson();
     private final IAlertService alertService = new AlertServiceImpl();
-    private java.util.List<String> allUsernames = new java.util.ArrayList<>();
-    private java.util.function.Consumer<String> messageListener;
+    private List<String> allUsernames = new ArrayList<>();
+    private Consumer<String> messageListener;
 
     @FXML
     public void initialize() {
         welcomeLabel.setText("Welcome " + ctx.getCurrentUser().getUsername());
+        
         setupAuctionListCell();
         setupUserListCell();
         setupDepositRequestListCell();
         setupWithdrawRequestListCell();
+
         refreshAuctions();
         refreshUsers();
         refreshAdminActionLogs();
         refreshWalletRequests();
 
+        // Tìm kiếm gợi ý (Autocomplete)
         usernameField.getEditor().textProperty().addListener((obs, oldText, newText) -> {
             if (newText == null || newText.isEmpty()) {
                 usernameField.setItems(javafx.collections.FXCollections.observableArrayList(allUsernames));
             } else {
-                java.util.List<String> filteredList = allUsernames.stream()
+                List<String> filteredList = allUsernames.stream()
                         .filter(s -> s.toLowerCase().contains(newText.toLowerCase()))
                         .collect(Collectors.toList());
                 usernameField.setItems(javafx.collections.FXCollections.observableArrayList(filteredList));
@@ -77,11 +84,11 @@ public class AdminHomeController {
             try {
                 Response res = gson.fromJson(line, Response.class);
                 if ("AUCTION_CREATED".equals(res.getStatus()) || "AUCTION_UPDATED".equals(res.getStatus()) || "UPDATE_PRICE".equals(res.getStatus())) {
-                    System.out.println("📢 [ADMIN] Received update from server, refreshing list...");
-                    Platform.runLater(this::refreshAuctions);
+                    System.out.println("[ADMIN] Received auction update from server, refreshing auction list...");
+                    Platform.runLater(() -> this.refreshAuctions());
                 }
             } catch (Exception e) {
-                // Ignore malformed messages
+                // Bỏ qua các tin nhắn không hợp lệ
             }
         };
         ctx.addMessageListener(messageListener);
@@ -92,7 +99,7 @@ public class AdminHomeController {
         auctionDetailPane.setVisible(true);
         auctionDetailPane.setManaged(true);
 
-        // Title and close button
+        // Tiêu đề và nút đóng
         Label titleLabel = new Label("Auction Details");
         titleLabel.getStyleClass().add("dashboard-section-title");
         Button closeButton = new Button("X");
@@ -104,13 +111,13 @@ public class AdminHomeController {
         HBox titleBox = new HBox(10, titleLabel, closeButton);
         HBox.setHgrow(titleLabel, Priority.ALWAYS);
 
-        // Image
+        // Ảnh
         ImageView imageView = new ImageView();
         if (auction.getItem().getImageUrl() != null && !auction.getItem().getImageUrl().isEmpty()) {
             imageView.setImage(new Image(auction.getItem().getImageUrl(), 200, 200, true, true));
         }
 
-        // Details grid
+        // Thông tin chi tiết
         GridPane detailsGrid = new GridPane();
         detailsGrid.setHgap(10);
         detailsGrid.setVgap(8);

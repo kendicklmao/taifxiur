@@ -32,7 +32,10 @@ public class AppContext {
     private final List<Consumer<String>> messageListeners = new CopyOnWriteArrayList<>();
     private final ConcurrentHashMap<String, CompletableFuture<Response>> pendingRequests = new ConcurrentHashMap<>();
     private final Gson gson = GsonUtils.createGson();
-    private Thread listenerThread;
+    private Thread listenerThread;  
+
+    protected AppContext() {
+    }
 
     public static AppContext getInstance() {
         return instance;
@@ -101,7 +104,7 @@ public class AppContext {
                 }
                 System.out.println("DEBUG CLIENT: Listener thread reached end of stream.");
             } catch (Throwable e) {
-                System.err.println("💥 DEBUG CLIENT: Connection lost or error in listener: " + e.getMessage());
+                System.err.println("DEBUG CLIENT: Connection lost or error in listener: " + e.getMessage());
                 e.printStackTrace();
                 // Reset connection state on error
                 socket = null;
@@ -138,8 +141,13 @@ public class AppContext {
         messageListeners.remove(listener);
     }
 
-    public PrintWriter getOut() { return out; }
-    public BufferedReader getIn() { return in; }
+    public PrintWriter getOut() {
+        return out;
+    }
+    
+    public BufferedReader getIn() {
+        return in;
+    }
 
     public boolean isConnected() {
         return socket != null && !socket.isClosed();

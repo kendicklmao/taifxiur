@@ -11,6 +11,7 @@ import server.service.WalletService;
 import shared.utils.GsonUtils;
 import shared.enums.AuctionStatus;
 import shared.enums.ItemStatus;
+import shared.enums.Role;
 import shared.models.Art;
 import shared.models.Auction;
 import shared.models.Bidder;
@@ -110,8 +111,9 @@ public class ClientHandler implements Runnable {
 
     private Response handleRequest(Request request) {
         String action = request.getAction();
-        if (action == null)
+        if (action == null) {
             return new Response("FAIL", "Invalid action");
+        }
 
         switch (action) {
             
@@ -145,7 +147,7 @@ public class ClientHandler implements Runnable {
                 String rQ2 = request.getData().get("q2");
                 String rA2 = request.getData().get("a2");
 
-                shared.enums.Role rRole = shared.enums.Role.valueOf(request.getData().get("role"));
+                Role rRole = Role.valueOf(request.getData().get("role"));
 
                 boolean isRegistered = userService.register(rUser, rPass, rEmail, rQ1, rA1, rQ2, rA2, rRole);
 

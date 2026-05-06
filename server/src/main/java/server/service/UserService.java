@@ -31,8 +31,7 @@ public class UserService {
 
     public void initializeDefaultUsers() {
         if (!exists("admin")) {
-            System.out.println("Initializing default admin user...");
-            register("admin", "Admin@123", "admin@example.com", "What is your favorite color?", "Blue", "What is your pet's name?", "Buddy", Role.ADMIN);
+            register("admin", "Admin@123", "admin@example.com", "q1", "a1", "q2", "a2", Role.ADMIN);
         }
         if (!exists("bidder")) {
             register("bidder", "Bidder@123", "bidder@example.com", "q1", "a1", "q2", "a2", Role.BIDDER);
