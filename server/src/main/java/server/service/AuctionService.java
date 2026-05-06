@@ -355,6 +355,7 @@ public class AuctionService {
 
     // Lấy phiên đấu giá theo trạng thái
     public List<Auction> getAuctionsByStatus(AuctionStatus status) {
+        syncWithDatabase(); // Luôn đồng bộ với DB trước khi trả về
         List<Auction> allAuctions = new ArrayList<>();
         for (Auction a : auctions.values()) {
             if (a.getStatus() == status) {
@@ -384,8 +385,10 @@ public class AuctionService {
              ResultSet rs = stmt.executeQuery(
                      "SELECT id, current_price, auction_status, auction_id FROM items WHERE auction_id IS NOT NULL")) {
 
+            java.util.Set<String> dbAuctionIds = new java.util.HashSet<>();
             while (rs.next()) {
                 String auctionId = rs.getString("auction_id");
+                dbAuctionIds.add(auctionId);
                 BigDecimal dbPrice = rs.getBigDecimal("current_price");
                 String dbStatus = rs.getString("auction_status");
 
@@ -403,6 +406,13 @@ public class AuctionService {
                     loadSingleAuctionFromDB(conn, auctionId);
                 }
             }
+            
+            // Xóa các auction khỏi RAM nếu nó đã bị xóa ở Database (bởi 1 máy khác)
+            // Chỉ xóa nếu item đó đã từng được lưu vào DB (getDbId() > 0)
+            auctions.entrySet().removeIf(entry -> 
+                !dbAuctionIds.contains(entry.getKey()) && entry.getValue().getItem().getDbId() > 0
+            );
+            
         } catch (SQLException e) {
             System.err.println("Error during DB sync: " + e.getMessage());
         }
@@ -442,7 +452,7 @@ public class AuctionService {
                         loadAutoBidsForAuction(conn, auction, userService);
 
                         auctions.put(targetAuctionId, auction);
-                        System.out.println("🆕 [SYNC] Loaded new auction from DB: " + targetAuctionId);
+                        System.out.println("[SYNC] Loaded new auction from DB: " + targetAuctionId);
                     }
                 }
             }
@@ -528,6 +538,7 @@ public class AuctionService {
 
     // Lấy phiên đấu giá theo TÊN người bán
     public List<Auction> getAuctionsBySeller(String sellerUsername) {
+        syncWithDatabase(); // Luôn đồng bộ với DB trước khi trả về
         List<Auction> sellerAuctions = new ArrayList<>();
         for (Auction auction : auctions.values()) {
             if (auction.getSeller() != null && auction.getSeller().getUsername().equals(sellerUsername)) {
@@ -583,6 +594,12 @@ public class AuctionService {
 
                 conn.commit();
                 System.out.println("🗑️ [PERMANENT DELETE] Auction " + auctionId + " and all related data (bids, auto-bids, holds) have been removed.");
+                
+                try {
+                    com.google.gson.Gson gson = shared.utils.GsonUtils.createGson();
+                    shared.network.Response resp = new shared.network.Response("AUCTION_UPDATED", auctionId);
+                    server.controller.ClientHandler.broadcast(gson.toJson(resp));
+                } catch (Exception ignored) {}
             } catch (SQLException e) {
                 conn.rollback();
                 throw e;
