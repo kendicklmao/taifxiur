@@ -30,6 +30,7 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.net.Socket;
 import java.time.Instant;
 import java.util.Base64;
@@ -388,9 +389,9 @@ public class ClientHandler implements Runnable {
                         // Handle minIncrement
                         String incType = data.get("incrementType");
                         BigDecimal minInc;
-                        BigDecimal defaultMinInc = price.multiply(new BigDecimal("0.05"));
+                        BigDecimal defaultMinInc = price.multiply(new BigDecimal("0.05")).setScale(2, RoundingMode.HALF_UP);
                         if ("Custom Amount".equals(incType)) {
-                            minInc = new BigDecimal(data.get("minIncrement"));
+                            minInc = new BigDecimal(data.get("minIncrement")).setScale(2, RoundingMode.HALF_UP);
                             if (minInc.compareTo(defaultMinInc) < 0) {
                                 return new Response("FAIL", "Custom increment must be greater than or equal to default minimum increment: " + defaultMinInc.toPlainString());
                             }
