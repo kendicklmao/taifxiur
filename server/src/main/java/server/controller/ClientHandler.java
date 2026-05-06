@@ -326,7 +326,7 @@ public class ClientHandler implements Runnable {
                     var data = request.getData();
                     String name = data.get("name");
                     String desc = data.get("description");
-                    BigDecimal price = new BigDecimal(data.get("price"));
+                    BigDecimal price = new BigDecimal(data.get("price")).setScale(2, RoundingMode.UP);
 
                     Instant start = Instant.parse(data.get("startTime"));
                     Instant end = Instant.parse(data.get("endTime"));
@@ -389,9 +389,9 @@ public class ClientHandler implements Runnable {
                         // Handle minIncrement
                         String incType = data.get("incrementType");
                         BigDecimal minInc;
-                        BigDecimal defaultMinInc = price.multiply(new BigDecimal("0.05")).setScale(2, RoundingMode.HALF_UP);
+                        BigDecimal defaultMinInc = price.multiply(new BigDecimal("0.05")).setScale(2, RoundingMode.UP);
                         if ("Custom Amount".equals(incType)) {
-                            minInc = new BigDecimal(data.get("minIncrement")).setScale(2, RoundingMode.HALF_UP);
+                            minInc = new BigDecimal(data.get("minIncrement")).setScale(2, RoundingMode.UP);
                             if (minInc.compareTo(defaultMinInc) < 0) {
                                 return new Response("FAIL", "Custom increment must be greater than or equal to default minimum increment: " + defaultMinInc.toPlainString());
                             }

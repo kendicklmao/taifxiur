@@ -186,7 +186,7 @@ public class BidderHomeController {
             imageView.setImage(new Image(auction.getItem().getImageUrl(), 150, 150, true, true));
         }
         nameLabel.setText(auction.getItem().getName());
-        priceLabel.setText("Current Bid: " + auction.getCurrentPrice() + "$");
+        priceLabel.setText("Current Bid: $" + auction.getCurrentPrice());
         statusLabel.setText(auction.getStatus().toString());
         startsAtLabel.setText("Starts: " + formatEndTime(auction.getStartTime()));
         endsInLabel.setText("Ends: " + formatEndTime(auction.getEndTime()));

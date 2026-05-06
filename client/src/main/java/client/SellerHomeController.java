@@ -176,7 +176,7 @@ public class SellerHomeController {
                 VBox card = existingAuctionCards.get(id);
                 Object priceObj = card.getProperties().get("priceLabel");
                 if (priceObj instanceof Label) {
-                    ((Label) priceObj).setText("Current Price: " + auction.getCurrentPrice() + "$");
+                    ((Label) priceObj).setText("Current Price: $" + auction.getCurrentPrice());
                 }
                 Object statusObj = card.getProperties().get("statusLabel");
                 if (statusObj instanceof Label) {
@@ -228,7 +228,7 @@ public class SellerHomeController {
             imageView.setImage(new Image(auction.getItem().getImageUrl(), 150, 150, true, true));
         }
         nameLabel.setText(auction.getItem().getName());
-        priceLabel.setText("Current Price: " + auction.getCurrentPrice() + "$");
+        priceLabel.setText("Current Price: $" + auction.getCurrentPrice());
         statusLabel.setText("Status: " + auction.getStatus());
         startsAtLabel.setText("Starts: " + formatTime(auction.getStartTime()));
         endsAtLabel.setText("Ends: " + formatTime(auction.getEndTime()));
