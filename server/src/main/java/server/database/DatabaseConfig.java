@@ -1,9 +1,7 @@
-package server.database; 
-
+package server.database;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
-
 
 /**
  * Database configuration for Supabase PostgreSQL connection using HikariCP
@@ -27,7 +25,8 @@ public class DatabaseConfig {
 
     /**
      * Lazy-initialize the HikariCP data source.
-     * DNS resolution is handled by the PostgreSQL JDBC driver which supports IPv4 and IPv6.
+     * DNS resolution is handled by the PostgreSQL JDBC driver which supports IPv4
+     * and IPv6.
      */
     public static HikariDataSource getDataSource() {
         if (dataSource == null) {
@@ -42,34 +41,41 @@ public class DatabaseConfig {
 
     private static void initializeDataSource() {
         String host = System.getenv("DB_HOST");
-        if (host == null || host.isEmpty()) host = DEFAULT_DB_HOST;
+        if (host == null || host.isEmpty())
+            host = DEFAULT_DB_HOST;
 
         String portStr = System.getenv("DB_PORT");
         int port = DEFAULT_DB_PORT;
         if (portStr != null && !portStr.isEmpty()) {
-            try { port = Integer.parseInt(portStr); } catch (NumberFormatException ignored) {}
+            try {
+                port = Integer.parseInt(portStr);
+            } catch (NumberFormatException ignored) {
+            }
         }
 
         String dbName = System.getenv("DB_NAME");
-        if (dbName == null || dbName.isEmpty()) dbName = DEFAULT_DB_NAME;
+        if (dbName == null || dbName.isEmpty())
+            dbName = DEFAULT_DB_NAME;
 
         String user = System.getenv("DB_USER");
-        if (user == null || user.isEmpty()) user = DEFAULT_DB_USER;
+        if (user == null || user.isEmpty())
+            user = DEFAULT_DB_USER;
 
         String password = System.getenv("DB_PASSWORD");
-        if (password == null || password.isEmpty()) password = DEFAULT_DB_PASSWORD;
+        if (password == null || password.isEmpty())
+            password = DEFAULT_DB_PASSWORD;
 
         String sslmode = System.getenv("DB_SSLMODE");
-        if (sslmode == null || sslmode.isEmpty()) sslmode = "require";
+        if (sslmode == null || sslmode.isEmpty())
+            sslmode = "require";
 
-        // Build JDBC URL - DNS resolution is handled by the PostgreSQL driver which supports IPv4 and IPv6
+        // Build JDBC URL - DNS resolution is handled by the PostgreSQL driver which
+        // supports IPv4 and IPv6
         String jdbcUrl = String.format(
-            "jdbc:postgresql://%s:%d/%s?sslmode=%s&tcpKeepAlives=true&prepareThreshold=0&preferQueryMode=simple&loggerLevel=OFF",
-            host, port, dbName, sslmode
-        );
+                "jdbc:postgresql://%s:%d/%s?sslmode=%s&tcpKeepAlives=true&prepareThreshold=0&preferQueryMode=simple&loggerLevel=OFF",
+                host, port, dbName, sslmode);
 
         System.out.println("Connecting to database at " + host + ":" + port);
-
 
         HikariConfig config = new HikariConfig();
         config.setJdbcUrl(jdbcUrl);
@@ -103,4 +109,3 @@ public class DatabaseConfig {
         }
     }
 }
-
