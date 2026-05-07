@@ -110,6 +110,10 @@ public class ClientHandler implements Runnable {
         }
     }
 
+    public void setLoggedInUsername(String username) {
+        this.loggedInUsername = username;
+    }
+
     private Response handleRequest(Request request) {
         String action = request.getAction();
         if (action == null) {

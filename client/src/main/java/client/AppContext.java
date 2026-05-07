@@ -35,6 +35,7 @@ public class AppContext {
     private Thread listenerThread;
 
     protected AppContext() {
+
     }
 
     public static AppContext getInstance() {
@@ -47,9 +48,11 @@ public class AppContext {
     public void setCurrentUser(User u) {
         currentUser = u;
     }
+    
     public Auction getSelectedAuction() {
         return selectedAuction;
     }
+
     public void setSelectedAuction(Auction a) {
         selectedAuction = a;
     }
