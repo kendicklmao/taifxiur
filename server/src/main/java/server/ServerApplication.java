@@ -1,6 +1,6 @@
 package server; 
 
-import server.controller.ClientHandler;
+import server.controller.*;
 import server.database.DatabaseConfig;
 import server.database.DatabaseInitializer;
 import server.service.AuctionService;
@@ -15,35 +15,30 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Map;
 
 public class ServerApplication {
 
-    // Port này để cho server listen và client connect vào
     private static final int PORT = 54321;
 
-    // Static services shared across all client handlers
     private static UserService userService;
     private static WalletService walletService;
     private static AuctionService auctionService;
     private static StorageService storageService;
 
     public static void main(String[] args) {
-        // Đặt Java networking preferences để có IPv4/IPv6 tương thích hơn
         System.setProperty("java.net.preferIPv4Stack", "false");
         System.setProperty("java.net.preferIPv6Addresses", "false");
 
         System.out.println("Initializing...");
-        // Khởi tạo connection pool và schema cơ sở dữ liệu
         try {
             DatabaseInitializer.initializeDatabase();
 
-            // Khởi tạo services với dependency injection
             userService = new UserService();
             walletService = new WalletService();
             auctionService = new AuctionService(userService, walletService);
             storageService = new StorageService();
 
-            // Break circular dependency
             userService.setWalletService(walletService);
 
             try (Connection conn = DatabaseConfig.getDataSource().getConnection();
@@ -58,8 +53,6 @@ public class ServerApplication {
             
             System.out.println("Database initialization completed");
             
-            // Khởi tạo trước AuctionService để tải tất cả các phiên đấu giá từ DB
-            // Điều này ngăn client đầu tiên bị time out trong quá trình kết nối
             System.out.println("Loading auctions into memory...");
             System.out.println("All services initialized.");
         } catch (Exception e) {
@@ -68,19 +61,20 @@ public class ServerApplication {
             System.exit(1);
         }
 
+        Map<String, RequestHandler> handlers = HandlerFactory.createHandlers(userService, auctionService, walletService, storageService);
+
         try (ServerSocket serverSocket = new ServerSocket(PORT)) {
             System.out.println("Server open at port " + PORT + ". Waiting for connections...");
 
             while (true) {
                 Socket clientSocket = serverSocket.accept();
                 System.out.println("New client connected: " + clientSocket.getInetAddress());
-                new Thread(new ClientHandler(clientSocket, userService, walletService, auctionService, storageService)).start();
+                new Thread(new ClientHandler(clientSocket, userService, handlers)).start();
             }
 
         } catch (IOException e) {
             System.err.println("Error starting server: " + e.getMessage());
         } finally {
-            // Đóng connection pool khi server shutdown
             DatabaseConfig.closeDataSource();
         }
     }

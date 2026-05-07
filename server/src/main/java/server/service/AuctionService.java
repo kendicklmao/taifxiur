@@ -266,7 +266,7 @@ public class AuctionService {
         auction.setFinishCallback(a -> finalizeAuction(a));
         auction.setBanChecker(username -> userService.isUserBanned(username));
         auctions.put(id, auction);
-        System.out.println("✅ [MEMORY] Added new auction to map. Current total in memory: " + auctions.size());
+        System.out.println(" [MEMORY] Added new auction to map. Current total in memory: " + auctions.size());
 
         // Lưu item và auction vào database
         int dbId = saveItemAndAuctionToDatabase(item, seller, startPrice, startTime, endTime, id);
@@ -368,7 +368,7 @@ public class AuctionService {
     // Lấy tất cả phiên đấu giá và cập nhật trạng thái nếu cần
     public List<Auction> getAllAuctions() {
         syncWithDatabase(); // Luôn đồng bộ với DB trước khi trả về cho Client
-        System.out.println("🔍 [QUERY] Sync completed. Client requested all auctions. Total: " + auctions.size());
+        System.out.println(" [QUERY] Sync completed. Client requested all auctions. Total: " + auctions.size());
         for (Auction auction : auctions.values()) {
             auction.updateStatus();
         }
@@ -593,7 +593,7 @@ public class AuctionService {
                 }
 
                 conn.commit();
-                System.out.println("🗑️ [PERMANENT DELETE] Auction " + auctionId + " and all related data (bids, auto-bids, holds) have been removed.");
+                System.out.println(" [PERMANENT DELETE] Auction " + auctionId + " and all related data (bids, auto-bids, holds) have been removed.");
                 
                 try {
                     com.google.gson.Gson gson = shared.utils.GsonUtils.createGson();

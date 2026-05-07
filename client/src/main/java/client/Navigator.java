@@ -65,7 +65,7 @@ public class Navigator implements INavigator {
             Platform.runLater(() -> {
 
                 if (isMaximized) {
-                    stage.setMaximized(true); // 🔳 giữ full màn hình
+                    stage.setMaximized(true); //  giữ full màn hình
                 } else {
                     stage.setWidth(width);
                     stage.setHeight(height);

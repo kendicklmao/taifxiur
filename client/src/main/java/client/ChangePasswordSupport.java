@@ -133,7 +133,6 @@ public final class ChangePasswordSupport {
                 if ("SUCCESS".equals(response.getStatus())) {
                     dialog.close();
 
-                    // 🔥 FIX QUAN TRỌNG: delay để dialog cũ đóng xong
                     Platform.runLater(() ->
                             showAlert("Success", response.getMessage(), ownerNode)
                     );

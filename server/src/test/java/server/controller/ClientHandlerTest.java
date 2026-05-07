@@ -43,12 +43,14 @@ public class ClientHandlerTest {
         storageService = new StorageService();
         userService.setWalletService(walletService);
 
+        Map<String, RequestHandler> handlers = HandlerFactory.createHandlers(userService, auctionService, walletService, storageService);
+
         serverSocket = new ServerSocket(0); // Use a random free port
         serverThread = new Thread(() -> {
             try {
                 while (!Thread.currentThread().isInterrupted()) {
                     Socket socket = serverSocket.accept();
-                    ClientHandler clientHandler = new ClientHandler(socket, userService, walletService, auctionService, storageService);
+                    ClientHandler clientHandler = new ClientHandler(socket, userService, handlers);
                     new Thread(clientHandler).start();
                 }
             } catch (IOException e) {

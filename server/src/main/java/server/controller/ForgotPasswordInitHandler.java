@@ -1,21 +1,18 @@
 package server.controller;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import com.google.gson.Gson;
-
+import shared.utils.GsonUtils;
 import server.service.UserService;
 import shared.network.Request;
 import shared.network.Response;
-import shared.utils.GsonUtils;
+import java.util.HashMap;
+import java.util.Map;
 
-public class ForgotPasswordInit implements RequestHandler {
-
+public class ForgotPasswordInitHandler implements RequestHandler {
     private final UserService userService;
     private final Gson gson = GsonUtils.createGson();
 
-    public ForgotPasswordInit(UserService userService) {
+    public ForgotPasswordInitHandler(UserService userService) {
         this.userService = userService;
     }
 

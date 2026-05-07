@@ -27,8 +27,7 @@ public class AuctionServiceTest {
     @BeforeAll
     public static void setUpClass() throws Exception {
         DatabaseInitializer.initializeDatabase();
-        // Dọn dẹp DB một lần trước khi khởi tạo service
-        // để tránh lỗi "min_increment is null"
+        // Dọn dẹp DB một lần trước khi khởi tạo service để tránh lỗi "min_increment is null"
         cleanupDatabaseOnce(); 
         userService = new UserService();
         walletService = new WalletService();
@@ -44,7 +43,7 @@ public class AuctionServiceTest {
         seller = (Seller) userService.getUser("seller");
         bidder = (Bidder) userService.getUser("bidder");
 
-        // Ensure bidder has funds for testing
+        // Đảm bảo bidder có tiền để test
         walletService.createDepositRequest(bidder.getUsername(), new BigDecimal("1000.00"), "Test Bank", "12345");
         String requestId = walletService.getPendingDepositRequests().get(0).get("id");
         walletService.approveDeposit(requestId, "admin");
