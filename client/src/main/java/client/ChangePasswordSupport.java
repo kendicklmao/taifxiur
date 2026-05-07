@@ -66,15 +66,8 @@ public final class ChangePasswordSupport {
 
         VBox content = new VBox(10);
         content.setStyle("-fx-padding: 24;");
-        content.getChildren().addAll(
-                currentPasswordLabel,
-                currentPasswordField,
-                newPasswordLabel,
-                newPasswordField,
-                confirmPasswordLabel,
-                confirmPasswordField,
-                errorLabel
-        );
+        content.getChildren().addAll(currentPasswordLabel, currentPasswordField, newPasswordLabel, newPasswordField,
+                                    confirmPasswordLabel, confirmPasswordField, errorLabel);
 
         Button changeButton = new Button("CHANGE PASSWORD");
         changeButton.getStyleClass().add("login-btn-primary");
@@ -98,11 +91,8 @@ public final class ChangePasswordSupport {
         cancelButton.setOnAction(e -> dialog.close());
 
         changeButton.setOnAction(event -> {
-            String validationError = validate(
-                    currentPasswordField.getText(),
-                    newPasswordField.getText(),
-                    confirmPasswordField.getText()
-            );
+            String validationError = validate(currentPasswordField.getText(), newPasswordField.getText(),
+                                            confirmPasswordField.getText());
 
             if (validationError != null) {
                 errorLabel.setText(validationError);
@@ -119,6 +109,7 @@ public final class ChangePasswordSupport {
                     if (!ctx.isConnected()) {
                         ctx.connect();
                     }
+
                     Map<String, String> data = new HashMap<>();
                     data.put("username", ctx.getCurrentUser().getUsername());
                     data.put("oldPassword", currentPasswordField.getText());
@@ -132,11 +123,7 @@ public final class ChangePasswordSupport {
 
                 if ("SUCCESS".equals(response.getStatus())) {
                     dialog.close();
-
-                    Platform.runLater(() ->
-                            showAlert("Success", response.getMessage(), ownerNode)
-                    );
-
+                    Platform.runLater(() -> showAlert("Success", response.getMessage(), ownerNode));
                 } else {
                     errorLabel.setText(response.getMessage());
                     errorLabel.setManaged(true);

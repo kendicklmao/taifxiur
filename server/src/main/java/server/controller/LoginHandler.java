@@ -24,6 +24,7 @@ public class LoginHandler implements RequestHandler {
             if (userService.exists(user) && userService.isBanned(user)) {
                 return new Response("FAIL", "Your account has been banned");
             }
+
             User loggedInUser = userService.login(user, pass);
             if (loggedInUser != null) {
                 clientHandler.setLoggedInUsername(loggedInUser.getUsername());
@@ -31,6 +32,7 @@ public class LoginHandler implements RequestHandler {
             } else {
                 return new Response("FAIL", "Invalid username or password");
             }
+
         } catch (UserAlreadyLoggedInException e) {
             return new Response("FAIL", e.getMessage());
         } catch (UserLockedException e) {

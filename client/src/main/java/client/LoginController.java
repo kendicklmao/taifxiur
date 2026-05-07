@@ -28,14 +28,14 @@ public class LoginController {
     private final INavigator navigator;
     private final IAlertService alertService;
 
-    // Default constructor for FXML loading
+    // Constructor mặc định cho FXML loading
     public LoginController() {
         this.ctx = AppContext.getInstance();
         this.navigator = Navigator.getInstance();
         this.alertService = new AlertServiceImpl();
     }
 
-    // Constructor for testing (Dependency Injection)
+    // Constructor cho testing (Dependency Injection)
     public LoginController(AppContext ctx, INavigator navigator, IAlertService alertService) {
         this.ctx = ctx;
         this.navigator = navigator;
@@ -69,6 +69,7 @@ public class LoginController {
                 } else {
                     currentUser = new Admin(username, "dummy", "dummy@mail.com", "q", "a", "q", "a");
                 }
+
                 ctx.setCurrentUser(currentUser);
 
                 alertService.showAlert("Success", "Login successful with role: " + role, usernameField);
@@ -79,6 +80,7 @@ public class LoginController {
                 } else if (role.equals("ADMIN")) {
                     navigator.switchScene("admin_home.fxml");
                 }
+
             } else if ("ACCOUNT_DISABLED".equals(res.getStatus())) {
                 int seconds = Integer.parseInt(res.getMessage());
                 alertService.showAlert("Account Disabled", "Account is temporarily locked. Please try again in " + seconds + " seconds.", usernameField);

@@ -74,10 +74,12 @@ public class ForgotPasswordController {
             markInvalid(usernameField);
             valid = false;
         }
+
         if (!Validator.isValidEmail(email)) {
             markInvalid(emailField);
             valid = false;
         }
+
         if (!valid) {
             showAlert("Invalid information", "Please enter a valid username and email.");
             return;
@@ -141,16 +143,19 @@ public class ForgotPasswordController {
             valid = false;
             errors.add("Security answer 1 cannot be empty.");
         }
+
         if (!hasAnswer(answer2)) {
             markInvalid(answer2Field);
             valid = false;
             errors.add("Security answer 2 cannot be empty.");
         }
+
         if (!Validator.isValidPassword(newPassword)) {
             markInvalid(newPasswordField);
             valid = false;
             errors.add("New password must be at least 6 characters and include uppercase, lowercase, number, and special character.");
         }
+
         if (confirmPassword == null || !confirmPassword.equals(newPassword)) {
             markInvalid(confirmPasswordField);
             valid = false;
@@ -158,10 +163,7 @@ public class ForgotPasswordController {
         }
 
         if (!valid) {
-            showAlert(
-                    "Invalid information",
-                    String.join("\n", errors)
-            );
+            showAlert("Invalid information", String.join("\n", errors));
             return;
         }
 
@@ -182,6 +184,7 @@ public class ForgotPasswordController {
             } else {
                 showAlert("Reset failed", response.getMessage());
             }
+
         } catch (Exception e) {
             showAlert("Connection error", "Cannot connect to server.");
             e.printStackTrace();

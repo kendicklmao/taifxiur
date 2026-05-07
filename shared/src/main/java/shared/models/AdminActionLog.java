@@ -39,8 +39,6 @@ public class AdminActionLog {
 
     @Override
     public String toString() {
-        return String.format("Admin '%s' %s user '%s' at %s",
-                adminUsername, action.toLowerCase(), targetUsername, actionTime.toString());
+        return String.format("Admin '%s' %s user '%s' at %s", adminUsername, action.toLowerCase(), targetUsername, actionTime.toString());
     }
 }
-

@@ -19,6 +19,7 @@ public class BannedPaymentTest {
         walletService = new WalletService();
         userService.initializeDefaultUsers();
     }
+
     @Test
     public void testBannedUserCannotBeCharged() {
         String bidder = "bidder_" + UUID.randomUUID().toString().substring(0, 8);
@@ -30,20 +31,12 @@ public class BannedPaymentTest {
         userService.register(seller, "Pass@123", seller + "@test.com", "q", "a", "q", "a", Role.SELLER);
 
         // 2. Deposit money into the bidder's wallet
-        String depositResult = walletService.createDepositRequest(
-                bidder,
-                new BigDecimal("1000"),
-                "Test Bank",
-                "12345"
+        String depositResult = walletService.createDepositRequest(bidder, new BigDecimal("1000"), "Test Bank", "12345"
         );
 
         assertNull(depositResult);
         // Get the ID of the request just created to approve it
-        String requestId = walletService.getPendingDepositRequests().stream()
-                .filter(r -> r.get("username").equals(bidder))
-                .findFirst()
-                .map(r -> r.get("id"))
-                .orElseThrow(() ->
+        String requestId = walletService.getPendingDepositRequests().stream().filter(r -> r.get("username").equals(bidder)).findFirst().map(r -> r.get("id")).orElseThrow(() ->
                         new RuntimeException("Deposit request not found"));
         walletService.approveDeposit(requestId, admin);
 
@@ -52,10 +45,7 @@ public class BannedPaymentTest {
         assertTrue(userService.isUserBanned(bidder), "User should be banned");
 
         // 4. Finalize payment for an auction where the banned bidder won
-        String result = walletService.finalizePaymentForWinner(
-                UUID.randomUUID().toString(),
-                bidder,
-                seller,
+        String result = walletService.finalizePaymentForWinner(UUID.randomUUID().toString(), bidder, seller,
                 new BigDecimal("100.00"));
 
         // 5. Check that the payment was blocked due to the ban

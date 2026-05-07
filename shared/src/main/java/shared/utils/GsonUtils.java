@@ -14,14 +14,7 @@ import java.util.concurrent.ScheduledFuture;
 
 public class GsonUtils {
     public static Gson createGson() {
-        return new GsonBuilder()
-                .registerTypeAdapter(Instant.class, new InstantAdapter())
-                .registerTypeAdapter(LocalDateTime.class, new LocalDateTimeAdapter())
-                .registerTypeAdapter(Item.class, new ItemDeserializer())
-                .registerTypeAdapter(User.class, new UserSerializer())
-                .registerTypeAdapter(User.class, new UserDeserializer())
-                .registerTypeAdapter(ScheduledFuture.class, new ScheduledFutureAdapter())
-                .create();
+        return new GsonBuilder().registerTypeAdapter(Instant.class, new InstantAdapter()).registerTypeAdapter(LocalDateTime.class, new LocalDateTimeAdapter()).registerTypeAdapter(Item.class, new ItemDeserializer()).registerTypeAdapter(User.class, new UserSerializer()).registerTypeAdapter(User.class, new UserDeserializer()).registerTypeAdapter(ScheduledFuture.class, new ScheduledFutureAdapter()).create();
     }
 
     private static class UserSerializer implements JsonSerializer<User> {
@@ -35,8 +28,8 @@ public class GsonUtils {
             obj.addProperty("isBanned", src.isBanned());
             obj.addProperty("securityQuestion1", src.getSecurityQuestion1());
             obj.addProperty("securityQuestion2", src.getSecurityQuestion2());
-            obj.addProperty("securityAnswer1", src.getSecurityQuestion1()); // Use question for consistency
-            obj.addProperty("securityAnswer2", src.getSecurityQuestion2()); // Use question for consistency
+            obj.addProperty("securityAnswer1", src.getSecurityQuestion1());
+            obj.addProperty("securityAnswer2", src.getSecurityQuestion2());
             return obj;
         }
     }
@@ -113,28 +106,33 @@ public class GsonUtils {
                     int yearCreated = obj.get("yearCreated").getAsInt();
                     yield new Collectible(name, description, null, startingPrice, yearCreated);
                 }
+
                 case ELECTRONICS -> {
                     String brand = obj.get("brand").getAsString();
                     ItemStatus status = ItemStatus.valueOf(obj.get("status").getAsString().toUpperCase());
                     yield new Electronic(name, description, null, startingPrice, brand, status);
                 }
+
                 case ARTS -> {
                     String artist = obj.get("artist").getAsString();
                     int year = obj.get("yearCreated").getAsInt();
                     boolean original = obj.get("isOriginal").getAsBoolean();
                     yield new Art(name, description, null, startingPrice, artist, year, original);
                 }
+
                 case VEHICLES -> {
                     String brand = obj.get("brand").getAsString();
                     int model = obj.get("model").getAsInt();
                     int km = obj.get("kmTravel").getAsInt();
                     yield new Vehicle(name, description, null, startingPrice, brand, model, km);
                 }
+
                 case FASHIONS -> {
                     String brand = obj.get("brand").getAsString();
                     ItemStatus status = ItemStatus.valueOf(obj.get("status").getAsString().toUpperCase());
                     yield new Fashion(name, description, null, startingPrice, brand, status);
                 }
+
                 default -> throw new JsonParseException("Unknown category: " + category);
             };
             
@@ -147,7 +145,7 @@ public class GsonUtils {
     private static class ScheduledFutureAdapter implements JsonSerializer<ScheduledFuture<?>>, JsonDeserializer<ScheduledFuture<?>> {
         @Override
         public JsonElement serialize(ScheduledFuture<?> src, Type typeOfSrc, JsonSerializationContext context) {
-            return JsonNull.INSTANCE; // or new JsonObject()
+            return JsonNull.INSTANCE;
         }
 
         @Override

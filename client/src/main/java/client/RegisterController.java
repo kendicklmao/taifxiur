@@ -60,12 +60,9 @@ public class RegisterController {
                     usernameError.setText("");
                     usernameField.getStyleClass().remove("error-field");
                 }
-            /*if (ctx.getUserService().exists(username)) {
-                usernameError.setText("Username đã tồn tại");
-                usernameField.setStyle("-fx-border-color: red;");
-            }*/
             }
         });
+
         passwordField.focusedProperty().addListener((obs, oldVal, newVal) -> {
             if (!newVal) {
                 String password = passwordField.getText();
@@ -77,7 +74,9 @@ public class RegisterController {
                     passwordField.getStyleClass().remove("error-field");
                 }
             }
+
         });
+
         confirmPasswordField.focusedProperty().addListener((obs, oldVal, newVal) -> {
             if (!newVal) {
                 String password = passwordField.getText();
@@ -91,6 +90,7 @@ public class RegisterController {
                 }
             }
         });
+
         emailField.focusedProperty().addListener((obs, oldVal, newVal) -> {
             if (!newVal) {
                 if (!emailField.getText().isEmpty() && !Validator.isValidEmail(emailField.getText())) {
@@ -102,6 +102,7 @@ public class RegisterController {
                 }
             }
         });
+
         q1Field.focusedProperty().addListener((obs, oldVal, newVal) -> {
             if (!newVal) {
                 if (q1Field.getText().isEmpty()) {
@@ -113,6 +114,7 @@ public class RegisterController {
                 }
             }
         });
+
         q2Field.focusedProperty().addListener((obs, oldVal, newVal) -> {
             if (!newVal) {
                 if (q2Field.getText().isEmpty()) {
@@ -124,6 +126,7 @@ public class RegisterController {
                 }
             }
         });
+
         a1Field.focusedProperty().addListener((obs, oldVal, newVal) -> {
             if (!newVal) {
                 if (a1Field.getText().isEmpty()) {
@@ -135,6 +138,7 @@ public class RegisterController {
                 }
             }
         });
+
         a2Field.focusedProperty().addListener((obs, oldVal, newVal) -> {
             if (!newVal) {
                 if (a2Field.getText().isEmpty()) {
@@ -146,7 +150,6 @@ public class RegisterController {
                 }
             }
         });
-
     }
 
     @FXML
@@ -193,7 +196,6 @@ public class RegisterController {
         formError.setText("");
         boolean valid = true;
 
-        // Clear all error styles
         clearErrorStyle(usernameField);
         clearErrorStyle(passwordField);
         clearErrorStyle(confirmPasswordField);
@@ -207,30 +209,37 @@ public class RegisterController {
             addErrorStyle(usernameField);
             valid = false;
         }
+
         if (passwordField.getText() == null || passwordField.getText().trim().isEmpty()) {
             addErrorStyle(passwordField);
             valid = false;
         }
+
         if (confirmPasswordField.getText() == null || confirmPasswordField.getText().trim().isEmpty()) {
             addErrorStyle(confirmPasswordField);
             valid = false;
         }
+
         if (emailField.getText() == null || emailField.getText().trim().isEmpty()) {
             addErrorStyle(emailField);
             valid = false;
         }
+
         if (q1Field.getText() == null || q1Field.getText().trim().isEmpty()) {
             addErrorStyle(q1Field);
             valid = false;
         }
+
         if (a1Field.getText() == null || a1Field.getText().trim().isEmpty()) {
             addErrorStyle(a1Field);
             valid = false;
         }
+
         if (q2Field.getText() == null || q2Field.getText().trim().isEmpty()) {
             addErrorStyle(q2Field);
             valid = false;
         }
+
         if (a2Field.getText() == null || a2Field.getText().trim().isEmpty()) {
             addErrorStyle(a2Field);
             valid = false;
@@ -274,6 +283,7 @@ public class RegisterController {
             } else {
                 showAlert("Error", res.getMessage());
             }
+
         } catch (Exception e) {
             showAlert("Error", "Error connecting to server");
             e.printStackTrace();

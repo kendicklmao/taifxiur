@@ -35,7 +35,6 @@ public class AppContext {
     private Thread listenerThread;
 
     protected AppContext() {
-
     }
 
     public static AppContext getInstance() {
@@ -45,10 +44,11 @@ public class AppContext {
     public User getCurrentUser() {
         return currentUser;
     }
+
     public void setCurrentUser(User u) {
         currentUser = u;
     }
-    
+
     public Auction getSelectedAuction() {
         return selectedAuction;
     }
@@ -70,13 +70,13 @@ public class AppContext {
         System.out.println("DEBUG CLIENT: Connected. Starting listener thread...");
         startListenerThread();
     }
-    
+
     private void startListenerThread() {
         if (listenerThread != null && listenerThread.isAlive()) {
             System.out.println("DEBUG CLIENT: Listener thread already running.");
             return;
         }
-        
+
         final BufferedReader currentIn = this.in;
         listenerThread = new Thread(() -> {
             System.out.println("DEBUG CLIENT: Listener thread started.");
@@ -97,29 +97,31 @@ public class AppContext {
                                 System.out.println("DEBUG CLIENT: No pending request found for ID " + res.getRequestId());
                             }
                         }
+
                     } catch (Exception e) {
                         System.out.println("DEBUG CLIENT: Message is not a standard Response or has no ID: " + e.getMessage());
                     }
-                    
+
                     for (Consumer<String> listener : messageListeners) {
                         listener.accept(message);
                     }
                 }
+
                 System.out.println("DEBUG CLIENT: Listener thread reached end of stream.");
             } catch (Throwable e) {
                 System.err.println("DEBUG CLIENT: Connection lost or error in listener: " + e.getMessage());
                 e.printStackTrace();
-                // Reset connection state on error
                 socket = null;
                 out = null;
                 in = null;
                 listenerThread = null;
             }
+
         });
         listenerThread.setDaemon(true);
         listenerThread.start();
     }
-    
+
     public Response sendRequestAndWait(Request req, long timeoutSeconds) throws Exception {
         String requestId = UUID.randomUUID().toString();
         req.setRequestId(requestId);
@@ -139,7 +141,7 @@ public class AppContext {
     public void addMessageListener(Consumer<String> listener) {
         messageListeners.add(listener);
     }
-    
+
     public void removeMessageListener(Consumer<String> listener) {
         messageListeners.remove(listener);
     }
@@ -147,7 +149,7 @@ public class AppContext {
     public PrintWriter getOut() {
         return out;
     }
-    
+
     public BufferedReader getIn() {
         return in;
     }

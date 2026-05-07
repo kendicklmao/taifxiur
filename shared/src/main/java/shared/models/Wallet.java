@@ -11,6 +11,7 @@ public class Wallet {
         if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
             throw new IllegalArgumentException();
         }
+
         balance = balance.add(amount);
     }
 
@@ -19,9 +20,11 @@ public class Wallet {
         if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
             throw new IllegalArgumentException();
         }
+
         if (balance.compareTo(amount) < 0) {
             return false;
         }
+
         balance = balance.subtract(amount);
         return true;
     }
@@ -31,6 +34,7 @@ public class Wallet {
         if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
             throw new IllegalArgumentException();
         }
+
         Wallet target = other.getWallet();
         Wallet first = System.identityHashCode(this) < System.identityHashCode(target) ? this : target;
         Wallet second = first == this ? target : this;
@@ -39,6 +43,7 @@ public class Wallet {
                 if (this.balance.compareTo(amount) < 0) {
                     return false;
                 }
+
                 this.balance = this.balance.subtract(amount);
                 target.balance = target.balance.add(amount);
                 return true;

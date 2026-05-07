@@ -12,7 +12,9 @@ public class FakeNavigator implements INavigator {
     }
 
     public String getLastSwitchedScene() {
-        if (switchedScenes.isEmpty()) return null;
+        if (switchedScenes.isEmpty()) {
+            return null;
+        }
         return switchedScenes.get(switchedScenes.size() - 1);
     }
 

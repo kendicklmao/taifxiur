@@ -28,8 +28,7 @@ public class AuctionService {
     private final WalletService walletService;
     private final UserService userService;
     private static final ExecutorService asyncExecutor = Executors.newFixedThreadPool(2);
-    // Cache để tránh lặp lại query DB
-    private static final Map<String, Integer> userIdCache = new ConcurrentHashMap<>();
+    private static final Map<String, Integer> userIdCache = new ConcurrentHashMap<>(); // Cache để tránh lặp lại query DB
 
     public AuctionService(UserService userService, WalletService walletService) {
         this.userService = userService;
@@ -43,8 +42,7 @@ public class AuctionService {
         System.out.println("Loading auctions from database...");
         try (Connection conn = DatabaseConfig.getDataSource().getConnection();
              Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery(
-                     "SELECT id, seller_id, base_price, current_price, auction_status, " +
+             ResultSet rs = stmt.executeQuery("SELECT id, seller_id, base_price, current_price, auction_status, " +
                              "start_time, end_time, winner_id, auction_id " +
                              "FROM items WHERE auction_id IS NOT NULL AND auction_status != 'CANCELED'")) {
 
@@ -101,6 +99,7 @@ public class AuctionService {
                     e.printStackTrace();
                 }
             }
+
             System.out.println("✓ Auction loading complete. Total auctions loaded: " + auctions.size());
         } catch (SQLException e) {
             System.err.println("Error initializing auctions from database: " + e.getMessage());
@@ -165,13 +164,17 @@ public class AuctionService {
                         // Mặc định nếu min_increment bị thiếu
                         throw new RuntimeException("min_increment is null for item " + itemId);
                     }
+
                     item.setDbId(itemId);
                 }
+
                 return item;
             }
+
         } catch (SQLException e) {
             System.err.println("Error loading item from database: " + e.getMessage());
         }
+
         return null;
     }
 
@@ -183,9 +186,11 @@ public class AuctionService {
             if (rs.next()) {
                 return rs.getString("username");
             }
+
         } catch (SQLException e) {
             System.err.println("Error fetching username from ID: " + e.getMessage());
         }
+
         return null;
     }
 
@@ -208,6 +213,7 @@ public class AuctionService {
                     auction.restoreBid((Bidder) bidderUser, bidAmount, rs.getTimestamp("bid_time").toInstant());
                 }
             }
+
         } catch (SQLException e) {
             System.err.println("Error loading bid history: " + e.getMessage());
         }
@@ -216,8 +222,7 @@ public class AuctionService {
     // Tải auto-bids cho một phiên đấu giá
     private void loadAutoBidsForAuction(Connection conn, Auction auction, UserService userService) {
         try (PreparedStatement pstmt = conn.prepareStatement(
-                "SELECT ab.bidder_id, ab.max_bid_amount FROM auto_bids ab " +
-                "WHERE ab.auction_id = ?")) {
+                "SELECT ab.bidder_id, ab.max_bid_amount FROM auto_bids ab " + "WHERE ab.auction_id = ?")) {
 
             pstmt.setString(1, auction.getId());
             ResultSet rs = pstmt.executeQuery();
@@ -232,6 +237,7 @@ public class AuctionService {
                     auction.registerAutoBid((Bidder) bidderUser, maxBid);
                 }
             }
+
         } catch (SQLException e) {
             System.err.println("Error loading auto-bids: " + e.getMessage());
         }
@@ -250,11 +256,13 @@ public class AuctionService {
         if (!item.isValid()) {
             throw new IllegalArgumentException("Item is invalid");
         }
+
         // Đảm bảo thời gian bắt đầu đấu giá hợp lệ
         Instant now = Instant.now();
         if (startTime == null || startTime.isBefore(now)) {
             startTime = now;
         }
+
         // Đảm bảo thời gian kết thúc đấu giá hợp lệ
         if (endTime == null || !endTime.isAfter(startTime)) {
             throw new IllegalArgumentException("endTime must be after startTime and cannot be null");
@@ -268,8 +276,7 @@ public class AuctionService {
         auctions.put(id, auction);
         System.out.println(" [MEMORY] Added new auction to map. Current total in memory: " + auctions.size());
 
-        // Lưu item và auction vào database
-        int dbId = saveItemAndAuctionToDatabase(item, seller, startPrice, startTime, endTime, id);
+        int dbId = saveItemAndAuctionToDatabase(item, seller, startPrice, startTime, endTime, id); // Lưu item và auction vào database
         if (dbId == -1) {
             auctions.remove(id); // remove from in-memory map if DB save failed
             throw new RuntimeException("Failed to save auction to database.");
@@ -286,6 +293,7 @@ public class AuctionService {
         if (auction == null) {
             throw new IllegalArgumentException();
         }
+
         // Đảm bảo bidder có đủ số dư (không có hệ thống hold)
         BigDecimal balance = walletService.getWalletBalance(bidder.getUsername());
         if (balance == null || balance.compareTo(amount) < 0) {
@@ -330,10 +338,12 @@ public class AuctionService {
         if (auctionId == null || bidder == null || maxBid == null) {
             throw new IllegalArgumentException();
         }
+
         Auction auction = auctions.get(auctionId);
         if (auction == null) {
             throw new IllegalArgumentException();
         }
+
         auction.registerAutoBid(bidder, maxBid);
 
         // Lưu vào database
@@ -362,6 +372,7 @@ public class AuctionService {
                 allAuctions.add(a);
             }
         }
+
         return allAuctions;
     }
 
@@ -372,13 +383,12 @@ public class AuctionService {
         for (Auction auction : auctions.values()) {
             auction.updateStatus();
         }
+
         return new ArrayList<>(auctions.values());
     }
 
-    /**
-     * Đồng bộ hóa dữ liệu từ Database vào RAM. 
-     * Giúp nhiều Server chạy song song vẫn nhìn thấy dữ liệu của nhau.
-     */
+    // Đồng bộ hóa dữ liệu từ Database vào RAM.
+// Giúp nhiều Server chạy song song vẫn nhìn thấy dữ liệu của nhau.
     private void syncWithDatabase() {
         try (Connection conn = DatabaseConfig.getDataSource().getConnection();
              Statement stmt = conn.createStatement();
@@ -398,20 +408,20 @@ public class AuctionService {
                     if (dbPrice != null && dbPrice.compareTo(auction.getCurrentPrice()) > 0) {
                         auction.setCurrentPriceForDBRestore(dbPrice);
                     }
+
                     if (dbStatus != null) {
                         auction.setStatusForDBRestore(AuctionStatus.valueOf(dbStatus));
                     }
+
                 } else {
                     // Nếu chưa có trong RAM (do Server khác tạo), tiến hành nạp mới hoàn toàn
                     loadSingleAuctionFromDB(conn, auctionId);
                 }
             }
-            
-            // Xóa các auction khỏi RAM nếu nó đã bị xóa ở Database (bởi 1 máy khác)
-            // Chỉ xóa nếu item đó đã từng được lưu vào DB (getDbId() > 0)
+
+            // Xóa các auction khỏi RAM nếu nó đã bị xóa ở Database (bởi 1 máy khác) Chỉ xóa nếu item đó đã từng được lưu vào DB (getDbId() > 0)
             auctions.entrySet().removeIf(entry -> 
-                !dbAuctionIds.contains(entry.getKey()) && entry.getValue().getItem().getDbId() > 0
-            );
+                !dbAuctionIds.contains(entry.getKey()) && entry.getValue().getItem().getDbId() > 0);
             
         } catch (SQLException e) {
             System.err.println("Error during DB sync: " + e.getMessage());
@@ -420,8 +430,7 @@ public class AuctionService {
 
     private void loadSingleAuctionFromDB(Connection conn, String targetAuctionId) {
         String sql = "SELECT id, seller_id, base_price, current_price, auction_status, " +
-                     "start_time, end_time, winner_id, auction_id " +
-                     "FROM items WHERE auction_id = ?";
+                     "start_time, end_time, winner_id, auction_id " + "FROM items WHERE auction_id = ?";
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, targetAuctionId);
             try (ResultSet rs = pstmt.executeQuery()) {
@@ -445,6 +454,7 @@ public class AuctionService {
                         if (currentPrice != null && currentPrice.compareTo(startPrice) > 0) {
                             auction.setCurrentPriceForDBRestore(currentPrice);
                         }
+
                         auction.setStatusForDBRestore(AuctionStatus.valueOf(statusStr));
                         
                         // Load bid history & auto-bids
@@ -456,6 +466,7 @@ public class AuctionService {
                     }
                 }
             }
+
         } catch (Exception e) {
             System.err.println("Error loading single auction during sync: " + e.getMessage());
         }
@@ -489,6 +500,7 @@ public class AuctionService {
                         } catch (SQLException e) {
                             System.err.println("Error updating auction status to PAID: " + e.getMessage());
                         }
+
                         // Thông báo cho client
                         try {
                             Gson gson = GsonUtils.createGson();
@@ -496,9 +508,11 @@ public class AuctionService {
                             ClientHandler.broadcast(gson.toJson(resp));
                         } catch (Exception ignored) {
                         }
+
                     } else {
                         System.err.println("Không thể thanh toán tiền cho phiên đấu giá " + auction.getId() + ": " + finalizeError);
                     }
+
                 } else {
                     // Không có người thắng: chỉ cập nhật trạng thái phiên đấu giá thành FINISHED trong DB
                     try (Connection conn = DatabaseConfig.getDataSource().getConnection();
@@ -510,6 +524,7 @@ public class AuctionService {
                     } catch (SQLException e) {
                         System.err.println("Error updating auction status to FINISHED: " + e.getMessage());
                     }
+
                     // Notify clients
                     try {
                         Gson gson = GsonUtils.createGson();
@@ -518,9 +533,11 @@ public class AuctionService {
                     } catch (Exception ignored) {
                     }
                 }
+
             } catch (Exception e) {
                 System.err.println("Error finalizing auction payment: " + e.getMessage());
             }
+
         });
     }
 
@@ -529,10 +546,12 @@ public class AuctionService {
         if (auctionId == null || bidder == null) {
             throw new IllegalArgumentException();
         }
+
         Auction auction = auctions.get(auctionId);
         if (auction == null) {
             throw new IllegalArgumentException();
         }
+
         auction.itemPaid(bidder);
     }
 
@@ -547,6 +566,7 @@ public class AuctionService {
                 sellerAuctions.add(auction);
             }
         }
+
         return sellerAuctions;
     }
 
@@ -604,6 +624,7 @@ public class AuctionService {
                 conn.rollback();
                 throw e;
             }
+
         } catch (SQLException e) {
             System.err.println("Error deleting auction from database: " + e.getMessage());
             return "Database error while deleting auction.";
@@ -628,8 +649,7 @@ public class AuctionService {
             pstmt.setString(2, item.getName());
             pstmt.setString(3, item.getDescription());
 
-            // Get category from item class type
-            String category = item.getClass().getSimpleName().toUpperCase();
+            String category = item.getClass().getSimpleName().toUpperCase(); // Get category from item class type
             if (category.equals("COLLECTIBLE"))
                 category = "COLLECTIBLES";
             else if (category.equals("ELECTRONIC"))
@@ -697,15 +717,15 @@ public class AuctionService {
                     }
                 }
             }
+
         } catch (SQLException e) {
             System.err.println("Error saving item to database: " + e.getMessage());
         }
+
         return -1;
     }
 
-    /**
-     * Helper method to get user ID from database by username (WITH CACHING)
-     */
+    // Helper method to get user ID from database by username (WITH CACHING)
     private int getUserIdFromDatabase(String username) {
         // Check cache first
         Integer cachedId = userIdCache.get(username);
@@ -723,15 +743,15 @@ public class AuctionService {
                 userIdCache.put(username, id);
                 return id;
             }
+
         } catch (SQLException e) {
             System.err.println("Error fetching user ID: " + e.getMessage());
         }
+
         return -1;
     }
 
-    /**
-     * Update auction current price (ASYNC to avoid blocking)
-     */
+    // Update auction current price (ASYNC to avoid blocking)
     private void updateItemPrice(int itemId, BigDecimal newPrice) {
         asyncExecutor.execute(() -> {
             try (Connection conn = DatabaseConfig.getDataSource().getConnection();
@@ -744,6 +764,7 @@ public class AuctionService {
             } catch (SQLException e) {
                 System.err.println("Error updating auction price: " + e.getMessage());
             }
+
         });
     }
 

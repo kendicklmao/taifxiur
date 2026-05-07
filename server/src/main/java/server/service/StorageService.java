@@ -19,20 +19,12 @@ public class StorageService {
     private final S3Client s3;
 
     public StorageService() {
-        s3 = S3Client.builder()
-                .endpointOverride(URI.create(ENDPOINT))
-                .region(Region.of(REGION))
-                .credentialsProvider(StaticCredentialsProvider.create(
-                        AwsBasicCredentials.create(ACCESS_KEY, SECRET_KEY)))
-                .build();
+        s3 = S3Client.builder().endpointOverride(URI.create(ENDPOINT)).region(Region.of(REGION)).credentialsProvider(StaticCredentialsProvider.create(
+                        AwsBasicCredentials.create(ACCESS_KEY, SECRET_KEY))).build();
     }
 
     public String uploadFile(String key, byte[] fileData, String contentType) {
-        s3.putObject(PutObjectRequest.builder()
-                        .bucket(BUCKET_NAME)
-                        .key(key)
-                        .contentType(contentType)
-                        .build(),
+        s3.putObject(PutObjectRequest.builder().bucket(BUCKET_NAME).key(key).contentType(contentType).build(),
                 RequestBody.fromBytes(fileData));
         return String.format("https://uxmbyzqylbtuqyyatzwj.storage.supabase.co/storage/v1/object/public/%s/%s", BUCKET_NAME, key);
     }

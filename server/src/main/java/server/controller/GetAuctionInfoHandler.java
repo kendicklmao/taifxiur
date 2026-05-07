@@ -23,10 +23,12 @@ public class GetAuctionInfoHandler implements RequestHandler {
         if (infoAuctionId == null || infoAuctionId.isBlank()) {
             return new Response("FAIL", "Missing auctionId");
         }
+
         Auction infoAuction = auctionService.getAuction(infoAuctionId);
         if (infoAuction == null) {
             return new Response("FAIL", "Auction not found");
         }
+
         Map<String, String> info = new HashMap<>();
         try {
             info.put("id", infoAuction.getId());
@@ -43,9 +45,11 @@ public class GetAuctionInfoHandler implements RequestHandler {
             } else {
                 info.put("highestBidder", "");
             }
+
         } catch (Exception e) {
             return new Response("FAIL", "Error reading auction info: " + e.getMessage());
         }
+
         return new Response("SUCCESS", gson.toJson(info));
     }
 }

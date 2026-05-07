@@ -10,11 +10,8 @@ import java.util.Map;
 
 public class HandlerFactory {
 
-    public static Map<String, RequestHandler> createHandlers(
-            UserService userService,
-            AuctionService auctionService,
-            WalletService walletService,
-            StorageService storageService) {
+    public static Map<String, RequestHandler> createHandlers(UserService userService, AuctionService auctionService,
+            WalletService walletService, StorageService storageService) {
 
         Map<String, RequestHandler> handlers = new HashMap<>();
 

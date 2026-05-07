@@ -52,11 +52,13 @@ public class ClientHandler implements Runnable {
                     if (request.getRequestId() != null) {
                         response.setRequestId(request.getRequestId());
                     }
+
                     String responseJson = gson.toJson(response);
                     System.out.println("DEBUG: Sending response: " + responseJson);
                     sendMessage(responseJson);
                 }
             }
+
         } catch (Throwable e) {
             System.err.println("CRITICAL ERROR in ClientHandler (" + socket.getInetAddress() + "): " + e.getMessage());
             e.printStackTrace();

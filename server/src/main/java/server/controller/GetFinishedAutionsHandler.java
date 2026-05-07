@@ -17,7 +17,7 @@ public class GetFinishedAutionsHandler implements RequestHandler {
     public GetFinishedAutionsHandler(AuctionService auctionService) {
         this.auctionService = auctionService;
     }
-    
+
     @Override
     public Response handle(Request request, ClientHandler clientHandler) {
         List<Auction> finishedList = auctionService.getAuctionsByStatus(AuctionStatus.FINISHED);

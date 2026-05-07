@@ -19,7 +19,6 @@ public class GetAuctionHandler implements RequestHandler {
 
     @Override
     public Response handle(Request request, ClientHandler clientHandler) {
-        // Return all auctions for bidders to see
         List<Auction> list = auctionService.getAllAuctions();
         String json = gson.toJson(list);
         return new Response("SUCCESS", json);

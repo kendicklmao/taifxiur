@@ -10,10 +10,7 @@ import shared.models.User;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-/**
- * Unit tests for Gson serialization and deserialization of User objects,
- * especially the isBanned field
- */
+// Unit tests for Gson serialization and deserialization of User objects, especially the isBanned field
 public class GsonUtilsTest {
     private Gson gson;
     private Bidder bidder;
@@ -23,14 +20,11 @@ public class GsonUtilsTest {
     @BeforeEach
     public void setUp() {
         gson = GsonUtils.createGson();
-        bidder = new Bidder(1, "bidder_user", "Password@123", "bidder@test.com",
-                           "What is your pet name?", "Fluffy",
+        bidder = new Bidder(1, "bidder_user", "Password@123", "bidder@test.com", "What is your pet name?", "Fluffy",
                            "What is your mother's name?", "Jane");
-        seller = new Seller(2, "seller_user", "Password@123", "seller@test.com",
-                           "What is your pet name?", "Fluffy",
+        seller = new Seller(2, "seller_user", "Password@123", "seller@test.com", "What is your pet name?", "Fluffy",
                            "What is your mother's name?", "Jane");
-        admin = new Admin(3, "admin_user", "Password@123", "admin@test.com",
-                         "What is your pet name?", "Fluffy",
+        admin = new Admin(3, "admin_user", "Password@123", "admin@test.com", "What is your pet name?", "Fluffy",
                          "What is your mother's name?", "Jane");
     }
 
@@ -72,8 +66,7 @@ public class GsonUtilsTest {
         // Ban only the seller
         seller.banUser();
 
-        // Serialize all three
-        String bidderJson = gson.toJson(bidder);
+        String bidderJson = gson.toJson(bidder); // Serialize all three
         String sellerJson = gson.toJson(seller);
         String adminJson = gson.toJson(admin);
 
@@ -113,4 +106,3 @@ public class GsonUtilsTest {
         assertFalse(bidder.isBanned(), "User should not be banned after setBanned(false)");
     }
 }
-

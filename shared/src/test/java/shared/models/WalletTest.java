@@ -5,9 +5,7 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 import java.math.BigDecimal;
 
-/**
- * Unit tests for Wallet class
- */
+// Unit tests for Wallet class
 public class WalletTest {
     private Wallet wallet;
 
@@ -23,7 +21,6 @@ public class WalletTest {
         wallet.deposit(amount);
         assertEquals(0, wallet.getBalance().compareTo(new BigDecimal("100.00")));
     }
-
 
     //Kiem tra gui tien nhieu lan va tinh tong tien cua cac lan gui
     @Test

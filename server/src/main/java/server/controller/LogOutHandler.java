@@ -19,6 +19,7 @@ public class LogOutHandler implements RequestHandler {
             userService.logout(loggedInUsername);
             clientHandler.setLoggedInUsername(null);
         }
+
         return new Response("SUCCESS", "Logged out");
     }
 }

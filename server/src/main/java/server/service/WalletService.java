@@ -44,9 +44,11 @@ public class WalletService {
         if (!Validator.isValidUsername(username)) {
             return "Invalid username";
         }
+
         if (!isPositiveAmount(amount)) {
             return "Amount must be greater than 0";
         }
+
         if (bankName == null || bankName.trim().isEmpty() || accountNumber == null || accountNumber.trim().isEmpty()) {
             return "Bank name and account number are required";
         }
@@ -82,18 +84,23 @@ public class WalletService {
         if (sellerUsername == null || Validator.normalizeAndLowercase(sellerUsername).isEmpty()) {
             return "Username is required";
         }
+
         if (!Validator.isValidUsername(sellerUsername)) {
             return "Invalid username";
         }
+
         if (amount == null) {
             return "Amount is required";
         }
+
         if (!isPositiveAmount(amount)) {
             return "Amount must be greater than 0";
         }
+
         if (bankName == null || Validator.normalizeAndLowercase(bankName).isEmpty()) {
             return "Bank name cannot be empty";
         }
+
         if (accountNumber == null || Validator.normalizeAndLowercase(accountNumber).isEmpty()) {
             return "Bank account cannot be empty";
         }
@@ -103,8 +110,7 @@ public class WalletService {
         accountNumber = Validator.normalizeAndLowercase(accountNumber);
 
         try (Connection conn = DatabaseConfig.getDataSource().getConnection();
-                PreparedStatement pstmt = conn.prepareStatement(
-                        """
+                PreparedStatement pstmt = conn.prepareStatement("""
                                 INSERT INTO withdraw_requests (id, seller_id, amount, bank_name, account_number, status, created_at, updated_at)
                                 VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
                                 """)) {
@@ -162,6 +168,7 @@ public class WalletService {
                 row.put("accountNumber", rs.getString("account_number"));
                 requests.add(row);
             }
+
         } catch (SQLException e) {
             System.err.println("Error loading deposit requests: " + e.getMessage());
         }
@@ -197,6 +204,7 @@ public class WalletService {
                 row.put("createdAt", rs.getTimestamp("created_at").toString());
                 requests.add(row);
             }
+
         } catch (SQLException e) {
             System.err.println("Error loading withdraw requests: " + e.getMessage());
         }
@@ -254,6 +262,7 @@ public class WalletService {
             } finally {
                 conn.setAutoCommit(true);
             }
+
         } catch (SQLException e) {
             System.err.println("Error processing deposit request: " + e.getMessage());
             return "Database error while processing deposit request";
@@ -286,6 +295,7 @@ public class WalletService {
                         conn.rollback();
                         return "Seller wallet balance is no longer sufficient";
                     }
+
                     updateWalletBalance(conn, requestData.userId(), requestData.amount().negate());
                 }
 
@@ -299,6 +309,7 @@ public class WalletService {
             } finally {
                 conn.setAutoCommit(true);
             }
+
         } catch (SQLException e) {
             System.err.println("Error processing withdraw request: " + e.getMessage());
             return "Database error while processing withdraw request";
@@ -321,6 +332,7 @@ public class WalletService {
             if (rs.next()) {
                 return rs.getInt("id");
             }
+
             return null;
         }
     }
@@ -334,13 +346,13 @@ public class WalletService {
             if (rs.next()) {
                 return rs.getInt("id");
             }
+
             return null;
         }
     }
 
     private void ensureWalletExists(Connection conn, int userId) throws SQLException {
-        try (PreparedStatement pstmt = conn.prepareStatement(
-                "SELECT 1 FROM wallets WHERE user_id = ?")) {
+        try (PreparedStatement pstmt = conn.prepareStatement("SELECT 1 FROM wallets WHERE user_id = ?")) {
             pstmt.setInt(1, userId);
             ResultSet rs = pstmt.executeQuery();
             if (!rs.next()) {
@@ -362,13 +374,13 @@ public class WalletService {
                 BigDecimal balance = rs.getBigDecimal("balance");
                 return balance == null ? BigDecimal.ZERO : balance;
             }
+
             return BigDecimal.ZERO;
         }
     }
 
     private void updateWalletBalance(Connection conn, int userId, BigDecimal amountDelta) throws SQLException {
-        try (PreparedStatement pstmt = conn.prepareStatement(
-                """
+        try (PreparedStatement pstmt = conn.prepareStatement("""
                         UPDATE wallets
                         SET balance = balance + ?, updated_at = CURRENT_TIMESTAMP
                         WHERE user_id = ?
@@ -388,6 +400,7 @@ public class WalletService {
             if (rs.next()) {
                 return new PendingRequestData(rs.getInt("bidder_id"), rs.getBigDecimal("amount"));
             }
+
             return null;
         }
     }
@@ -401,6 +414,7 @@ public class WalletService {
             if (rs.next()) {
                 return new PendingRequestData(rs.getInt("seller_id"), rs.getBigDecimal("amount"));
             }
+
             return null;
         }
     }
@@ -428,11 +442,9 @@ public class WalletService {
     private record PendingRequestData(int userId, BigDecimal amount) {
     }
 
-    /* --- Hold / reservation functionality for bids --- */
+    // --- Hold / reservation functionality for bids ---
 
-    /**
-     * Get available wallet balance (just total balance, no holds)
-     */
+    // Get available wallet balance (just total balance, no holds)
     public BigDecimal getAvailableBalance(String username) {
         if (!Validator.isValidUsername(username))
             return null;
@@ -457,14 +469,12 @@ public class WalletService {
             if (rs.next()) {
                 return rs.getBigDecimal("total");
             }
+
             return BigDecimal.ZERO;
         }
     }
 
-    /**
-     * Create or update a hold for a bidder on an auction. Returns null on success,
-     * or error message.
-     */
+    // Create or update a hold for a bidder on an auction. Returns null on success, or error message.
     public String createOrUpdateHold(String auctionId, String bidderUsername, BigDecimal amount) {
         if (auctionId == null || Validator.normalize(auctionId).isEmpty())
             return "Invalid auction id";
@@ -481,10 +491,9 @@ public class WalletService {
                     conn.rollback();
                     return "Bidder not found";
                 }
+
                 ensureWalletExists(conn, bidderId);
-                // If there's an existing hold for this auction by the bidder, allow updating it
-                // by
-                // considering the existing hold amount when checking available funds.
+                // If there's an existing hold for this auction by the bidder, allow updating it by considering the existing hold amount when checking available funds.
                 BigDecimal existingHold = BigDecimal.ZERO;
                 try (PreparedStatement check = conn.prepareStatement(
                         "SELECT amount FROM wallet_holds WHERE auction_id = ? AND bidder_id = ? AND status = 'HELD'")) {
@@ -505,8 +514,7 @@ public class WalletService {
                         .subtract(existingHold == null ? BigDecimal.ZERO : existingHold);
                 BigDecimal balance = getWalletBalance(conn, bidderId);
                 BigDecimal available = balance.subtract(totalHeldExcludingCurrent);
-                // Now ensure available (excluding current auction's existing hold) is enough
-                // for the requested amount
+                // Now ensure available (excluding current auction's existing hold) is enough for the requested amount
                 if (available.compareTo(amount) < 0) {
                     conn.rollback();
                     return "Insufficient available balance";
@@ -532,15 +540,14 @@ public class WalletService {
             } finally {
                 conn.setAutoCommit(true);
             }
+
         } catch (SQLException e) {
             System.err.println("Error creating/updating hold: " + e.getMessage());
             return "Database error while creating hold";
         }
     }
 
-    /**
-     * Release (cancel) a hold for a bidder on an auction
-     */
+    // Release (cancel) a hold for a bidder on an auction
     public void releaseHold(String auctionId, String bidderUsername) {
         if (auctionId == null || Validator.normalize(auctionId).isEmpty() || !Validator.isValidUsername(bidderUsername))
             return;
@@ -555,15 +562,13 @@ public class WalletService {
                 pstmt.setInt(2, bidderId);
                 pstmt.executeUpdate();
             }
+
         } catch (SQLException e) {
             System.err.println("Error releasing hold: " + e.getMessage());
         }
     }
 
-    /**
-     * Release all holds for an auction (used when auction finishes to release
-     * non-winning holds)
-     */
+    // Release all holds for an auction (used when auction finishes to release non-winning holds)
     public void releaseAllHoldsForAuction(String auctionId) {
         if (auctionId == null || Validator.normalize(auctionId).isEmpty())
             return;
@@ -577,10 +582,8 @@ public class WalletService {
         }
     }
 
-    /**
-     * Finalize payment for a winning bidder: deduct amount and credit seller.
-     * Returns null on success or error message.
-     */
+    // Finalize payment for a winning bidder: deduct amount and credit seller.
+// Returns null on success or error message.
     public String finalizePaymentForWinner(String auctionId, String bidderUsername, String sellerUsername,
             BigDecimal amount) {
         if (auctionId == null || Validator.normalize(auctionId).isEmpty())
@@ -637,6 +640,7 @@ public class WalletService {
             } finally {
                 conn.setAutoCommit(true);
             }
+
         } catch (SQLException e) {
             System.err.println("Error finalizing payment: " + e.getMessage());
             return "Database error while finalizing payment";

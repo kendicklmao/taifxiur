@@ -4,7 +4,8 @@ import shared.enums.Category;
 
 import java.math.BigDecimal;
 
-public class Collectible extends Item { //mặt hàng sưu tập
+// Mặt hàng sưu tập
+public class Collectible extends Item {
     private int yearCreated;
 
     public Collectible(String name, String description, Seller seller, BigDecimal startingPrice, int yearCreated) {
@@ -12,12 +13,11 @@ public class Collectible extends Item { //mặt hàng sưu tập
         this.yearCreated = yearCreated;
     }
 
-
     public int getYearCreated() {
         return yearCreated;
     }
 
-    public boolean isValid() { //kiểm tra thông số có logic không?
+    public boolean isValid() {
         return super.isValid() && yearCreated >= 0;
     }
 }

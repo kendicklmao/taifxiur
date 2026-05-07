@@ -37,15 +37,24 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 public class AdminHomeController {
-    @FXML private ListView<Auction> allAuctionsList;
-    @FXML private VBox auctionDetailPane;
-    @FXML private ListView<User> allUsersList;
-    @FXML private ListView<AdminActionLog> adminActionLogsList;
-    @FXML private ListView<Map<String, String>> depositRequestsList;
-    @FXML private ListView<Map<String, String>> withdrawRequestsList;
-    @FXML private ComboBox<String> usernameField;
-    @FXML private TextArea userStatusArea;
-    @FXML private Label welcomeLabel;
+    @FXML
+    private ListView<Auction> allAuctionsList;
+    @FXML
+    private VBox auctionDetailPane;
+    @FXML
+    private ListView<User> allUsersList;
+    @FXML
+    private ListView<AdminActionLog> adminActionLogsList;
+    @FXML
+    private ListView<Map<String, String>> depositRequestsList;
+    @FXML
+    private ListView<Map<String, String>> withdrawRequestsList;
+    @FXML
+    private ComboBox<String> usernameField;
+    @FXML
+    private TextArea userStatusArea;
+    @FXML
+    private Label welcomeLabel;
 
     private final AppContext ctx = AppContext.getInstance();
     private final Gson gson = GsonUtils.createGson();
@@ -56,20 +65,16 @@ public class AdminHomeController {
     @FXML
     public void initialize() {
         welcomeLabel.setText("Welcome " + ctx.getCurrentUser().getUsername());
-        
+
         setupAuctionListCell();
         setupUserListCell();
         setupDepositRequestListCell();
         setupWithdrawRequestListCell();
 
         Platform.runLater(() -> {
-
             refreshAuctions();
-
             refreshUsers();
-
             refreshAdminActionLogs();
-
             refreshWalletRequests();
         });
 
@@ -79,8 +84,7 @@ public class AdminHomeController {
                 usernameField.setItems(javafx.collections.FXCollections.observableArrayList(allUsernames));
             } else {
                 List<String> filteredList = allUsernames.stream()
-                        .filter(s -> s.toLowerCase().contains(newText.toLowerCase()))
-                        .collect(Collectors.toList());
+                .filter(s -> s.toLowerCase().contains(newText.toLowerCase())).collect(Collectors.toList());
                 usernameField.setItems(javafx.collections.FXCollections.observableArrayList(filteredList));
                 usernameField.show();
             }
@@ -90,7 +94,9 @@ public class AdminHomeController {
         messageListener = line -> {
             try {
                 Response res = gson.fromJson(line, Response.class);
-                if ("AUCTION_CREATED".equals(res.getStatus()) || "AUCTION_UPDATED".equals(res.getStatus()) || "UPDATE_PRICE".equals(res.getStatus())) {
+                if ("AUCTION_CREATED".equals(res.getStatus()) ||
+                    "AUCTION_UPDATED".equals(res.getStatus()) ||
+                    "UPDATE_PRICE".equals(res.getStatus())) {
                     System.out.println("[ADMIN] Received auction update from server, refreshing auction list...");
                     this.refreshAuctions();
                 }
@@ -222,6 +228,7 @@ public class AdminHomeController {
             } else {
                 alertService.showAlert("Error", "Failed to terminate auction: " + response.getMessage(), welcomeLabel);
             }
+
         } catch (Exception e) {
             alertService.showAlert("Error", "An error occurred while terminating the auction.", welcomeLabel);
         }
@@ -235,15 +242,10 @@ public class AdminHomeController {
                 if (empty || item == null) {
                     setText(null);
                 } else {
-                    setText(
-                            item.getItem().getName() +
-                            " | ID: " + item.getId() +
-                            " | Seller: " + item.getSeller().getUsername() +
-                            " | Price: $" + item.getCurrentPrice() +
-                            " | Status: " + item.getStatus() +
-                            " | Start: " + formatTime(item.getStartTime()) +
-                            " | End: " + formatTime(item.getEndTime())
-                    );
+                    setText(item.getItem().getName() + " | ID: " + item.getId() +
+                            " | Seller: " + item.getSeller().getUsername() + " | Price: $" + item.getCurrentPrice() +
+                            " | Status: " + item.getStatus() + " | Start: " + formatTime(item.getStartTime()) +
+                            " | End: " + formatTime(item.getEndTime()));
                 }
             }
         });
@@ -278,7 +280,9 @@ public class AdminHomeController {
                 if (empty || item == null) {
                     setText(null);
                 } else {
-                    setText("Deposit | " + item.get("username") + " | $" + item.get("amount") + " | Bank: " + item.get("bankName") + " | Acc: " + item.get("accountNumber") + " | " + item.get("createdAt"));
+                    setText("Deposit | " + item.get("username") + " | $" + item.get("amount") + " | Bank: "
+                            + item.get("bankName") + " | Acc: " + item.get("accountNumber") + " | "
+                            + item.get("createdAt"));
                 }
             }
         });
@@ -292,7 +296,9 @@ public class AdminHomeController {
                 if (empty || item == null) {
                     setText(null);
                 } else {
-                    setText("Withdraw | " + item.get("username") + " | $" + item.get("amount") + " | Bank: " + item.get("bankName") + " | Acc: " + item.get("accountNumber") + " | " + item.get("createdAt"));
+                    setText("Withdraw | " + item.get("username") + " | $" + item.get("amount") + " | Bank: "
+                            + item.get("bankName") + " | Acc: " + item.get("accountNumber") + " | "
+                            + item.get("createdAt"));
                 }
             }
         });
@@ -316,66 +322,33 @@ public class AdminHomeController {
     public void refreshUsers() {
 
         Task<User[]> task = new Task<>() {
-
             @Override
             protected User[] call() throws Exception {
-
-                Request req =
-                        new Request(
-                                "GET_ALL_USERS",
-                                new HashMap<>()
-                        );
-
-                Response response =
-                        ctx.sendRequestAndWait(req, 15);
-
+                Request req = new Request("GET_ALL_USERS", new HashMap<>());
+                Response response = ctx.sendRequestAndWait(req, 15);
                 if (!"SUCCESS".equals(response.getStatus())) {
                     return new User[0];
                 }
-
-                return gson.fromJson(
-                        response.getMessage(),
-                        User[].class
-                );
+                return gson.fromJson(response.getMessage(), User[].class);
             }
         };
 
         task.setOnSucceeded(e -> {
-
             User[] users = task.getValue();
-
             allUsersList.getItems().setAll(users);
-
-            List<String> usernames =
-                    java.util.Arrays.stream(users)
-                            .map(User::getUsername)
-                            .collect(Collectors.toList());
-
+            List<String> usernames = java.util.Arrays.stream(users).map(User::getUsername).collect(Collectors.toList());
             allUsernames.clear();
-
             allUsernames.addAll(usernames);
-
-            usernameField.setItems(
-                    javafx.collections.FXCollections
-                            .observableArrayList(allUsernames)
-            );
-
+            usernameField.setItems(javafx.collections.FXCollections.observableArrayList(allUsernames));
             allUsersList.refresh();
         });
 
         task.setOnFailed(e -> {
-
-            alertService.showAlert(
-                    "Error",
-                    "Failed to load users",
-                    welcomeLabel
-            );
+            alertService.showAlert("Error", "Failed to load users", welcomeLabel);
         });
 
         Thread thread = new Thread(task);
-
         thread.setDaemon(true);
-
         thread.start();
     }
 
@@ -383,57 +356,30 @@ public class AdminHomeController {
     public void refreshAuctions() {
 
         Task<List<Auction>> task = new Task<>() {
-
             @Override
             protected List<Auction> call() throws Exception {
-
-                Request req =
-                        new Request(
-                                "GET_AUCTIONS",
-                                new HashMap<>()
-                        );
-
-                Response response =
-                        ctx.sendRequestAndWait(req, 15);
-
+                Request req = new Request("GET_AUCTIONS", new HashMap<>());
+                Response response = ctx.sendRequestAndWait(req, 15);
                 if (!"SUCCESS".equals(response.getStatus())) {
                     return List.of();
                 }
-
-                Auction[] auctions =
-                        gson.fromJson(
-                                response.getMessage(),
-                                Auction[].class
-                        );
-
+                Auction[] auctions = gson.fromJson(response.getMessage(), Auction[].class);
                 return java.util.Arrays.stream(auctions)
-                        .filter(a ->
-                                a.getStatus()
-                                        != shared.enums.AuctionStatus.CANCELED
-                        )
-                        .collect(Collectors.toList());
+                        .filter(a -> a.getStatus() != shared.enums.AuctionStatus.CANCELED).collect(Collectors.toList());
             }
+
         };
 
         task.setOnSucceeded(e -> {
-
-            allAuctionsList.getItems()
-                    .setAll(task.getValue());
+            allAuctionsList.getItems().setAll(task.getValue());
         });
 
         task.setOnFailed(e -> {
-
-            alertService.showAlert(
-                    "Error",
-                    "Failed to load auctions",
-                    welcomeLabel
-            );
+            alertService.showAlert("Error", "Failed to load auctions", welcomeLabel);
         });
 
         Thread thread = new Thread(task);
-
         thread.setDaemon(true);
-
         thread.start();
     }
 
@@ -494,6 +440,7 @@ public class AdminHomeController {
             } else {
                 alertService.showAlert("Error", response.getMessage(), welcomeLabel);
             }
+
         } catch (Exception e) {
             alertService.showAlert("Error", "Failed to ban user: " + e.getMessage(), welcomeLabel);
         }
@@ -522,6 +469,7 @@ public class AdminHomeController {
             } else {
                 alertService.showAlert("Error", response.getMessage(), welcomeLabel);
             }
+
         } catch (Exception e) {
             alertService.showAlert("Error", "Failed to unban user: " + e.getMessage(), welcomeLabel);
         }
@@ -562,6 +510,7 @@ public class AdminHomeController {
         } catch (Exception e) {
             // Ignore, proceed with logout
         }
+
         ctx.setCurrentUser(null);
         Navigator.switchSceneStatic("login.fxml");
     }
@@ -583,6 +532,7 @@ public class AdminHomeController {
             } else {
                 alertService.showAlert("Error", response.getMessage(), welcomeLabel);
             }
+
         } catch (Exception e) {
             alertService.showAlert("Error", "Failed to process request: " + e.getMessage(), welcomeLabel);
         }

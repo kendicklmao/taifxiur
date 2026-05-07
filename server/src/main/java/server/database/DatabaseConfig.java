@@ -3,17 +3,11 @@ package server.database;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 
-/**
- * Database configuration for Supabase PostgreSQL connection using HikariCP
- * <p>
- * This class reads connection info from environment variables if available.
- */
+// Database configuration for Supabase PostgreSQL connection using HikariCP <p> This class reads connection info from environment variables if available.
 public class DatabaseConfig {
     private static volatile HikariDataSource dataSource;
 
-    // Defaults (can be overridden with environment variables)
-    // Using Supabase Session Pooler for IPv4 compatibility
-    private static final String DEFAULT_DB_HOST = "aws-1-ap-northeast-1.pooler.supabase.com";
+    private static final String DEFAULT_DB_HOST = "aws-1-ap-northeast-1.pooler.supabase.com"; // Defaults (can be overridden with environment variables) Using Supabase Session Pooler for IPv4 compatibility
     private static final int DEFAULT_DB_PORT = 5432;
     private static final String DEFAULT_DB_NAME = "postgres";
     private static final String DEFAULT_DB_USER = "postgres.uxmbyzqylbtuqyyatzwj";
@@ -23,11 +17,8 @@ public class DatabaseConfig {
         // utility
     }
 
-    /**
-     * Lazy-initialize the HikariCP data source.
-     * DNS resolution is handled by the PostgreSQL JDBC driver which supports IPv4
-     * and IPv6.
-     */
+    // Lazy-initialize the HikariCP data source.
+// DNS resolution is handled by the PostgreSQL JDBC driver which supports IPv4 and IPv6.
     public static HikariDataSource getDataSource() {
         if (dataSource == null) {
             synchronized (DatabaseConfig.class) {
@@ -36,6 +27,7 @@ public class DatabaseConfig {
                 }
             }
         }
+
         return dataSource;
     }
 
@@ -69,8 +61,7 @@ public class DatabaseConfig {
         if (sslmode == null || sslmode.isEmpty())
             sslmode = "require";
 
-        // Build JDBC URL - DNS resolution is handled by the PostgreSQL driver which
-        // supports IPv4 and IPv6
+        // Build JDBC URL - DNS resolution is handled by the PostgreSQL driver which supports IPv4 and IPv6
         String jdbcUrl = String.format(
                 "jdbc:postgresql://%s:%d/%s?sslmode=%s&tcpKeepAlives=true&prepareThreshold=0&preferQueryMode=simple&loggerLevel=OFF",
                 host, port, dbName, sslmode);
@@ -99,9 +90,7 @@ public class DatabaseConfig {
         }
     }
 
-    /**
-     * Close the connection pool
-     */
+    // Close the connection pool
     public static void closeDataSource() {
         if (dataSource != null) {
             dataSource.close();

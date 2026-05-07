@@ -45,10 +45,11 @@ public class ServerApplication {
                 if (!rs.next()) {
                     userService.initializeDefaultUsers();
                 }
+
             } catch (SQLException e) {
                 System.err.println("Error checking for existing users: " + e.getMessage());
             }
-            
+
             System.out.println("Database initialization completed");
             
             System.out.println("Loading auctions into memory...");

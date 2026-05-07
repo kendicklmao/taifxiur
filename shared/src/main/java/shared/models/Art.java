@@ -29,7 +29,6 @@ public class Art extends Item {
         return yearCreated;
     }
 
-    // Kiểm tra thông số có logic không?
     public boolean isValid() {
         return super.isValid() && yearCreated >= 0;
     }

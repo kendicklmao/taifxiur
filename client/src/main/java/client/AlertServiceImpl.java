@@ -21,23 +21,16 @@ public class AlertServiceImpl implements IAlertService {
     public void showAlert(String title, String message, Window ownerWindow) {
         Dialog<Void> dialog = new Dialog<>();
 
-        // Set the owner of the dialog so it appears on top
         if (ownerWindow != null) {
             dialog.initOwner(ownerWindow);
         }
 
-        // --- THIS IS THE FIX ---
-        // Initialize the dialog with a transparent style.
-        // The faulty line that caused the crash has been REMOVED.
         dialog.initStyle(StageStyle.TRANSPARENT);
 
         dialog.setTitle(title);
         dialog.setHeaderText(title.toUpperCase());
 
-        // Apply the dark theme stylesheet
         shared.utils.DialogHelper.applyCustomStyle(dialog);
-
-        // --- Custom Layout for the Alert ---
         Label messageLabel = new Label(message);
         messageLabel.setWrapText(true);
         messageLabel.getStyleClass().add("login-subtitle-main");
@@ -52,12 +45,10 @@ public class AlertServiceImpl implements IAlertService {
         alertContent.setStyle("-fx-padding: 24;");
         dialog.getDialogPane().setContent(alertContent);
 
-        // Remove the default button bar
         dialog.getDialogPane().getButtonTypes().add(ButtonType.CLOSE);
         Node closeButton = dialog.getDialogPane().lookupButton(ButtonType.CLOSE);
         closeButton.setVisible(false);
         closeButton.setManaged(false);
-
 
         dialog.show();
     }

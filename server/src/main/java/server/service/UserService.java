@@ -15,10 +15,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class UserService {
     private static final ConcurrentHashMap<String, Integer> failedAttempts = new ConcurrentHashMap<>(); // Lưu số lần
-                                                                                                        // đăng nhập
-                                                                                                        // thất bại của
-                                                                                                        // từng tài
-                                                                                                        // khoản
+                                                                                                        // đăng nhập thất bại của từng tài khoản
     private static final ConcurrentHashMap<String, Instant> lockUntil = new ConcurrentHashMap<>(); // Lưu số giây bị ban
                                                                                                    // của từng tài khoản
     private static final ConcurrentHashMap<String, Boolean> loggedIn = new ConcurrentHashMap<>(); // Lưu trạng thái đăng
@@ -33,9 +30,11 @@ public class UserService {
         if (!exists("admin")) {
             register("admin", "Admin@123", "admin@example.com", "q1", "a1", "q2", "a2", Role.ADMIN);
         }
+
         if (!exists("bidder")) {
             register("bidder", "Bidder@123", "bidder@example.com", "q1", "a1", "q2", "a2", Role.BIDDER);
         }
+
         if (!exists("seller")) {
             register("seller", "Seller@123", "seller@example.com", "q1", "a1", "q2", "a2", Role.SELLER);
         }
@@ -49,10 +48,12 @@ public class UserService {
             System.out.println("DEBUG REGISTER: Invalid username format: " + username);
             return false;
         }
+
         if (!Validator.isValidPassword(password)) {
             System.out.println("DEBUG REGISTER: Invalid password format");
             return false;
         }
+
         if (!Validator.isValidEmail(email)) {
             System.out.println("DEBUG REGISTER: Invalid email format: " + email);
             return false;
@@ -114,8 +115,10 @@ public class UserService {
                 if (generatedKeys.next()) {
                     ensureWalletExists(conn, generatedKeys.getInt(1));
                 }
+
                 return true;
             }
+
         } catch (SQLException e) {
             System.out.println("DEBUG REGISTER: SQL Exception - " + e.getMessage());
             if (e.getMessage().contains("duplicate key")) {
@@ -124,8 +127,10 @@ public class UserService {
                 System.err.println("Error registering user: " + e.getMessage());
                 e.printStackTrace();
             }
+
             return false;
         }
+
         return false;
     }
 
@@ -136,6 +141,7 @@ public class UserService {
             System.out.println("DEBUG LOGIN: Null username or password");
             return null;
         }
+
         username = Validator.normalizeAndLowercase(username);
         password = Validator.normalize(password);
 
@@ -165,6 +171,7 @@ public class UserService {
                 System.out.println("DEBUG LOGIN: User not found in DB: " + username);
                 return null;
             }
+
             System.out.println("DEBUG LOGIN: User found in DB. Verifying password...");
 
             String storedHash = rs.getString("password");
@@ -172,8 +179,7 @@ public class UserService {
             String roleStr = rs.getString("role");
             int userId = rs.getInt("id");
 
-            // Kiểm tra mật khẩu bằng cách băm thử với Salt đã lưu
-            String inputHash = shared.utils.Hash.formula(password, storedSalt);
+            String inputHash = shared.utils.Hash.formula(password, storedSalt); // Kiểm tra mật khẩu bằng cách băm thử với Salt đã lưu
             if (storedHash.equals(inputHash)) {
                 System.out.println("DEBUG LOGIN: Password correct for " + username);
 
@@ -207,6 +213,7 @@ public class UserService {
                     } else {
                         lockSeconds = (long) Math.pow(BASE_LOCK_SECONDS, (attempts - 1));
                     }
+
                     lockUntil.put(username, now.plusSeconds(lockSeconds));
                 }
 
@@ -216,6 +223,7 @@ public class UserService {
 
                 return null;
             }
+
         } catch (SQLException e) {
             System.err.println("Error during login: " + e.getMessage());
             return null;
@@ -238,6 +246,7 @@ public class UserService {
         if (username == null) {
             return false;
         }
+
         username = Validator.normalizeAndLowercase(username);
         try (Connection conn = DatabaseConfig.getDataSource().getConnection();
                 PreparedStatement pstmt = conn.prepareStatement("SELECT is_banned FROM users WHERE username = ?")) {
@@ -291,9 +300,11 @@ public class UserService {
                 loadWalletBalance(conn, user);
                 return user;
             }
+
         } catch (SQLException e) {
             System.err.println("Error fetching user: " + e.getMessage());
         }
+
         return null;
     }
 
@@ -307,6 +318,7 @@ public class UserService {
         if (email == null) {
             return false;
         }
+
         email = Validator.normalizeAndLowercase(email);
 
         try (Connection conn = DatabaseConfig.getDataSource().getConnection();
@@ -326,6 +338,7 @@ public class UserService {
         if (username == null) {
             return false;
         }
+
         username = Validator.normalizeAndLowercase(username);
 
         try (Connection conn = DatabaseConfig.getDataSource().getConnection();
@@ -345,6 +358,7 @@ public class UserService {
         if (username == null) {
             return false;
         }
+
         username = Validator.normalizeAndLowercase(username);
 
         try (Connection conn = DatabaseConfig.getDataSource().getConnection();
@@ -355,6 +369,7 @@ public class UserService {
             if (rs.next()) {
                 return rs.getBoolean("is_banned");
             }
+
             return false;
         } catch (SQLException e) {
             System.err.println("Error checking if user is banned: " + e.getMessage());
@@ -381,10 +396,10 @@ public class UserService {
 
             if (rs.next()) {
                 return new String[] {
-                        rs.getString("question_1"),
-                        rs.getString("question_2")
+                        rs.getString("question_1"), rs.getString("question_2")
                 };
             }
+
         } catch (SQLException e) {
             System.err.println("Error fetching security questions: " + e.getMessage());
         }
@@ -394,11 +409,8 @@ public class UserService {
 
     // Reset mật khẩu sau khi xác minh tên người dùng, email và câu trả lời bảo mật
     public boolean resetPassword(String username, String email, String answer1, String answer2, String newPassword) {
-        if (!Validator.isValidUsername(username) ||
-                !Validator.isValidEmail(email) ||
-                !hasAnswer(answer1) ||
-                !hasAnswer(answer2) ||
-                !Validator.isValidPassword(newPassword)) {
+        if (!Validator.isValidUsername(username) || !Validator.isValidEmail(email) || !hasAnswer(answer1) ||
+                !hasAnswer(answer2) || !Validator.isValidPassword(newPassword)) {
             return false;
         }
 
@@ -409,10 +421,8 @@ public class UserService {
         newPassword = Validator.normalize(newPassword);
 
         try (Connection conn = DatabaseConfig.getDataSource().getConnection();
-                PreparedStatement selectStmt = conn.prepareStatement(
-                        """
-                                SELECT *
-                                FROM users
+                PreparedStatement selectStmt = conn.prepareStatement("""
+                                SELECT * FROM users
                                 WHERE username = ? AND email = ?
                                 """)) {
 
@@ -454,6 +464,7 @@ public class UserService {
                     return true;
                 }
             }
+
         } catch (SQLException e) {
             System.err.println("Error resetting password: " + e.getMessage());
         }
@@ -466,9 +477,11 @@ public class UserService {
         if (!Validator.isValidUsername(username)) {
             throw new IllegalArgumentException("Invalid username");
         }
+
         if (oldPassword == null || oldPassword.trim().isEmpty()) {
             throw new IllegalArgumentException("Current password cannot be empty");
         }
+
         if (!Validator.isValidPassword(newPassword)) {
             throw new IllegalArgumentException("New password must be at least 6 characters and include uppercase, lowercase, number, and special character");
         }
@@ -482,10 +495,8 @@ public class UserService {
         }
 
         try (Connection conn = DatabaseConfig.getDataSource().getConnection();
-                PreparedStatement selectStmt = conn.prepareStatement(
-                        """
-                                SELECT *
-                                FROM users
+                PreparedStatement selectStmt = conn.prepareStatement("""
+                                SELECT * FROM users
                                 WHERE username = ?
                                 """)) {
 
@@ -500,6 +511,7 @@ public class UserService {
             if (user == null) {
                 throw new IllegalArgumentException("User not found");
             }
+
             if (!user.changePassword(oldPassword, newPassword)) {
                 throw new IllegalArgumentException("Current password is incorrect or the new password is invalid");
             }
@@ -518,6 +530,7 @@ public class UserService {
                     return true;
                 }
             }
+
         } catch (SQLException e) {
             System.err.println("Error changing password: " + e.getMessage());
             throw new RuntimeException("Database error while changing password");
@@ -576,8 +589,7 @@ public class UserService {
 
         try (Connection conn = DatabaseConfig.getDataSource().getConnection();
                 Statement stmt = conn.createStatement();
-                ResultSet rs = stmt.executeQuery(
-                        "SELECT * FROM users")) {
+                ResultSet rs = stmt.executeQuery("SELECT * FROM users")) {
 
             while (rs.next()) {
                 User user = mapUser(rs, conn);
@@ -585,6 +597,7 @@ public class UserService {
                     userList.add(user);
                 }
             }
+
         } catch (SQLException e) {
             System.err.println("Error fetching all users: " + e.getMessage());
         }
@@ -592,8 +605,7 @@ public class UserService {
         return userList;
     }
 
-    // Cấm người dùng - trả về null nếu thành công, thông báo lỗi nếu không thành
-    // công
+    // Cấm người dùng - trả về null nếu thành công, thông báo lỗi nếu không thành công
     public String banUser(String username, String adminUsername) {
         username = Validator.normalizeAndLowercase(username);
         User admin = getUserFromDatabase(adminUsername);
@@ -626,6 +638,7 @@ public class UserService {
                 logAdminAction(admin.getId(), targetUser.getId(), "BAN");
                 return null; // Success
             }
+
             return "Failed to ban user";
         } catch (SQLException e) {
             System.err.println("Error banning user: " + e.getMessage());
@@ -633,8 +646,7 @@ public class UserService {
         }
     }
 
-    // Bỏ cấm người dùng - trả về null nếu thành công, thông báo lỗi nếu không thành
-    // công
+    // Bỏ cấm người dùng - trả về null nếu thành công, thông báo lỗi nếu không thành công
     public String unbanUser(String username, String adminUsername) {
         username = Validator.normalizeAndLowercase(username);
         User admin = getUserFromDatabase(adminUsername);
@@ -667,6 +679,7 @@ public class UserService {
                 logAdminAction(admin.getId(), targetUser.getId(), "UNBAN");
                 return null; // Thành công
             }
+
             return "Failed to unban user";
         } catch (SQLException e) {
             System.err.println("Error unbanning user: " + e.getMessage());
@@ -690,11 +703,8 @@ public class UserService {
     public List<AdminActionLog> getAdminActionLogs() {
         List<AdminActionLog> logs = new ArrayList<>();
         String sql = "SELECT aal.id, u_admin.username AS admin_username, u_target.username AS target_username, aal.action, aal.action_time "
-                +
-                "FROM admin_action_logs aal " +
-                "JOIN users u_admin ON aal.admin_id = u_admin.id " +
-                "JOIN users u_target ON aal.target_user_id = u_target.id " +
-                "ORDER BY aal.action_time DESC";
+                + "FROM admin_action_logs aal " + "JOIN users u_admin ON aal.admin_id = u_admin.id " +
+                "JOIN users u_target ON aal.target_user_id = u_target.id " + "ORDER BY aal.action_time DESC";
 
         try (Connection conn = DatabaseConfig.getDataSource().getConnection();
                 PreparedStatement pstmt = conn.prepareStatement(sql);
@@ -708,15 +718,16 @@ public class UserService {
                 Instant actionTime = rs.getTimestamp("action_time").toInstant();
                 logs.add(new AdminActionLog(id, adminUsername, targetUsername, action, actionTime));
             }
+
         } catch (SQLException e) {
             System.err.println("Error fetching admin action logs: " + e.getMessage());
         }
+
         return logs;
     }
 
     private void ensureWalletExists(Connection conn, int userId) throws SQLException {
-        try (PreparedStatement pstmt = conn.prepareStatement(
-                """
+        try (PreparedStatement pstmt = conn.prepareStatement("""
                         INSERT INTO wallets (user_id, balance, currency, created_at, updated_at)
                         SELECT ?, 0, 'USD', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
                         WHERE NOT EXISTS (SELECT 1 FROM wallets WHERE user_id = ?)
@@ -737,6 +748,7 @@ public class UserService {
                 BigDecimal balance = rs.getBigDecimal("balance");
                 return balance == null ? BigDecimal.ZERO : balance;
             }
+
             return BigDecimal.ZERO;
         }
     }
@@ -757,5 +769,4 @@ public class UserService {
             seller.getWallet().deposit(balance);
         }
     }
-
 }

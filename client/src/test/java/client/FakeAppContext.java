@@ -38,4 +38,3 @@ public class FakeAppContext extends AppContext {
         return connectCalled;
     }
 }
-

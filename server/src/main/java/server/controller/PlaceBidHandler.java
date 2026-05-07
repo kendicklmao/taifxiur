@@ -47,19 +47,23 @@ public class PlaceBidHandler implements RequestHandler {
                     } else {
                         msg.append("Balance: ").append(balance.toPlainString()).append(". ");
                     }
+
                     try {
                         var auction = auctionService.getAuction(pAuctionId);
                         if (auction != null) {
                             msg.append("CurrentPrice: ").append(auction.getCurrentPrice()).append(", MinIncrement: ").append(auction.getItem().getMinIncrement()).append('.');
                         }
+
                     } catch (Exception ignored) {
                     }
 
                     if (balance == null || balance.compareTo(amount) < 0) {
                         return new Response("FAIL", "Insufficient funds. " + msg.toString());
                     }
+
                     return new Response("FAIL", "Bid too low or auction not running. " + msg.toString());
                 }
+
             } catch (IllegalStateException ise) {
                 return new Response("FAIL", ise.getMessage());
             } catch (Exception e) {

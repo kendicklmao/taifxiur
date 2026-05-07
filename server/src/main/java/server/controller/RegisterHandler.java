@@ -11,7 +11,7 @@ public class RegisterHandler implements RequestHandler {
     public RegisterHandler(UserService userService) {
         this.userService = userService;
     }
-    
+
     @Override
     public Response handle(Request request, ClientHandler clientHandler) {
         String rUser = request.getData().get("username");

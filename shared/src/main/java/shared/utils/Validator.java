@@ -2,6 +2,7 @@ package shared.utils;
 
 // Kiểm tra format các input và chuẩn hóa nó
 public class Validator {
+    
     // Bỏ trắng và chuyển về chữ thường
     public static String normalizeAndLowercase(String text) {
         if (text == null) {
@@ -33,10 +34,8 @@ public class Validator {
             return false;
         }
         password = normalize(password);
-        return password.length() >= 6 && !password.contains(" ") &&
-                password.matches(".*[A-Z].*") &&
-                password.matches(".*[a-z].*") &&
-                password.matches(".*\\d.*") &&
+        return password.length() >= 6 && !password.contains(" ") && password.matches(".*[A-Z].*") &&
+                password.matches(".*[a-z].*") && password.matches(".*\\d.*") &&
                 password.matches(".*[!@#$%^&*(),.?\":{}|<>].*");
     }
 
@@ -46,8 +45,7 @@ public class Validator {
             return false;
         }
         email = normalizeAndLowercase(email);
-        return !email.contains(" ") &&
-                email.matches("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$");
+        return !email.contains(" ") && email.matches("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$");
     }
 
     // Kiểm tra format câu hỏi xác nhận danh tính

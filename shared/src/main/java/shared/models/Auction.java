@@ -33,6 +33,7 @@ public class Auction {
         if (cmp != 0) {
             return cmp;
         }
+
         return a.getTimeStamp().compareTo(b.getTimeStamp()); // Đăng ký sớm hơn sẽ thắng
     });
     
@@ -48,15 +49,19 @@ public class Auction {
         if (id == null || id.isBlank()) {
             throw new IllegalArgumentException("Auction ID is null or blank");
         }
+
         if (item == null) {
             throw new IllegalArgumentException("Auction item is null");
         }
+
         if (startPrice == null || startPrice.compareTo(BigDecimal.ZERO) < 0) {
             throw new IllegalArgumentException("Invalid start price: " + startPrice);
         }
+
         if (seller == null) {
             throw new IllegalArgumentException("Auction seller is null");
         }
+
         if (startTime == null || endTime == null || endTime.isBefore(startTime)) {
             throw new IllegalArgumentException("Invalid auction dates: start = " + startTime + ", end = " + endTime);
         }
@@ -78,6 +83,7 @@ public class Auction {
             if (finishTask != null) {
                 finishTask.cancel(true);
             }
+
             status = AuctionStatus.CANCELED;
         }
     }
@@ -123,6 +129,7 @@ public class Auction {
                         bidHistory.add(new BidTransaction(highest.getBidder(), newPrice, Instant.now()));
                     }
                 }
+
             } else {
                 // Người khác đang thắng. Người có bid cao nhất cần outbid họ
                 BigDecimal minToOutbid = currentPrice.add(increment);
@@ -131,6 +138,7 @@ public class Auction {
                     if (newPrice.compareTo(minToOutbid) < 0) {
                         newPrice = minToOutbid;
                     }
+
                 } else {
                     newPrice = minToOutbid;
                 }
@@ -145,6 +153,7 @@ public class Auction {
                     bidHistory.add(new BidTransaction(highest.getBidder(), newPrice, Instant.now()));
                 }
             }
+
             autoBids.add(highest);
         }
     }
@@ -155,15 +164,19 @@ public class Auction {
             if (bidder == null || maxBid == null) {
                 throw new IllegalArgumentException();
             }
+
             if (maxBid.compareTo(currentPrice.add(item.getMinIncrement())) < 0) {
                 throw new IllegalArgumentException("Bid amount must be at least current price + minimum increment");
             }
+
             if (bidder.isBanned()) {
                 throw new IllegalArgumentException();
             }
+
             if (status != AuctionStatus.RUNNING && status != AuctionStatus.OPEN) {
                 throw new IllegalArgumentException("Auction is not in a biddable state");
             }
+
             autoBids.add(new AutoBid(bidder, maxBid));
             AutoBidService();
         }
@@ -175,6 +188,7 @@ public class Auction {
         if (delay < 0) {
             delay = 0;
         }
+
         globalScheduler.schedule(() -> {
             synchronized (bidLock) {
                 if (status == AuctionStatus.OPEN) {
@@ -190,6 +204,7 @@ public class Auction {
         if (delay < 0) {
             delay = 0;
         }
+
         finishTask = globalScheduler.schedule(() -> {
             synchronized (bidLock) {
                 if (status == AuctionStatus.RUNNING && !Instant.now().isBefore(endTime)) {
@@ -213,15 +228,18 @@ public class Auction {
             if (status != AuctionStatus.FINISHED) {
                 throw new IllegalStateException();
             }
+
             if (highestBidder == null || !highestBidder.equals(bidder)) {
                 throw new IllegalStateException();
             }
+
             BigDecimal price = currentPrice;
             Seller seller = this.seller;
             boolean success = bidder.getWallet().transfer(price, seller);
             if (!success) {
                 throw new IllegalStateException();
             }
+
             status = AuctionStatus.PAID;
         }
     }
@@ -232,19 +250,24 @@ public class Auction {
             if (bidder == null || amount == null) {
                 throw new IllegalArgumentException();
             }
+
             if (bidder.isBanned()) {
                 throw new IllegalStateException("User is banned");
             }
+
             if (status != AuctionStatus.RUNNING) {
                 throw new IllegalStateException("Auction is not running. Current status: " + status);
             }
+
             if (Instant.now().isAfter(endTime)) {
                 status = AuctionStatus.FINISHED;
                 return false;
             }
+
             if (amount.compareTo(currentPrice.add(item.getMinIncrement())) < 0) {
                 return false;
             }
+
             currentPrice = amount;
             highestBidder = bidder;
             bidHistory.add(new BidTransaction(bidder, amount, Instant.now()));
@@ -334,10 +357,6 @@ public class Auction {
         return endTime;
     }
 
-    /**
-     * Cập nhật trạng thái của phiên đấu giá dựa trên thời gian hiện tại.
-     * Chỉ nên được gọi bởi các service đáng tin cậy.
-     */
     public void updateStatus() {
         synchronized (bidLock) {
             Instant now = Instant.now();
@@ -349,20 +368,12 @@ public class Auction {
         }
     }
 
-    /**
-     * Đặt giá hiện tại khi khôi phục từ cơ sở dữ liệu.
-     * Chỉ nên được gọi bởi các service đáng tin cậy.
-     */
     public void setCurrentPriceForDBRestore(BigDecimal price) {
         synchronized (bidLock) {
             this.currentPrice = price;
         }
     }
 
-    /**
-     * Đặt trạng thái khi khôi phục từ cơ sở dữ liệu.
-     * Chỉ nên được gọi bởi các service đáng tin cậy.
-     */
     public void setStatusForDBRestore(AuctionStatus status) {
         synchronized (bidLock) {
             this.status = status;

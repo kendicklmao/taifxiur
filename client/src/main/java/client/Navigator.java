@@ -17,13 +17,13 @@ public class Navigator implements INavigator {
 
     public static void setStage(Stage s){
         stage = s;
-        // Load global stylesheet once
+        // Tải global stylesheet một lần
         try {
             globalStylesheet = Navigator.class.getClassLoader().getResource("styles.css").toExternalForm();
-            System.out.println("✓ CSS loaded: " + globalStylesheet);
+            System.out.println("CSS loaded: " + globalStylesheet);
         } catch (Exception e) {
-            System.err.println("✗ ERROR: Could not find styles.css!");
-            System.err.println("  Message: " + e.getMessage());
+            System.err.println("ERROR: Could not find styles.css!");
+            System.err.println("Message: " + e.getMessage());
             e.printStackTrace();
         }
     }
@@ -42,9 +42,7 @@ public class Navigator implements INavigator {
             double x = stage.getX();
             double y = stage.getY();
 
-            FXMLLoader loader = new FXMLLoader(
-                Navigator.class.getClassLoader().getResource(fxml)
-            );
+            FXMLLoader loader = new FXMLLoader(Navigator.class.getClassLoader().getResource(fxml));
 
             Parent root = loader.load();
             Scene scene = stage.getScene();
@@ -53,10 +51,11 @@ public class Navigator implements INavigator {
                 scene = new Scene(root, width, height);
                 if (globalStylesheet != null) {
                     scene.getStylesheets().add(globalStylesheet);
-                    System.out.println("✓ Stylesheet applied to scene");
+                    System.out.println("Stylesheet applied to scene");
                 } else {
-                    System.err.println("✗ WARNING: globalStylesheet is null!");
+                    System.err.println("WARNING: globalStylesheet is null!");
                 }
+
                 stage.setScene(scene);
             } else {
                 scene.setRoot(root);
@@ -65,7 +64,7 @@ public class Navigator implements INavigator {
             Platform.runLater(() -> {
 
                 if (isMaximized) {
-                    stage.setMaximized(true); //  giữ full màn hình
+                    stage.setMaximized(true); // Giữ full màn hình
                 } else {
                     stage.setWidth(width);
                     stage.setHeight(height);

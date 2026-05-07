@@ -30,13 +30,11 @@ public abstract class User {
         this.isBanned = false;
         this.wallet = new Wallet();
         
-        // Tạo Salt mới
-        this.passwordSalt = Hash.generateSalt();
+        this.passwordSalt = Hash.generateSalt(); // Tạo Salt mới
         this.answerSalt1 = Hash.generateSalt();
         this.answerSalt2 = Hash.generateSalt();
 
-        // Hash dữ liệu
-        this.hashedPassword = Hash.formula(Validator.normalize(password), passwordSalt);
+        this.hashedPassword = Hash.formula(Validator.normalize(password), passwordSalt); // Hash dữ liệu
         this.securityQuestion1 = Validator.normalize(q1);
         this.securityAnswer1 = Hash.formula(Validator.normalizeAndLowercase(a1), answerSalt1);
         this.securityQuestion2 = Validator.normalize(q2);
@@ -128,6 +126,7 @@ public abstract class User {
         if (!Validator.isValidPassword(newPassword)) {
             return false;
         }
+
         this.passwordSalt = Hash.generateSalt();
         this.hashedPassword = Hash.formula(newPassword, this.passwordSalt);
         return true;
@@ -139,6 +138,7 @@ public abstract class User {
         if (!Validator.isValidEmail(email)) {
             return false;
         }
+
         this.email = email;
         return true;
     }
@@ -175,10 +175,12 @@ public abstract class User {
         if (!checkPassword(oldPassword)) {
             return false;
         }
+
         newPassword = Validator.normalize(newPassword);
         if (!Validator.isValidPassword(newPassword)) {
             return false;
         }
+
         this.passwordSalt = Hash.generateSalt();
         this.hashedPassword = Hash.formula(newPassword, passwordSalt);
         return true;

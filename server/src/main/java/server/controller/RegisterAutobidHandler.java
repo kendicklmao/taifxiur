@@ -17,7 +17,7 @@ public class RegisterAutobidHandler implements RequestHandler {
         this.userService = userService;
         this.auctionService = auctionService;
     }
-    
+
     @Override
     public Response handle(Request request, ClientHandler clientHandler) {
         String raAuctionId = request.getData().get("auctionId");

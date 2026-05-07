@@ -97,7 +97,6 @@ public abstract class Item implements Serializable {
         this.imageUrl = imageUrl;
     }
 
-    // Kiểm tra thông số có logic không?
     public boolean isValid() {
         return name != null && name.length() >= 1 && !name.isBlank() &&
                description != null && description.length() >= 1 && !description.isBlank() &&

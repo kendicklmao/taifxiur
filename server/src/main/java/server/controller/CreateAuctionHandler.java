@@ -104,11 +104,10 @@ public class CreateAuctionHandler implements RequestHandler {
                         return new Response("FAIL", "Custom increment must be greater than or equal to default minimum increment: " + defaultMinInc.toPlainString());
                     }
                 } else {
-                    // Mặc định 5% giá khởi điểm
                     minInc = defaultMinInc;
                 }
+
                 item.setMinIncrement(minInc);
-                
                 seller.addItem(item);
             }
 

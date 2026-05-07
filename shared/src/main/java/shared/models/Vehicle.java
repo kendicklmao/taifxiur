@@ -29,7 +29,6 @@ public class Vehicle extends Item {
         return kmTravel;
     }
 
-    // Kiểm tra thông số có logic không?
     public boolean isValid() {
         return super.isValid() && model >= 0 && kmTravel >= 0;
     }

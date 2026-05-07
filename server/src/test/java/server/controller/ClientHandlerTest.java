@@ -43,7 +43,7 @@ public class ClientHandlerTest {
         storageService = new StorageService();
         Map<String, RequestHandler> handlers = HandlerFactory.createHandlers(userService, auctionService, walletService, storageService);
 
-        serverSocket = new ServerSocket(0); // Use a random free port
+        serverSocket = new ServerSocket(0);
         serverThread = new Thread(() -> {
             try {
                 while (!Thread.currentThread().isInterrupted()) {
@@ -51,9 +51,10 @@ public class ClientHandlerTest {
                     ClientHandler clientHandler = new ClientHandler(socket, userService, handlers);
                     new Thread(clientHandler).start();
                 }
+
             } catch (IOException e) {
-                // Socket closed, which is expected
             }
+
         });
         serverThread.start();
     }
@@ -72,7 +73,9 @@ public class ClientHandlerTest {
     @AfterEach
     public void tearDown() throws IOException {
         cleanupDatabase();
-        if (clientSocket != null) clientSocket.close();
+        if (clientSocket != null) {
+            clientSocket.close();
+        }  
     }
 
     @AfterAll
@@ -83,17 +86,6 @@ public class ClientHandlerTest {
     }
 
     private void cleanupDatabase() {
-        // FIXME: Commented out to prevent wiping the actual database during tests
-        // try (java.sql.Connection conn = DatabaseConfig.getDataSource().getConnection();
-        //      java.sql.Statement stmt = conn.createStatement()) {
-        //     stmt.executeUpdate("DELETE FROM bids");
-        //     stmt.executeUpdate("DELETE FROM auto_bids");
-        //     stmt.executeUpdate("DELETE FROM items");
-        //     stmt.executeUpdate("DELETE FROM wallets");
-        //     stmt.executeUpdate("DELETE FROM users");
-        // } catch (java.sql.SQLException e) {
-        //     e.printStackTrace();
-        // }
     }
 
     @Test

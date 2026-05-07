@@ -24,6 +24,7 @@ public class ChangePasswordHandler implements RequestHandler {
             } else {
                 return new Response("FAIL", "Current password is incorrect or the new password is invalid");
             }
+
         } catch (IllegalArgumentException | IllegalStateException e) {
             return new Response("FAIL", e.getMessage());
         } catch (Exception e) {

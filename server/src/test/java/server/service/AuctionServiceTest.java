@@ -60,32 +60,24 @@ public class AuctionServiceTest {
     }
 
     private void cleanupDatabase() {
-        // FIXME: Commented out to prevent wiping the actual database during tests
-        // try (java.sql.Connection conn =
-        // DatabaseConfig.getDataSource().getConnection();
-        // java.sql.Statement stmt = conn.createStatement()) {
-        // stmt.executeUpdate("DELETE FROM bids");
+        // FIXME: Commented out to prevent wiping the actual database during tests try (java.sql.Connection conn = DatabaseConfig.getDataSource().getConnection();
+        // java.sql.Statement stmt = conn.createStatement()) { stmt.executeUpdate("DELETE FROM bids");
         // stmt.executeUpdate("DELETE FROM auto_bids");
         // stmt.executeUpdate("DELETE FROM items");
         // stmt.executeUpdate("DELETE FROM wallets");
         // stmt.executeUpdate("DELETE FROM users");
-        // } catch (java.sql.SQLException e) {
-        // e.printStackTrace();
+        // } catch (java.sql.SQLException e) { e.printStackTrace();
         // }
     }
 
     private static void cleanupDatabaseOnce() {
-        // FIXME: Commented out to prevent wiping the actual database during tests
-        // try (java.sql.Connection conn =
-        // DatabaseConfig.getDataSource().getConnection();
-        // java.sql.Statement stmt = conn.createStatement()) {
-        // stmt.executeUpdate("DELETE FROM bids");
+        // FIXME: Commented out to prevent wiping the actual database during tests try (java.sql.Connection conn = DatabaseConfig.getDataSource().getConnection();
+        // java.sql.Statement stmt = conn.createStatement()) { stmt.executeUpdate("DELETE FROM bids");
         // stmt.executeUpdate("DELETE FROM auto_bids");
         // stmt.executeUpdate("DELETE FROM items");
         // stmt.executeUpdate("DELETE FROM wallets");
         // stmt.executeUpdate("DELETE FROM users");
-        // } catch (java.sql.SQLException e) {
-        // e.printStackTrace();
+        // } catch (java.sql.SQLException e) { e.printStackTrace();
         // }
     }
 

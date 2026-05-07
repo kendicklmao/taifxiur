@@ -35,29 +35,23 @@ public class UserServiceTest {
     }
 
     private void cleanupDatabase() {
-        // FIXME: Commented out to prevent wiping the actual database during tests
-        // try (java.sql.Connection conn =
-        // DatabaseConfig.getDataSource().getConnection();
-        // java.sql.Statement stmt = conn.createStatement()) {
-        // stmt.executeUpdate("DELETE FROM wallets");
+        // FIXME: Commented out to prevent wiping the actual database during tests try (java.sql.Connection conn = DatabaseConfig.getDataSource().getConnection();
+        // java.sql.Statement stmt = conn.createStatement()) { stmt.executeUpdate("DELETE FROM wallets");
         // stmt.executeUpdate("DELETE FROM users");
-        // } catch (java.sql.SQLException e) {
-        // e.printStackTrace();
+        // } catch (java.sql.SQLException e) { e.printStackTrace();
         // }
     }
 
     @Test
     public void testAdminCannotBanAdmin() {
-        // Admin1 tries to ban Admin2
-        String result = userService.banUser("admin", "admin");
+        String result = userService.banUser("admin", "admin"); // Admin1 tries to ban Admin2
         // Check that the result is the expected error message
         assertEquals("Cannot ban an administrator", result);
     }
 
     @Test
     public void testNonAdminCannotBanUser() {
-        // A bidder tries to ban an admin
-        String result = userService.banUser("admin", "bidder");
+        String result = userService.banUser("admin", "bidder"); // A bidder tries to ban an admin
         // Check that the result is the expected error message
         assertEquals("Only admin can ban users", result);
     }
@@ -68,8 +62,7 @@ public class UserServiceTest {
         String testUser = "newuser_" + suffix;
         String testEmail = testUser + "@test.com";
 
-        boolean result = userService.register(testUser, "Password@123", testEmail, "q", "a", "q", "a",
-                Role.BIDDER);
+        boolean result = userService.register(testUser, "Password@123", testEmail, "q", "a", "q", "a", Role.BIDDER);
         assertEquals(true, result, "Registration should succeed for a new unique user");
 
         // Dọn dẹp: Xóa user vừa tạo để không rác DB

@@ -20,7 +20,9 @@ public class GetAdminActionLogsHandler implements RequestHandler {
     @Override
     public Response handle(Request request, ClientHandler clientHandler) {
         User u = userService.getUser(clientHandler.getLoggedInUsername());
-        if (u == null || u.getRole() != shared.enums.Role.ADMIN) return new Response("FAIL", "Unauthorized");
+        if (u == null || u.getRole() != shared.enums.Role.ADMIN) {
+            return new Response("FAIL", "Unauthorized");
+        }
         List<AdminActionLog> logs = userService.getAdminActionLogs();
         return new Response("SUCCESS", gson.toJson(logs));
     }

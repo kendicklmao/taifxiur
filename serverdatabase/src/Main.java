@@ -8,8 +8,7 @@ import java.sql.SQLException;
 
 public class Main {
     public static void main(String[] args) {
-        // Register bidder2 directly into database
-        String username = "bidder2";
+        String username = "bidder2"; // Register bidder2 directly into database
         String password = "Admin@123"; // Same as default
         String email = "bidder2@gmail.com";
         String q1 = "q";
@@ -22,10 +21,12 @@ public class Main {
             System.out.println("Invalid username");
             return;
         }
+
         if (!Validator.isValidPassword(password)) {
             System.out.println("Invalid password");
             return;
         }
+
         if (!Validator.isValidEmail(email)) {
             System.out.println("Invalid email");
             return;
@@ -62,9 +63,11 @@ public class Main {
                     // Ensure wallet
                     ensureWalletExists(conn, userId);
                 }
+
             } else {
                 System.out.println("Failed to register user");
             }
+
         } catch (SQLException e) {
             if (e.getMessage().contains("duplicate key")) {
                 System.out.println("Username already exists");
@@ -75,8 +78,7 @@ public class Main {
     }
 
     private static void ensureWalletExists(Connection conn, int userId) throws SQLException {
-        try (PreparedStatement pstmt = conn.prepareStatement(
-                """
+        try (PreparedStatement pstmt = conn.prepareStatement("""
                 INSERT INTO wallets (user_id, balance, currency, created_at, updated_at)
                 SELECT ?, 0, 'USD', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
                 WHERE NOT EXISTS (SELECT 1 FROM wallets WHERE user_id = ?)

@@ -106,100 +106,49 @@ public class SellerHomeController {
     @FXML
     public void initialize() {
 
-        welcomeLabel.setText(
-                "Welcome " + ctx.getCurrentUser().getUsername()
-        );
+        welcomeLabel.setText("Welcome " + ctx.getCurrentUser().getUsername());
 
         categoryBox.getItems().addAll(Category.values());
         categoryBox.setOnAction(e -> updateForm());
 
-        // Set default timing values
+        // Tạo thời gian mặc định (5 phút sau)
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime startTime = now.plusMinutes(5);
         LocalDateTime endTime = startTime.plusMinutes(30);
 
         startDatePicker.setValue(startTime.toLocalDate());
-
-        startHourSpinner.setValueFactory(
-                new SpinnerValueFactory.IntegerSpinnerValueFactory(
-                        0,
-                        23,
-                        startTime.getHour()
-                )
-        );
-
-        startMinuteSpinner.setValueFactory(
-                new SpinnerValueFactory.IntegerSpinnerValueFactory(
-                        0,
-                        59,
-                        startTime.getMinute()
-                )
-        );
+        startHourSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 23, startTime.getHour()));
+        startMinuteSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 59, startTime.getMinute()));
 
         endDatePicker.setValue(endTime.toLocalDate());
+        endHourSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 23, endTime.getHour()));
+        endMinuteSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 59, endTime.getMinute()));
 
-        endHourSpinner.setValueFactory(
-                new SpinnerValueFactory.IntegerSpinnerValueFactory(
-                        0,
-                        23,
-                        endTime.getHour()
-                )
-        );
-
-        endMinuteSpinner.setValueFactory(
-                new SpinnerValueFactory.IntegerSpinnerValueFactory(
-                        0,
-                        59,
-                        endTime.getMinute()
-                )
-        );
-
-        // Increment type
-        incrementTypeBox.getItems().addAll(
-                "Default (5%)",
-                "Custom Amount"
-        );
-
+        // Chọn loại increment
+        incrementTypeBox.getItems().addAll("Default (5%)", "Custom Amount");
         incrementTypeBox.setValue("Default (5%)");
-
         incrementTypeBox.setOnAction(e -> {
-
-            boolean isCustom =
-                    "Custom Amount".equals(
-                            incrementTypeBox.getValue()
-                    );
-
+            boolean isCustom = "Custom Amount".equals(incrementTypeBox.getValue());
             customIncrementPane.setVisible(isCustom);
             customIncrementPane.setManaged(isCustom);
         });
 
-        // Loading state
         walletBalanceLabel.setText("Loading...");
 
         Platform.runLater(() -> {
-
             refreshWalletBalance();
             fetchAllAuctions();
         });
 
-        // Listener realtime update
         messageListener = line -> {
-
             try {
-
-                Response res =
-                        gson.fromJson(line, Response.class);
-
-                if ("UPDATE_PRICE".equals(res.getStatus())
-                        || "AUCTION_UPDATED".equals(res.getStatus())
-                        || "AUCTION_FINISHED".equals(res.getStatus())
-                        || "AUCTION_CREATED".equals(res.getStatus())) {
-
+                Response res = gson.fromJson(line, Response.class);
+                if ("UPDATE_PRICE".equals(res.getStatus()) || "AUCTION_UPDATED".equals(res.getStatus())
+                        || "AUCTION_FINISHED".equals(res.getStatus()) || "AUCTION_CREATED".equals(res.getStatus())) {
                     fetchAllAuctions();
                 }
-
             } catch (Exception e) {
-                // Ignore malformed broadcast
+                // Bỏ qua broadcast nếu lỗi
             }
         };
 
@@ -213,9 +162,8 @@ public class SellerHomeController {
     }
 
     private void updateAuctionGrid(List<Auction> auctions) {
-        // Build a safe map of existing cards keyed by their auction id (userData)
         Map<String, VBox> existingAuctionCards = new java.util.HashMap<>();
-        for (var node : auctionGrid.getChildren()) {
+        for (var node: auctionGrid.getChildren()) {
             if (node instanceof VBox) {
                 Object ud = node.getUserData();
                 if (ud != null) {
@@ -224,11 +172,11 @@ public class SellerHomeController {
             }
         }
 
-        // Iterate incoming auctions and update existing cards or add new ones
-        for (Auction auction : auctions) {
+        // Cập nhật hoặc tạo mới các card
+        for (Auction auction: auctions) {
             String id = auction.getId();
             if (existingAuctionCards.containsKey(id)) {
-                // Update existing card with latest data
+                // Update card cũ
                 VBox card = existingAuctionCards.get(id);
                 Object priceObj = card.getProperties().get("priceLabel");
                 if (priceObj instanceof Label) {
@@ -244,14 +192,14 @@ public class SellerHomeController {
                 }
                 existingAuctionCards.remove(id);
             } else {
-                // Add new card
+                // Thêm card mới
                 VBox card = createAuctionCard(auction);
                 card.setUserData(id);
                 auctionGrid.getChildren().add(card);
             }
         }
 
-        // Remove cards for auctions that no longer exist
+        // Xoá các card không còn tồn tại
         auctionGrid.getChildren().removeAll(existingAuctionCards.values());
     }
 
@@ -275,7 +223,7 @@ public class SellerHomeController {
         VBox itemDetails = new VBox(5, nameLabel, priceLabel, statusLabel, startsAtLabel, endsAtLabel);
         card.getChildren().addAll(imageView, itemDetails);
 
-        // Store labels in properties for easy updating
+        // Lưu label vào properties để dễ cập nhật
         card.getProperties().put("priceLabel", priceLabel);
         card.getProperties().put("statusLabel", statusLabel);
         card.getProperties().put("endsLabel", endsAtLabel);
@@ -283,6 +231,7 @@ public class SellerHomeController {
         if (auction.getItem().getImageUrl() != null && !auction.getItem().getImageUrl().isEmpty()) {
             imageView.setImage(new Image(auction.getItem().getImageUrl(), 150, 150, true, true));
         }
+
         nameLabel.setText(auction.getItem().getName());
         priceLabel.setText("Current Price: $" + auction.getCurrentPrice());
         statusLabel.setText("Status: " + auction.getStatus());
@@ -303,7 +252,7 @@ public class SellerHomeController {
         auctionDetailPane.setVisible(true);
         auctionDetailPane.setManaged(true);
 
-        // Title and close button
+        // Tiêu đề và nút đóng
         Label titleLabel = new Label("Auction Details");
         titleLabel.getStyleClass().add("dashboard-section-title");
         Button closeButton = new Button("X");
@@ -315,13 +264,13 @@ public class SellerHomeController {
         HBox titleBox = new HBox(10, titleLabel, closeButton);
         HBox.setHgrow(titleLabel, Priority.ALWAYS);
 
-        // Image
+        // Ảnh
         ImageView imageView = new ImageView();
         if (auction.getItem().getImageUrl() != null && !auction.getItem().getImageUrl().isEmpty()) {
             imageView.setImage(new Image(auction.getItem().getImageUrl(), 200, 200, true, true));
         }
 
-        // Details grid
+        // Chi tiết sản phẩm
         GridPane detailsGrid = new GridPane();
         detailsGrid.setHgap(10);
         detailsGrid.setVgap(8);
@@ -386,8 +335,7 @@ public class SellerHomeController {
         terminateButton.getStyleClass().add("dashboard-btn-logout");
         terminateButton.setOnAction(e -> handleTerminateAuction(auction));
 
-        // Only show terminate button if user owns the auction or is admin
-        boolean canTerminate = auction.getSeller().getUsername().equals(ctx.getCurrentUser().getUsername());
+        boolean canTerminate = auction.getSeller().getUsername().equals(ctx.getCurrentUser().getUsername()); // Chỉ hiển thị nút terminate nếu người dùng là chủ sở hữu hoặc admin
         terminateButton.setVisible(canTerminate);
         terminateButton.setManaged(canTerminate);
 
@@ -424,6 +372,7 @@ public class SellerHomeController {
             } else {
                 alertService.showAlert("Error", "Failed to terminate auction: " + response.getMessage(), welcomeLabel);
             }
+
         } catch (Exception e) {
             alertService.showAlert("Error", "An error occurred while terminating the auction.", welcomeLabel);
         }
@@ -457,10 +406,9 @@ public class SellerHomeController {
         }
     }
 
-    // ================= DYNAMIC FORM =================
+    // Form tạo sản phẩm
     private void updateForm() {
         dynamicForm.getChildren().clear();
-
         Category c = categoryBox.getValue();
 
         if (c == null) {
@@ -524,7 +472,7 @@ public class SellerHomeController {
         dynamicForm.getChildren().add(checkbox);
     }
 
-    // ================= CREATE AUCTION =================
+    // Xử lý tạo auction
     public void handleCreateAuction() {
         try {
             String name = itemNameField.getText();
@@ -604,17 +552,20 @@ public class SellerHomeController {
                     alertService.showAlert("Error", "Please enter custom increment amount!", welcomeLabel);
                     return;
                 }
+
                 try {
                     BigDecimal inc = new BigDecimal(customInc);
                     if (inc.compareTo(BigDecimal.ZERO) <= 0) {
                         alertService.showAlert("Error", "Minimum increment must be greater than 0!", welcomeLabel);
                         return;
                     }
+
                     BigDecimal defaultMinIncrement = startingPrice.multiply(new BigDecimal("0.05"));
                     if (inc.compareTo(defaultMinIncrement) < 0) {
                         alertService.showAlert("Error", "Custom increment must be greater than or equal to default minimum increment: " + defaultMinIncrement.toPlainString(), welcomeLabel);
                         return;
                     }
+
                     data.put("minIncrement", customInc);
                 } catch (NumberFormatException e) {
                     alertService.showAlert("Error", "Custom increment must be a valid number!", welcomeLabel);
@@ -642,6 +593,7 @@ public class SellerHomeController {
                             }
                         }
                     }
+
                 } else if (node instanceof TextField tf) {
                     data.put(tf.getId(), tf.getText());
                 } else if (node instanceof CheckBox cb) {
@@ -660,7 +612,7 @@ public class SellerHomeController {
 
             System.out.println("MESSAGE = " + response.getMessage());
             if ("SUCCESS".equals(response.getStatus())) {
-                fetchAllAuctions(); // Refresh the grid
+                fetchAllAuctions();
                 alertService.showAlert("Success", "Auction created successfully!", welcomeLabel);
                 itemNameField.clear();
                 startPriceField.clear();
@@ -668,22 +620,17 @@ public class SellerHomeController {
                 startDatePicker.setValue(null);
                 endDatePicker.setValue(null);
 
-                // Set default timing values for next auction
                 LocalDateTime now = LocalDateTime.now();
                 LocalDateTime nextStartTime = now.plusMinutes(5);
                 LocalDateTime nextEndTime = nextStartTime.plusMinutes(5);
 
                 startDatePicker.setValue(nextStartTime.toLocalDate());
-                startHourSpinner.setValueFactory(
-                        new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 23, nextStartTime.getHour()));
-                startMinuteSpinner.setValueFactory(
-                        new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 59, nextStartTime.getMinute()));
+                startHourSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 23, nextStartTime.getHour()));
+                startMinuteSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 59, nextStartTime.getMinute()));
 
                 endDatePicker.setValue(nextEndTime.toLocalDate());
-                endHourSpinner.setValueFactory(
-                        new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 23, nextEndTime.getHour()));
-                endMinuteSpinner.setValueFactory(
-                        new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 59, nextEndTime.getMinute()));
+                endHourSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 23, nextEndTime.getHour()));
+                endMinuteSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 59, nextEndTime.getMinute()));
 
                 categoryBox.setValue(null);
                 dynamicForm.getChildren().clear();
@@ -703,12 +650,12 @@ public class SellerHomeController {
     private String getFileExtension(String fileName) {
         int lastIndexOf = fileName.lastIndexOf(".");
         if (lastIndexOf == -1) {
-            return ""; // empty extension
+            return "";
         }
+
         return fileName.substring(lastIndexOf + 1);
     }
 
-    // ================= LOGOUT =================
     @FXML
     public void handleChangePassword() {
         ChangePasswordSupport.showDialog(ctx, welcomeLabel);
@@ -722,56 +669,34 @@ public class SellerHomeController {
             Request req = new Request("LOGOUT", data);
             ctx.sendRequestAndWait(req, 15);
         } catch (Exception e) {
-            // Ignore, proceed with logout
+            // Bỏ qua ngoại lệ khi logout
         }
+
         ctx.removeMessageListener(messageListener);
         ctx.setCurrentUser(null);
         Navigator.switchSceneStatic("login.fxml");
     }
 
-
     private String formatTime(java.time.Instant instant) {
         return shared.utils.FormatUtils.formatTime(instant);
     }
 
-    // ================= FETCH ALL AUCTIONS =================
     private void fetchAllAuctions() {
         Task<List<Auction>> task = new Task<>() {
-
             @Override
             protected List<Auction> call() throws Exception {
-
-                Response response =
-                        ctx.sendRequestAndWait(
-                                new Request(
-                                        "GET_AUCTIONS",
-                                        new HashMap<>()
-                                ),
-                                15
-                        );
-
-                Type type =
-                        new TypeToken<List<Auction>>(){}.getType();
-
-                return gson.fromJson(
-                        response.getMessage(),
-                        type
-                );
+                Response response = ctx.sendRequestAndWait(new Request("GET_AUCTIONS", new HashMap<>()), 15);
+                Type type = new TypeToken<List<Auction>>(){}.getType();
+                return gson.fromJson(response.getMessage(), type);
             }
         };
 
         task.setOnSucceeded(e -> {
-
             updateAuctionGrid(task.getValue());
         });
 
         task.setOnFailed(e -> {
-
-            alertService.showAlert(
-                    "Error",
-                    "Cannot load auctions",
-                    auctionGrid
-            );
+            alertService.showAlert("Error", "Cannot load auctions", auctionGrid);
         });
 
         new Thread(task).start();
@@ -779,58 +704,29 @@ public class SellerHomeController {
 
     private void refreshWalletBalance() {
         Task<String> task = new Task<>() {
-
             @Override
             protected String call() throws Exception {
-
-                Map<String, String> data =
-                        new HashMap<>();
-
-                data.put(
-                        "username",
-                        ctx.getCurrentUser().getUsername()
-                );
-
-                Response response =
-                        ctx.sendRequestAndWait(
-                                new Request(
-                                        "GET_WALLET_BALANCE",
-                                        data
-                                ),
-                                15
-                        );
-
+                Map<String, String> data = new HashMap<>();
+                data.put("username", ctx.getCurrentUser().getUsername());
+                Response response = ctx.sendRequestAndWait(new Request("GET_WALLET_BALANCE", data), 15);
                 if ("SUCCESS".equals(response.getStatus())) {
                     return response.getMessage();
                 }
-
                 return null;
             }
         };
 
         task.setOnSucceeded(e -> {
-
             String balance = task.getValue();
-
             if (balance != null) {
-
-                walletBalanceLabel.setText(
-                        "Balance: $" + balance
-                );
-
+                walletBalanceLabel.setText("Balance: $" + balance);
             } else {
-
-                walletBalanceLabel.setText(
-                        "Balance unavailable"
-                );
+                walletBalanceLabel.setText("Balance unavailable");
             }
         });
 
         task.setOnFailed(e -> {
-
-            walletBalanceLabel.setText(
-                    "Balance unavailable"
-            );
+            walletBalanceLabel.setText("Balance unavailable");
         });
 
         new Thread(task).start();
@@ -857,9 +753,7 @@ public class SellerHomeController {
             if (newText == null || newText.isEmpty()) {
                 bankNameComboBox.setItems(bankOptions);
             } else {
-                List<BankList> filteredList = Arrays.stream(BankList.values())
-                        .filter(s -> s.name().toLowerCase().contains(newText.toLowerCase()))
-                        .collect(Collectors.toList());
+                List<BankList> filteredList = Arrays.stream(BankList.values()).filter(s -> s.name().toLowerCase().contains(newText.toLowerCase())).collect(Collectors.toList());
                 bankNameComboBox.setItems(FXCollections.observableArrayList(filteredList));
             }
         });
@@ -875,7 +769,6 @@ public class SellerHomeController {
         dialog.getDialogPane().setContent(content);
         dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
 
-        // Apply custom dialog styling
         shared.utils.DialogHelper.applyCustomStyle(dialog);
 
         dialog.setResultConverter(buttonType -> {
@@ -887,6 +780,7 @@ public class SellerHomeController {
                 } else if (value != null) {
                     bankName = value.toString();
                 }
+
                 return amountField.getText() + "," + bankName + "," + accountNumberField.getText();
             }
             return null;
@@ -902,6 +796,7 @@ public class SellerHomeController {
                         alertService.showAlert("Error", "Amount must be greater than 0", welcomeLabel);
                         return;
                     }
+
                     if (bankName.trim().isEmpty() || accountNumber.trim().isEmpty()) {
                         alertService.showAlert("Error", "Bank name and account number cannot be empty", welcomeLabel);
                         return;
@@ -918,11 +813,11 @@ public class SellerHomeController {
                     } else {
                         alertService.showAlert("Error", response.getMessage(), welcomeLabel);
                     }
+
                 } catch (Exception e) {
                     alertService.showAlert("Error", "Please enter valid data", welcomeLabel);
                 }
             }
         });
     }
-
 }

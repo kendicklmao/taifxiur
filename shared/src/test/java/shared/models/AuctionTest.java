@@ -10,9 +10,7 @@ import java.time.Instant;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-/**
- * Unit tests for Auction class
- */
+// Unit tests for Auction class
 public class AuctionTest {
     private Seller seller;
     private Bidder bidder1;
@@ -35,9 +33,7 @@ public class AuctionTest {
         auction = new Auction("auc123", item, new BigDecimal("1000"), seller, startTime, endTime);
     }
 
-    /**
-     * Test auction creation
-     */
+    // Test auction creation
     @Test
     public void testAuctionCreation() {
         assertNotNull(auction);
@@ -47,9 +43,7 @@ public class AuctionTest {
         assertEquals(AuctionStatus.RUNNING, auction.getStatus());
     }
 
-    /**
-     * Test manual bid placement
-     */
+    // Test manual bid placement
     @Test
     public void testManualBid() {
         boolean success = auction.placeBid(bidder1, new BigDecimal("1200000"));
@@ -58,9 +52,7 @@ public class AuctionTest {
         assertEquals(bidder1, auction.getHighestBidder());
     }
 
-    /**
-     * Test auto bid for same bidder
-     */
+    // Test auto bid for same bidder
     @Test
     public void testAutoBidSelfBidding() {
         // Register auto-bid for bidder1
@@ -71,8 +63,7 @@ public class AuctionTest {
         assertTrue(price1.compareTo(new BigDecimal("1000")) >= 0);
         assertEquals(bidder1, auction.getHighestBidder());
 
-        // Place manual bid as same bidder
-        boolean success = auction.placeBid(bidder1, new BigDecimal("2000000"));
+        boolean success = auction.placeBid(bidder1, new BigDecimal("2000000")); // Place manual bid as same bidder
         assertTrue(success);
         assertEquals(0, auction.getCurrentPrice().compareTo(new BigDecimal("2000000")));
 
@@ -80,9 +71,7 @@ public class AuctionTest {
         assertEquals(0, auction.getCurrentPrice().compareTo(new BigDecimal("2000000")));
     }
 
-    /**
-     * Test auto bid competition between bidders
-     */
+    // Test auto bid competition between bidders
     @Test
     public void testAutoBidCompetition() {
         // Bidder 1 max 2,000,000
@@ -97,13 +86,10 @@ public class AuctionTest {
         assertEquals(0, auction.getCurrentPrice().compareTo(new BigDecimal("2100000")));
     }
 
-    /**
-     * Test placing bid with invalid amount
-     */
+    // Test placing bid with invalid amount
     @Test
     public void testPlaceBidInvalidAmount() {
-        // Try to bid less than minimum increment
-        boolean result = auction.placeBid(bidder1, new BigDecimal("1000"));
+        boolean result = auction.placeBid(bidder1, new BigDecimal("1000")); // Try to bid less than minimum increment
         assertFalse(result);
     }
 }

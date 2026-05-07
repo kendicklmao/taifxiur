@@ -31,6 +31,7 @@ public class Seller extends User {
         if (!a.isValid()) {
             throw new IllegalArgumentException();
         }
+
         addItem(a);
     }
 
@@ -40,6 +41,7 @@ public class Seller extends User {
         if (!e.isValid()) {
             throw new IllegalArgumentException();
         }
+
         addItem(e);
     }
 
@@ -49,6 +51,7 @@ public class Seller extends User {
         if (!f.isValid()) {
             throw new IllegalArgumentException();
         }
+
         addItem(f);
     }
 
@@ -58,6 +61,7 @@ public class Seller extends User {
         if (!c.isValid()) {
             throw new IllegalArgumentException();
         }
+
         addItem(c);
     }
 
@@ -75,6 +79,7 @@ public class Seller extends User {
         if (item == null || !item.isValid()) {
             throw new IllegalArgumentException();
         }
+
         String id = UUID.randomUUID().toString();
         items.put(id, item);
     }
