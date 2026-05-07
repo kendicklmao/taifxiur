@@ -15,7 +15,7 @@ public class WalletServiceTest {
     private static WalletService walletService;
     private static UserService userService;
 
-    @BeforeAll // Chạy một lần trước tất cả các test trong class này
+    @BeforeAll
     public static void setUpClass() throws Exception {
         DatabaseInitializer.initializeDatabase();
         userService = new UserService();
@@ -23,7 +23,7 @@ public class WalletServiceTest {
         userService.setWalletService(walletService);
     }
 
-    @BeforeEach // Chạy trước mỗi test
+    @BeforeEach
     public void setUp() {
         // Dọn dẹp DB trước khi chạy để đảm bảo môi trường sạch
         cleanupDatabase();
@@ -55,6 +55,7 @@ public class WalletServiceTest {
         //     e.printStackTrace();
         // }
     }
+
 
     @Test
     public void testCreateDepositRequest() {
