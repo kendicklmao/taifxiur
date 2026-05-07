@@ -18,43 +18,43 @@ public class DatabaseInitializer {
 
             System.out.println("Initializing database schema...");
 
-            // Tạo bảng db_version để theo dõi phiên bản schema
-            createDbVersionTable(stmt);
-
-            // Tạo bảng users
-            createUsersTable(stmt);
-
-            // Tạo bảng wallets
-            createWalletTable(stmt);
-
-            // Tạo bảng items
-            createItemsTable(stmt);
-
-            // Tạo bảng bids
-            createBidsTable(stmt);
-
-            // Tạo bảng auto_bids
-            createAutoBidsTable(stmt);
-
-            // Tạo bảng deposit_requests
-            createDepositRequestsTable(stmt);
-
-            // Tạo bảng withdraw_requests
-            createWithdrawRequestsTable(stmt);
-
-            // Tạo bảng admin_logs
-            createAdminLogsTable(stmt);
-
-            // Tạo bảng admin_action_logs
-            createAdminActionLogsTable(stmt);
-
-            // Tạo bảng wallet_holds
-            createWalletHoldsTable(stmt);
-
-            // Đánh dấu là đã khởi tạo
-            stampDatabaseVersion(conn);
-
-            System.out.println("Database schema initialized successfully");
+//            // Tạo bảng db_version để theo dõi phiên bản schema
+//            createDbVersionTable(stmt);
+//
+//            // Tạo bảng users
+//            createUsersTable(stmt);
+//
+//            // Tạo bảng wallets
+//            createWalletTable(stmt);
+//
+//            // Tạo bảng items
+//            createItemsTable(stmt);
+//
+//            // Tạo bảng bids
+//            createBidsTable(stmt);
+//
+//            // Tạo bảng auto_bids
+//            createAutoBidsTable(stmt);
+//
+//            // Tạo bảng deposit_requests
+//            createDepositRequestsTable(stmt);
+//
+//            // Tạo bảng withdraw_requests
+//            createWithdrawRequestsTable(stmt);
+//
+//            // Tạo bảng admin_logs
+//            createAdminLogsTable(stmt);
+//
+//            // Tạo bảng admin_action_logs
+//            createAdminActionLogsTable(stmt);
+//
+//            // Tạo bảng wallet_holds
+//            createWalletHoldsTable(stmt);
+//
+//            // Đánh dấu là đã khởi tạo
+//            stampDatabaseVersion(conn);
+//
+//            System.out.println("Database schema initialized successfully");
 
         } catch (SQLException e) {
             System.err.println("SQL error initializing database: " + e.getMessage());

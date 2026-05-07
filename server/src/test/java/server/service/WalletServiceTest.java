@@ -67,37 +67,45 @@ public class WalletServiceTest {
 
     @Test
     public void testApproveDepositRequest() {
-        walletService.createDepositRequest("bidder", new BigDecimal("100.00"), "Test Bank", "12345");
+        walletService.createDepositRequest("bidder1", new BigDecimal("100.00"), "Test Bank", "12345");
         List<Map<String, String>> requests = walletService.getPendingDepositRequests();
+        assertFalse(requests.isEmpty(), "No pending deposit requests found");
+
         String requestId = requests.get(0).get("id");
+        assertNotNull(requestId, "Request ID should not be null");
 
-        String result = walletService.approveDeposit(requestId, "admin");
-        assertNull(result);
+        String result = walletService.approveDeposit(requestId, "admin1");
+        assertNull(result, "Approval should succeed");
 
-        BigDecimal balance = walletService.getWalletBalance("bidder");
-        assertEquals(0, balance.compareTo(new BigDecimal("100.00")));
+        BigDecimal balance = walletService.getWalletBalance("bidder1");
+        assertNotNull(balance, "Bidder balance should not be null");
+        assertEquals(0, balance.compareTo(new BigDecimal("100.00")), "Balance should be 100.00");
     }
 
     @Test
     public void testRejectDepositRequest() {
-        walletService.createDepositRequest("bidder", new BigDecimal("100.00"), "Test Bank", "12345");
+        walletService.createDepositRequest("bidder1", new BigDecimal("100.00"), "Test Bank", "12345");
         List<Map<String, String>> requests = walletService.getPendingDepositRequests();
+        assertFalse(requests.isEmpty(), "No pending deposit requests found");
+
         String requestId = requests.get(0).get("id");
+        assertNotNull(requestId, "Request ID should not be null");
 
-        String result = walletService.rejectDeposit(requestId, "admin");
-        assertNull(result);
+        String result = walletService.rejectDeposit(requestId, "admin1");
+        assertNull(result, "Rejection should succeed");
 
-        BigDecimal balance = walletService.getWalletBalance("bidder");
-        assertEquals(0, balance.compareTo(BigDecimal.ZERO));
+        BigDecimal balance = walletService.getWalletBalance("bidder1");
+        assertNotNull(balance, "Bidder balance should not be null");
+        assertEquals(0, balance.compareTo(BigDecimal.ZERO), "Balance should remain 0");
     }
 
     @Test
     public void testCreateWithdrawRequest() {
-        walletService.createDepositRequest("seller", new BigDecimal("200.00"), "Test Bank", "12345");
+        walletService.createDepositRequest("seller1", new BigDecimal("200.00"), "Test Bank", "12345");
         List<Map<String, String>> deposits = walletService.getPendingDepositRequests();
-        walletService.approveDeposit(deposits.get(0).get("id"), "admin");
+        walletService.approveDeposit(deposits.get(0).get("id"), "admin1");
 
-        String result = walletService.createWithdrawRequest("seller", new BigDecimal("50.00"), "Bank", "12345");
+        String result = walletService.createWithdrawRequest("seller1", new BigDecimal("50.00"), "Bank", "12345");
         assertNull(result);
 
         List<Map<String, String>> withdraws = walletService.getPendingWithdrawRequests();
@@ -106,35 +114,47 @@ public class WalletServiceTest {
 
     @Test
     public void testApproveWithdrawRequest() {
-        walletService.createDepositRequest("seller", new BigDecimal("200.00"), "Test Bank", "12345");
+        walletService.createDepositRequest("seller1", new BigDecimal("200.00"), "Test Bank", "12345");
         List<Map<String, String>> deposits = walletService.getPendingDepositRequests();
-        walletService.approveDeposit(deposits.get(0).get("id"), "admin");
+        assertFalse(deposits.isEmpty(), "No pending deposit requests found");
 
-        walletService.createWithdrawRequest("seller", new BigDecimal("50.00"), "Bank", "12345");
+        walletService.approveDeposit(deposits.get(0).get("id"), "admin1");
+
+        walletService.createWithdrawRequest("seller1", new BigDecimal("50.00"), "Bank", "12345");
         List<Map<String, String>> withdraws = walletService.getPendingWithdrawRequests();
+        assertFalse(withdraws.isEmpty(), "No pending withdraw requests found");
+
         String requestId = withdraws.get(0).get("id");
+        assertNotNull(requestId, "Request ID should not be null");
 
-        String result = walletService.approveWithdraw(requestId, "admin");
-        assertNull(result);
+        String result = walletService.approveWithdraw(requestId, "admin1");
+        assertNull(result, "Approval should succeed");
 
-        BigDecimal balance = walletService.getWalletBalance("seller");
-        assertEquals(0, balance.compareTo(new BigDecimal("150.00")));
+        BigDecimal balance = walletService.getWalletBalance("seller1");
+        assertNotNull(balance, "Seller balance should not be null");
+        assertEquals(0, balance.compareTo(new BigDecimal("150.00")), "Balance should be 150.00");
     }
 
     @Test
     public void testRejectWithdrawRequest() {
-        walletService.createDepositRequest("seller", new BigDecimal("200.00"), "Test Bank", "12345");
+        walletService.createDepositRequest("seller1", new BigDecimal("200.00"), "Test Bank", "12345");
         List<Map<String, String>> deposits = walletService.getPendingDepositRequests();
+        assertFalse(deposits.isEmpty(), "No pending deposit requests found");
+
         walletService.approveDeposit(deposits.get(0).get("id"), "admin");
 
-        walletService.createWithdrawRequest("seller", new BigDecimal("50.00"), "Bank", "12345");
+        walletService.createWithdrawRequest("seller1", new BigDecimal("50.00"), "Bank", "12345");
         List<Map<String, String>> withdraws = walletService.getPendingWithdrawRequests();
+        assertFalse(withdraws.isEmpty(), "No pending withdraw requests found");
+
         String requestId = withdraws.get(0).get("id");
+        assertNotNull(requestId, "Request ID should not be null");
 
-        String result = walletService.rejectWithdraw(requestId, "admin");
-        assertNull(result);
+        String result = walletService.rejectWithdraw(requestId, "admin1");
+        assertNull(result, "Rejection should succeed");
 
-        BigDecimal balance = walletService.getWalletBalance("seller");
-        assertEquals(0, balance.compareTo(new BigDecimal("200.00")));
+        BigDecimal balance = walletService.getWalletBalance("seller1");
+        assertNotNull(balance, "Seller balance should not be null");
+        assertEquals(0, balance.compareTo(new BigDecimal("200.00")), "Balance should be 200.00");
     }
 }
