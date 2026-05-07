@@ -4,13 +4,17 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
+import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
+import java.util.Comparator;
 import javafx.concurrent.Task;
+import javafx.collections.transformation.FilteredList;
+import javafx.collections.transformation.SortedList;
 import javafx.scene.image.Image;
 import java.lang.reflect.Type;
 import javafx.scene.image.ImageView;
@@ -66,9 +70,80 @@ public class BidderHomeController {
 
     @FXML
     public void initialize() {
-        welcomeLabel.setText("Welcome " + ctx.getCurrentUser().getUsername());
+
+        welcomeLabel.setText(
+                "Welcome " +
+                        ctx.getCurrentUser().getUsername()
+        );
+
+        // setup sort
+        sortComboBox.getItems().addAll(
+                "Name (A-Z)",
+                "Price (Low to High)"
+        );
+
+        FilteredList<Auction> filteredData =
+                new FilteredList<>(allAuctions, p -> true);
+
+        searchField.textProperty().addListener(
+                (observable, oldValue, newValue) -> {
+
+                    filteredData.setPredicate(auction -> {
+
+                        if (newValue == null ||
+                                newValue.isEmpty()) {
+                            return true;
+                        }
+
+                        return auction.getItem()
+                                .getName()
+                                .toLowerCase()
+                                .contains(newValue.toLowerCase());
+                    });
+                }
+        );
+
+        SortedList<Auction> sortedData =
+                new SortedList<>(filteredData);
+
+        sortComboBox.valueProperty().addListener(
+                (observable, oldValue, newValue) -> {
+
+                    if (newValue == null) {
+                        sortedData.setComparator(null);
+                        return;
+                    }
+
+                    switch (newValue) {
+
+                        case "Name (A-Z)":
+                            sortedData.setComparator(
+                                    Comparator.comparing(
+                                            a -> a.getItem().getName()
+                                    )
+                            );
+                            break;
+
+                        case "Price (Low to High)":
+                            sortedData.setComparator(
+                                    Comparator.comparing(
+                                            Auction::getCurrentPrice
+                                    )
+                            );
+                            break;
+                    }
+                }
+        );
+
+        sortedData.addListener(
+                (ListChangeListener<Auction>) c ->
+                        updateAuctionGrid(sortedData)
+        );
+
         Platform.runLater(() -> {
+
             loadAuction();
+
             loadWallet();
         });
     }
@@ -93,7 +168,7 @@ public class BidderHomeController {
         };
 
         task.setOnSucceeded(e -> {
-            updateAuctionGrid(task.getValue());
+            allAuctions.setAll(task.getValue());
         });
 
         task.setOnFailed(e -> {
@@ -160,31 +235,108 @@ public class BidderHomeController {
 
     @FXML
     public void handleRefresh() {
-        refreshWalletBalance();
-        refreshAuctions();
-    }
-
-    private void refreshWalletBalance() {
-        try {
-            Map<String, String> data = new HashMap<>();
-            data.put("username", ctx.getCurrentUser().getUsername());
-            Response response = ctx.sendRequestAndWait(new Request("GET_WALLET_BALANCE", data), 15);
-            if ("SUCCESS".equals(response.getStatus())) {
-                Platform.runLater(() -> walletBalanceLabel.setText("Balance: $" + response.getMessage()));
-            } else {
-                Platform.runLater(() -> walletBalanceLabel.setText("Balance: unavailable"));
-            }
-        } catch (Exception e) {
-            Platform.runLater(() -> walletBalanceLabel.setText("Balance: unavailable"));
-        }
+        loadAuction();
+        loadWallet();
     }
 
     private void updateAuctionGrid(List<Auction> auctions) {
-        auctionGrid.getChildren().clear();
-        for (Auction auction : auctions) {
-            VBox card = createAuctionCard(auction);
-            auctionGrid.getChildren().add(card);
+
+        // Existing cards map
+        Map<String, VBox> existingCards = new HashMap<>();
+
+        for (var node : auctionGrid.getChildren()) {
+
+            if (node instanceof VBox card) {
+
+                Object userData = card.getUserData();
+
+                if (userData != null) {
+                    existingCards.put(userData.toString(), card);
+                }
+            }
         }
+
+        // Update existing or add new
+        for (Auction auction : auctions) {
+
+            String id = auction.getId();
+
+            if (existingCards.containsKey(id)) {
+
+                VBox card = existingCards.get(id);
+
+                Label nameLabel =
+                        (Label) card.getProperties()
+                                .get("nameLabel");
+
+                Label priceLabel =
+                        (Label) card.getProperties()
+                                .get("priceLabel");
+
+                Label statusLabel =
+                        (Label) card.getProperties()
+                                .get("statusLabel");
+
+                Label startsLabel =
+                        (Label) card.getProperties()
+                                .get("startsLabel");
+
+                Label endsLabel =
+                        (Label) card.getProperties()
+                                .get("endsLabel");
+
+                if (nameLabel != null) {
+                    nameLabel.setText(
+                            auction.getItem().getName()
+                    );
+                }
+
+                if (priceLabel != null) {
+                    priceLabel.setText(
+                            "Current Bid: $" +
+                                    auction.getCurrentPrice()
+                    );
+                }
+
+                if (statusLabel != null) {
+                    statusLabel.setText(
+                            auction.getStatus().toString()
+                    );
+                }
+
+                if (startsLabel != null) {
+                    startsLabel.setText(
+                            "Starts: " +
+                                    formatEndTime(
+                                            auction.getStartTime()
+                                    )
+                    );
+                }
+
+                if (endsLabel != null) {
+                    endsLabel.setText(
+                            "Ends: " +
+                                    formatEndTime(
+                                            auction.getEndTime()
+                                    )
+                    );
+                }
+
+                existingCards.remove(id);
+
+            } else {
+
+                VBox card = createAuctionCard(auction);
+
+                card.setUserData(id);
+
+                auctionGrid.getChildren().add(card);
+            }
+        }
+
+        // Remove deleted auctions
+        auctionGrid.getChildren()
+                .removeAll(existingCards.values());
     }
 
     private VBox createAuctionCard(Auction auction) {
@@ -195,6 +347,11 @@ public class BidderHomeController {
         Label startsAtLabel = new Label();
         Label endsInLabel = new Label();
         VBox card = new VBox(10);
+        card.getProperties().put("nameLabel", nameLabel);
+        card.getProperties().put("priceLabel", priceLabel);
+        card.getProperties().put("statusLabel", statusLabel);
+        card.getProperties().put("startsLabel", startsAtLabel);
+        card.getProperties().put("endsLabel", endsInLabel);
 
         imageView.setFitHeight(150);
         imageView.setFitWidth(150);
@@ -328,24 +485,6 @@ public class BidderHomeController {
         }
 
         auctionDetailPane.getChildren().addAll(titleBox, imageView, detailsGrid, actionBox);
-    }
-
-    private void refreshAuctions() {
-        try {
-            Response response = ctx.sendRequestAndWait(new Request("GET_AUCTIONS", new HashMap<>()), 15);
-            if ("SUCCESS".equals(response.getStatus())) {
-                List<Auction> auctions = gson.fromJson(response.getMessage(), new TypeToken<List<Auction>>() {
-                }.getType());
-                List<Auction> activeAuctions = auctions.stream()
-                        .filter(a -> a.getStatus() != shared.enums.AuctionStatus.CANCELED)
-                        .collect(Collectors.toList());
-                Platform.runLater(() -> {
-                    allAuctions.setAll(activeAuctions);
-                });
-            }
-        } catch (Exception e) {
-            alertService.showAlert("Error", "Failed to refresh auctions: " + e.getMessage(), welcomeLabel);
-        }
     }
 
     @FXML
@@ -651,7 +790,7 @@ public class BidderHomeController {
             Response response = ctx.sendRequestAndWait(req, 15);
 
             if ("SUCCESS".equals(response.getStatus())) {
-                refreshAuctions();
+                loadAuction();
                 showAlert("Success", "Bid placed successfully!");
             } else {
                 showAlert("Error", response.getMessage());
@@ -672,7 +811,7 @@ public class BidderHomeController {
             Response response = ctx.sendRequestAndWait(req, 15);
 
             if ("SUCCESS".equals(response.getStatus())) {
-                refreshAuctions();
+                loadAuction();
                 showAlert("Success", "Auto-bid registered successfully!");
             } else {
                 showAlert("Error", response.getMessage());
