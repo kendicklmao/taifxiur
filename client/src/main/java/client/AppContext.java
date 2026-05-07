@@ -32,7 +32,7 @@ public class AppContext {
     private final List<Consumer<String>> messageListeners = new CopyOnWriteArrayList<>();
     private final ConcurrentHashMap<String, CompletableFuture<Response>> pendingRequests = new ConcurrentHashMap<>();
     private final Gson gson = GsonUtils.createGson();
-    private Thread listenerThread;  
+    private Thread listenerThread;
 
     protected AppContext() {
 

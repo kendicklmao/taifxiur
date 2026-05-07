@@ -34,18 +34,14 @@ public class GsonUtilsTest {
                          "What is your mother's name?", "Jane");
     }
 
-    /**
-     * Test serializing a non-banned user
-     */
+    //Kiem tra serialization cua user khong bi Ban
     @Test
     public void testSerializeNonBannedUser() {
         String json = gson.toJson(bidder);
         assertTrue(json.contains("\"isBanned\":false"), "JSON should contain isBanned field");
     }
 
-    /**
-     * Test serializing a banned user
-     */
+    //Kiem tra serialization cua user bi ban
     @Test
     public void testSerializeBannedUser() {
         bidder.banUser();
@@ -53,9 +49,7 @@ public class GsonUtilsTest {
         assertTrue(json.contains("\"isBanned\":true"), "JSON should contain isBanned as true");
     }
 
-    /**
-     * Test deserializing a non-banned user
-     */
+    //Kiem tra deserialization cua user khong bi ban
     @Test
     public void testDeserializeNonBannedUser() {
         String json = gson.toJson(bidder);
@@ -63,9 +57,7 @@ public class GsonUtilsTest {
         assertFalse(deserializedUser.isBanned(), "Deserialized user should not be banned");
     }
 
-    /**
-     * Test deserializing a banned user
-     */
+    //Kiem tra deserialization cua user bi ban
     @Test
     public void testDeserializeBannedUser() {
         bidder.banUser();
@@ -74,9 +66,7 @@ public class GsonUtilsTest {
         assertTrue(deserializedUser.isBanned(), "Deserialized user should be banned");
     }
 
-    /**
-     * Test serializing and deserializing multiple users with different ban statuses
-     */
+    //Test voi lop cha User de xac dinh chung chinh la lop con ke thua
     @Test
     public void testSerializeDeserializeMultipleUsers() {
         // Ban only the seller
@@ -98,9 +88,7 @@ public class GsonUtilsTest {
         assertFalse(adminDeserialized.isBanned(), "Admin should not be banned");
     }
 
-    /**
-     * Test serializing and deserializing array of users
-     */
+    //Test kha nang xu li mang User
     @Test
     public void testSerializeDeserializeUserArray() {
         seller.banUser();
@@ -115,9 +103,7 @@ public class GsonUtilsTest {
         assertFalse(deserializedUsers[2].isBanned(), "Third user should not be banned");
     }
 
-    /**
-     * Test that setBanned method works correctly
-     */
+    //Test chuc nang cua method setBanned
     @Test
     public void testSetBannedMethod() {
         assertFalse(bidder.isBanned(), "User should not be banned initially");

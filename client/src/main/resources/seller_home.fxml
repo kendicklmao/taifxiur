@@ -49,7 +49,7 @@
 
                     <!-- CREATE AUCTION -->
                     <VBox styleClass="dash-card" spacing="16" HBox.hgrow="ALWAYS"
-                          minWidth="380" prefWidth="520">
+                          minWidth="520" prefWidth="700">
                         <VBox spacing="4">
                             <Label text="Create New Auction" styleClass="dashboard-section-title"/>
                             <Label text="List a new item for live auction"
