@@ -26,7 +26,7 @@ public class AppContext {
     private Socket socket;
     private PrintWriter out;
     private BufferedReader in;
-    private static final AppContext instance = new AppContext();
+    private static volatile AppContext instance;
     private User currentUser;
     private Auction selectedAuction;
     private final List<Consumer<String>> messageListeners = new CopyOnWriteArrayList<>();
@@ -35,6 +35,11 @@ public class AppContext {
     private Thread listenerThread;  
 
     protected AppContext() {
+        synchronized (AppContext.class) {
+            if (instance != null) {
+                instance = new AppContext();
+            }
+        }
     }
 
     public static AppContext getInstance() {
