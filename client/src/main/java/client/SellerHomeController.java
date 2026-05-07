@@ -605,7 +605,7 @@ public class SellerHomeController {
             System.out.println("MESSAGE = " + response.getMessage());
             if ("SUCCESS".equals(response.getStatus())) {
                 fetchAllAuctions(); // Refresh the grid
-                alertService.showAlert("OK", "Auction created successfully!", welcomeLabel);
+                alertService.showAlert("Success", "Auction created successfully!", welcomeLabel);
                 itemNameField.clear();
                 startPriceField.clear();
                 descField.clear();
@@ -799,4 +799,5 @@ public class SellerHomeController {
             }
         });
     }
+
 }
