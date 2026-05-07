@@ -20,12 +20,6 @@ public class BannedPaymentTest {
         userService.setWalletService(walletService);
         userService.initializeDefaultUsers();
     }
-
-    @AfterEach
-    public void tearDown() {
-        DatabaseConfig.closeDataSource();
-    }
-
     @Test
     public void testBannedUserCannotBeCharged() {
         String bidder = "bidder_" + UUID.randomUUID().toString().substring(0, 8);
