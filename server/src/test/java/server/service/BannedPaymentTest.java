@@ -37,8 +37,9 @@ public class BannedPaymentTest {
         String requestId = walletService.getPendingDepositRequests().stream()
                 .filter(r -> r.get("username").equals(bidder))
                 .findFirst()
-                .get()
-                .get("id");
+                .map(r -> r.get("id"))
+                .orElseThrow(() ->
+                        new RuntimeException("Deposit request not found"));
         walletService.approveDeposit(requestId, admin);
 
         // 3. Ban the bidder
