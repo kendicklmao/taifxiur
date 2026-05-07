@@ -16,9 +16,7 @@ public class WalletTest {
         wallet = new Wallet();
     }
 
-    /**
-     * Test successful deposit with positive amount
-     */
+    //Kiem tra gui tien thanh cong voi so tien duong
     @Test
     public void testDepositSuccess() {
         BigDecimal amount = new BigDecimal("100.00");
@@ -26,9 +24,8 @@ public class WalletTest {
         assertEquals(0, wallet.getBalance().compareTo(new BigDecimal("100.00")));
     }
 
-    /**
-     * Test multiple deposits
-     */
+
+    //Kiem tra gui tien nhieu lan va tinh tong tien cua cac lan gui
     @Test
     public void testMultipleDeposits() {
         wallet.deposit(new BigDecimal("100.00"));
@@ -37,9 +34,7 @@ public class WalletTest {
         assertEquals(0, wallet.getBalance().compareTo(new BigDecimal("175.50")));
     }
 
-    /**
-     * Test deposit with null amount throws exception
-     */
+    //tien gui la null , check nem exception
     @Test
     public void testDepositNullAmount() {
         assertThrows(IllegalArgumentException.class, () -> {
@@ -47,9 +42,7 @@ public class WalletTest {
         });
     }
 
-    /**
-     * Test deposit with zero amount throws exception
-     */
+    //tien gui la 0 , check nem exception
     @Test
     public void testDepositZeroAmount() {
         assertThrows(IllegalArgumentException.class, () -> {
@@ -57,9 +50,7 @@ public class WalletTest {
         });
     }
 
-    /**
-     * Test deposit with negative amount throws exception
-     */
+    //tien gui la am , check nem exception
     @Test
     public void testDepositNegativeAmount() {
         assertThrows(IllegalArgumentException.class, () -> {
@@ -67,9 +58,7 @@ public class WalletTest {
         });
     }
 
-    /**
-     * Test successful withdrawal
-     */
+    //rut tien va so du duoc cap nhat
     @Test
     public void testWithdrawSuccess() {
         wallet.deposit(new BigDecimal("100.00"));
@@ -78,9 +67,7 @@ public class WalletTest {
         assertEquals(0, wallet.getBalance().compareTo(new BigDecimal("50.00")));
     }
 
-    /**
-     * Test withdrawal with insufficient balance
-     */
+    //rut tien trong truong hop so du khong du
     @Test
     public void testWithdrawInsufficientBalance() {
         wallet.deposit(new BigDecimal("50.00"));
@@ -89,9 +76,7 @@ public class WalletTest {
         assertEquals(0, wallet.getBalance().compareTo(new BigDecimal("50.00")));
     }
 
-    /**
-     * Test withdrawal with zero amount throws exception
-     */
+    //Rut tien bang 0
     @Test
     public void testWithdrawZeroAmount() {
         assertThrows(IllegalArgumentException.class, () -> {
@@ -99,9 +84,7 @@ public class WalletTest {
         });
     }
 
-    /**
-     * Test withdrawal with negative amount throws exception
-     */
+    //rut tien am
     @Test
     public void testWithdrawNegativeAmount() {
         assertThrows(IllegalArgumentException.class, () -> {
@@ -109,9 +92,7 @@ public class WalletTest {
         });
     }
 
-    /**
-     * Test withdrawal with null amount throws exception
-     */
+    //rut tien null
     @Test
     public void testWithdrawNullAmount() {
         assertThrows(IllegalArgumentException.class, () -> {
@@ -119,17 +100,13 @@ public class WalletTest {
         });
     }
 
-    /**
-     * Test initial balance is zero
-     */
+    //kiem tra so du ban dau la 0
     @Test
     public void testInitialBalance() {
         assertEquals(0, wallet.getBalance().compareTo(BigDecimal.ZERO));
     }
 
-    /**
-     * Test withdraw exact balance
-     */
+    //Kiem tra rut het so du, so du con lai la 0
     @Test
     public void testWithdrawExactBalance() {
         BigDecimal amount = new BigDecimal("100.00");
