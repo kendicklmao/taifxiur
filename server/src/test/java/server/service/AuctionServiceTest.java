@@ -32,8 +32,7 @@ public class AuctionServiceTest {
         userService = new UserService();
         walletService = new WalletService();
         auctionService = new AuctionService(userService, walletService);
-        userService.setWalletService(walletService);
-    }
+        }
 
     @BeforeEach
     public void setUp() {

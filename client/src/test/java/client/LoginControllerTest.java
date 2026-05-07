@@ -11,7 +11,6 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class LoginControllerTest {
 
-    // Static block to initialize JavaFX Toolkit
     static {
         new JFXPanel();
     }
@@ -28,23 +27,18 @@ public class LoginControllerTest {
         fakeAlertService = new FakeAlertService();
         loginController = new LoginController(fakeAppContext, fakeNavigator, fakeAlertService);
 
-        // Initialize JavaFX fields
         loginController.usernameField = new TextField();
         loginController.passwordField = new PasswordField();
     }
 
     @Test
     void handleLogin_whenSuccessAsBidder_navigatesToBidderHome() {
-        // Arrange
         loginController.usernameField.setText("bidder");
         loginController.passwordField.setText("password");
         Response successResponse = new Response("SUCCESS", "BIDDER,bidder");
         fakeAppContext.setResponseToReturn(successResponse);
-
-        // Act
         loginController.handleLogin();
 
-        // Assert
         assertTrue(fakeAppContext.isConnectCalled());
         assertNotNull(fakeAppContext.getCurrentUser());
         assertEquals("bidder", fakeAppContext.getCurrentUser().getUsername());
@@ -53,16 +47,12 @@ public class LoginControllerTest {
 
     @Test
     void handleLogin_whenFailed_doesNotNavigate() {
-        // Arrange
         loginController.usernameField.setText("user");
         loginController.passwordField.setText("wrongpassword");
         Response errorResponse = new Response("ERROR", "Invalid credentials");
         fakeAppContext.setResponseToReturn(errorResponse);
-
-        // Act
         loginController.handleLogin();
 
-        // Assert
         assertTrue(fakeAppContext.isConnectCalled());
         assertNull(fakeAppContext.getCurrentUser());
         assertTrue(fakeNavigator.getSwitchedScenes().isEmpty());
@@ -72,15 +62,10 @@ public class LoginControllerTest {
 
     @Test
     void handleLogin_whenConnectionFails_doesNotNavigate() {
-        // Arrange
         loginController.usernameField.setText("user");
         loginController.passwordField.setText("password");
         fakeAppContext.setExceptionToThrow(new RuntimeException("Connection failed"));
-
-        // Act
         loginController.handleLogin();
-
-        // Assert
         assertTrue(fakeAppContext.isConnectCalled());
         assertNull(fakeAppContext.getCurrentUser());
         assertTrue(fakeNavigator.getSwitchedScenes().isEmpty());
@@ -90,19 +75,13 @@ public class LoginControllerTest {
 
     @Test
     void goToRegister_callsNavigator() {
-        // Act
         loginController.goToRegister();
-
-        // Assert
         assertEquals("register.fxml", fakeNavigator.getLastSwitchedScene());
     }
 
     @Test
     void goToForgotPassword_callsNavigator() {
-        // Act
         loginController.goToForgotPassword();
-
-        // Assert
         assertEquals("forgot_password.fxml", fakeNavigator.getLastSwitchedScene());
     }
 }

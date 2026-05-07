@@ -25,12 +25,6 @@ public class UserService {
                                                                                                   // nhập
     private static final int MAX_ATTEMPTS = 5; // Số lượt đăng nhập thất bại tối đa
     private static final long BASE_LOCK_SECONDS = 2; // Số giây cơ sở để vô hiệu hóa nếu đăng nhập thất bại
-    private WalletService walletService;
-
-    public void setWalletService(WalletService walletService) {
-        this.walletService = walletService;
-    }
-
     // Khởi tạo người dùng mặc định trong cơ sở dữ liệu
     public UserService() {
     }
@@ -764,41 +758,4 @@ public class UserService {
         }
     }
 
-    public BigDecimal getWalletBalance(String username) {
-        return walletService.getWalletBalance(username);
-    }
-
-    public String createDepositRequest(String bidderUsername, BigDecimal amount, String bankName,
-            String accountNumber) {
-        return walletService.createDepositRequest(bidderUsername, amount, bankName, accountNumber);
-    }
-
-    public String createWithdrawRequest(String sellerUsername, BigDecimal amount, String bankName,
-            String accountNumber) {
-        return walletService.createWithdrawRequest(sellerUsername, amount, bankName, accountNumber);
-    }
-
-    public List<Map<String, String>> getPendingDepositRequests() {
-        return walletService.getPendingDepositRequests();
-    }
-
-    public List<Map<String, String>> getPendingWithdrawRequests() {
-        return walletService.getPendingWithdrawRequests();
-    }
-
-    public String approveDepositRequest(String requestId, String adminUsername) {
-        return walletService.approveDeposit(requestId, adminUsername);
-    }
-
-    public String rejectDepositRequest(String requestId, String adminUsername) {
-        return walletService.rejectDeposit(requestId, adminUsername);
-    }
-
-    public String approveWithdrawRequest(String requestId, String adminUsername) {
-        return walletService.approveWithdraw(requestId, adminUsername);
-    }
-
-    public String rejectWithdrawRequest(String requestId, String adminUsername) {
-        return walletService.rejectWithdraw(requestId, adminUsername);
-    }
 }

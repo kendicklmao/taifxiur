@@ -1,15 +1,15 @@
 package server.controller;
 
 import java.math.BigDecimal;
-import server.service.UserService;
+import server.service.WalletService;
 import shared.network.Request;
 import shared.network.Response;
 
 public class CreateDepositRequestHandler implements RequestHandler {
-    private final UserService userService;
+    private final WalletService walletService;
 
-    public CreateDepositRequestHandler(UserService userService) {
-        this.userService = userService;
+    public CreateDepositRequestHandler(WalletService walletService) {
+        this.walletService = walletService;
     }
 
     @Override
@@ -18,7 +18,7 @@ public class CreateDepositRequestHandler implements RequestHandler {
         BigDecimal depositAmount = new BigDecimal(request.getData().get("amount"));
         String depositBankName = request.getData().get("bankName");
         String depositAccountNumber = request.getData().get("accountNumber");
-        String depositError = userService.createDepositRequest(depositUsername, depositAmount, depositBankName, depositAccountNumber);
+        String depositError = walletService.createDepositRequest(depositUsername, depositAmount, depositBankName, depositAccountNumber);
         if (depositError == null) {
             return new Response("SUCCESS", "Deposit request created successfully");
         } else {

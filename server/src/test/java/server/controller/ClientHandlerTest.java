@@ -41,8 +41,6 @@ public class ClientHandlerTest {
         walletService = new WalletService();
         auctionService = new AuctionService(userService, walletService);
         storageService = new StorageService();
-        userService.setWalletService(walletService);
-
         Map<String, RequestHandler> handlers = HandlerFactory.createHandlers(userService, auctionService, walletService, storageService);
 
         serverSocket = new ServerSocket(0); // Use a random free port

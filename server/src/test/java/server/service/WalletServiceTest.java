@@ -24,8 +24,7 @@ public class WalletServiceTest {
         DatabaseInitializer.initializeDatabase();
         userService = new UserService();
         walletService = new WalletService();
-        userService.setWalletService(walletService);
-    }
+        }
 
     @BeforeEach
     public void setUp() {

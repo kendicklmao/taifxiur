@@ -39,8 +39,6 @@ public class ServerApplication {
             auctionService = new AuctionService(userService, walletService);
             storageService = new StorageService();
 
-            userService.setWalletService(walletService);
-
             try (Connection conn = DatabaseConfig.getDataSource().getConnection();
                  PreparedStatement pstmt = conn.prepareStatement("SELECT 1 FROM users LIMIT 1")) {
                 ResultSet rs = pstmt.executeQuery();

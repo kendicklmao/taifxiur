@@ -11,14 +11,11 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 public class UserServiceTest {
 
     private static UserService userService;
-    private static WalletService walletService;
 
     @BeforeAll
     public static void setUpClass() throws Exception {
         DatabaseInitializer.initializeDatabase();
         userService = new UserService();
-        walletService = new WalletService();
-        userService.setWalletService(walletService);
     }
 
     @BeforeEach
