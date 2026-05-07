@@ -26,20 +26,15 @@ public class AppContext {
     private Socket socket;
     private PrintWriter out;
     private BufferedReader in;
-    private static volatile AppContext instance;
+    private static final AppContext instance = new AppContext();
     private User currentUser;
     private Auction selectedAuction;
     private final List<Consumer<String>> messageListeners = new CopyOnWriteArrayList<>();
     private final ConcurrentHashMap<String, CompletableFuture<Response>> pendingRequests = new ConcurrentHashMap<>();
     private final Gson gson = GsonUtils.createGson();
-    private Thread listenerThread;  
+    private Thread listenerThread;
 
     protected AppContext() {
-        synchronized (AppContext.class) {
-            if (instance != null) {
-                instance = new AppContext();
-            }
-        }
     }
 
     public static AppContext getInstance() {
