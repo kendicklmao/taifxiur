@@ -20,12 +20,6 @@ public class BannedPaymentTest {
         userService.setWalletService(walletService);
         userService.initializeDefaultUsers();
     }
-
-    @AfterEach
-    public void tearDown() {
-        DatabaseConfig.closeDataSource();
-    }
-
     @Test
     public void testBannedUserCannotBeCharged() {
         String bidder = "bidder_" + UUID.randomUUID().toString().substring(0, 8);
@@ -37,14 +31,21 @@ public class BannedPaymentTest {
         userService.register(seller, "Pass@123", seller + "@test.com", "q", "a", "q", "a", Role.SELLER);
 
         // 2. Deposit money into the bidder's wallet
-        walletService.createDepositRequest(bidder, new BigDecimal("1000"), "Test Bank", "12345");
+        String depositResult = walletService.createDepositRequest(
+                bidder,
+                new BigDecimal("1000"),
+                "Test Bank",
+                "12345"
+        );
 
+        assertNull(depositResult);
         // Get the ID of the request just created to approve it
         String requestId = walletService.getPendingDepositRequests().stream()
                 .filter(r -> r.get("username").equals(bidder))
                 .findFirst()
-                .get()
-                .get("id");
+                .map(r -> r.get("id"))
+                .orElseThrow(() ->
+                        new RuntimeException("Deposit request not found"));
         walletService.approveDeposit(requestId, admin);
 
         // 3. Ban the bidder

@@ -2,18 +2,22 @@ package client;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
+import javafx.animation.PauseTransition;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
-import javafx.collections.transformation.FilteredList;
-import javafx.collections.transformation.SortedList;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
+import java.util.Comparator;
+import javafx.concurrent.Task;
+import javafx.collections.transformation.FilteredList;
+import javafx.collections.transformation.SortedList;
 import javafx.scene.image.Image;
+import java.lang.reflect.Type;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
@@ -22,6 +26,7 @@ import javafx.scene.layout.TilePane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
+import javafx.util.Duration;
 import shared.models.Auction;
 import shared.network.Request;
 import shared.network.Response;
@@ -37,7 +42,6 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.Arrays;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -62,101 +66,347 @@ public class BidderHomeController {
     private final AppContext ctx = AppContext.getInstance();
     private final Gson gson = GsonUtils.createGson();
     private final IAlertService alertService = new AlertServiceImpl();
+    private final Map<String, VBox> auctionCardMap =
+            new HashMap<>();
 
     private Consumer<String> messageListener;
     private final ObservableList<Auction> allAuctions = FXCollections.observableArrayList();
 
     @FXML
     public void initialize() {
-        welcomeLabel.setText("Welcome " + ctx.getCurrentUser().getUsername());
 
-        // Setup sorting options
-        sortComboBox.getItems().addAll("Name (A-Z)", "Price (Low to High)");
+        welcomeLabel.setText(
+                "Welcome " +
+                        ctx.getCurrentUser().getUsername()
+        );
 
-        // 1. Wrap the ObservableList in a FilteredList (initially display all data).
-        FilteredList<Auction> filteredData = new FilteredList<>(allAuctions, p -> true);
+        // setup sort
+        sortComboBox.getItems().addAll(
+                "Name (A-Z)",
+                "Price (Low to High)"
+        );
 
-        // 2. Set the filter Predicate whenever the filter changes.
-        searchField.textProperty().addListener((observable, oldValue, newValue) -> {
-            filteredData.setPredicate(auction -> {
-                if (newValue == null || newValue.isEmpty()) {
-                    return true; // Display all auctions if search field is empty.
+        FilteredList<Auction> filteredData =
+                new FilteredList<>(allAuctions, p -> true);
+
+        searchField.textProperty().addListener(
+                (observable, oldValue, newValue) -> {
+
+                    filteredData.setPredicate(auction -> {
+
+                        if (newValue == null ||
+                                newValue.isEmpty()) {
+                            return true;
+                        }
+
+                        return auction.getItem()
+                                .getName()
+                                .toLowerCase()
+                                .contains(newValue.toLowerCase());
+                    });
                 }
-                String lowerCaseFilter = newValue.toLowerCase();
-                // Filter matches item name.
-                return auction.getItem().getName().toLowerCase().contains(lowerCaseFilter);
-            });
+        );
+
+        SortedList<Auction> sortedData =
+                new SortedList<>(filteredData);
+
+        sortComboBox.valueProperty().addListener(
+                (observable, oldValue, newValue) -> {
+
+                    if (newValue == null) {
+                        sortedData.setComparator(null);
+                        return;
+                    }
+
+                    switch (newValue) {
+
+                        case "Name (A-Z)":
+                            sortedData.setComparator(
+                                    Comparator.comparing(
+                                            a -> a.getItem().getName()
+                                    )
+                            );
+                            break;
+
+                        case "Price (Low to High)":
+                            sortedData.setComparator(
+                                    Comparator.comparing(
+                                            Auction::getCurrentPrice
+                                    )
+                            );
+                            break;
+                    }
+                }
+        );
+
+        sortedData.addListener(
+                (ListChangeListener<Auction>) c ->
+                        updateAuctionGrid(sortedData)
+        );
+
+        Platform.runLater(() -> {
+
+            loadAuction();
+
+            loadWallet();
         });
-
-        // 3. Wrap the FilteredList in a SortedList.
-        SortedList<Auction> sortedData = new SortedList<>(filteredData);
-
-        // 4. Bind the SortedList comparator to the ComboBox selection.
-        sortComboBox.valueProperty().addListener((observable, oldValue, newValue) -> {
-            if (newValue == null) {
-                sortedData.setComparator(null);
-                return;
-            }
-            switch (newValue) {
-                case "Name (A-Z)":
-                    sortedData.setComparator(Comparator.comparing(a -> a.getItem().getName()));
-                    break;
-                case "Price (Low to High)":
-                    sortedData.setComparator(Comparator.comparing(Auction::getCurrentPrice));
-                    break;
-                default:
-                    sortedData.setComparator(null);
-                    break;
-            }
-        });
-
-        // 5. Add a listener to the SortedList to update the UI whenever it changes.
-        sortedData.addListener((ListChangeListener<Auction>) c -> updateAuctionGrid(sortedData));
-
         messageListener = line -> {
+
             try {
-                Response res = gson.fromJson(line, Response.class);
-                if ("UPDATE_PRICE".equals(res.getStatus()) || "AUCTION_UPDATED".equals(res.getStatus())
-                        || "AUCTION_FINISHED".equals(res.getStatus()) || "AUCTION_CREATED".equals(res.getStatus())) {
-                    Platform.runLater(this::refreshAuctions);
+
+                Response res =
+                        gson.fromJson(
+                                line,
+                                Response.class
+                        );
+
+                if ("UPDATE_PRICE".equals(res.getStatus())) {
+
+                    Type type =
+                            new TypeToken<Map<String, String>>(){}.getType();
+
+                    Map<String, String> payload =
+                            gson.fromJson(
+                                    res.getMessage(),
+                                    type
+                            );
+
+                    String auctionId =
+                            payload.get("auctionId");
+
+                    String newPrice =
+                            payload.get("newPrice");
+
+                    Platform.runLater(() -> {
+
+                        VBox card =
+                                auctionCardMap.get(auctionId);
+
+                        if (card != null) {
+
+                            Label priceLabel =
+                                    (Label) card.getProperties()
+                                            .get("priceLabel");
+
+                            if (priceLabel != null) {
+
+                                priceLabel.setText(
+                                        "Current Bid: $" + newPrice
+                                );
+                                PauseTransition delay =
+                                        new PauseTransition(
+                                                Duration.millis(300)
+                                        );
+
+                                delay.setOnFinished(e -> loadAuction());
+
+                                delay.play();
+
+                            }
+                        }
+                    });
                 }
+
             } catch (Exception e) {
+
                 e.printStackTrace();
             }
         };
+
         ctx.addMessageListener(messageListener);
 
-        refreshWalletBalance();
-        refreshAuctions();
+    }
+
+
+    private void loadAuction() {
+        Task<List<Auction>> task = new Task<>() {
+            @Override
+            protected List<Auction> call() throws Exception {
+
+                Map<String, String> data = new HashMap<>();
+
+                Response response =
+                        ctx.sendRequestAndWait(
+                                new Request("GET_AUCTIONS", data),
+                                15
+                        );
+
+                Type type = new TypeToken<List<Auction>>(){}.getType();
+
+                return gson.fromJson(response.getMessage(), type);
+            }
+        };
+
+        task.setOnSucceeded(e -> {
+            allAuctions.setAll(task.getValue());
+        });
+
+        task.setOnFailed(e -> {
+            alertService.showAlert(
+                    "Error",
+                    "Cannot load auctions",
+                    auctionGrid
+            );
+        });
+
+        new Thread(task).start();
+    }
+
+    private void loadWallet() {
+        Task<String> task = new Task<>() {
+
+            @Override
+            protected String call() throws Exception {
+
+                Map<String, String> data = new HashMap<>();
+
+                data.put(
+                        "username",
+                        ctx.getCurrentUser().getUsername()
+                );
+
+                Response response =
+                        ctx.sendRequestAndWait(
+                                new Request("GET_WALLET_BALANCE", data),
+                                15
+                        );
+
+                if ("SUCCESS".equals(response.getStatus())) {
+                    return response.getMessage();
+                }
+
+                return null;
+            }
+        };
+
+        task.setOnSucceeded(e -> {
+
+            String balance = task.getValue();
+
+            if (balance != null) {
+                walletBalanceLabel.setText(
+                        "Balance: $" + balance
+                );
+            } else {
+                walletBalanceLabel.setText(
+                        "Balance unavailable"
+                );
+            }
+        });
+
+        task.setOnFailed(e -> {
+            walletBalanceLabel.setText(
+                    "Balance unavailable"
+            );
+        });
+
+        new Thread(task).start();
     }
 
     @FXML
     public void handleRefresh() {
-        refreshWalletBalance();
-        refreshAuctions();
-    }
-
-    private void refreshWalletBalance() {
-        try {
-            Map<String, String> data = new HashMap<>();
-            data.put("username", ctx.getCurrentUser().getUsername());
-            Response response = ctx.sendRequestAndWait(new Request("GET_WALLET_BALANCE", data), 15);
-            if ("SUCCESS".equals(response.getStatus())) {
-                Platform.runLater(() -> walletBalanceLabel.setText("Balance: $" + response.getMessage()));
-            } else {
-                Platform.runLater(() -> walletBalanceLabel.setText("Balance: unavailable"));
-            }
-        } catch (Exception e) {
-            Platform.runLater(() -> walletBalanceLabel.setText("Balance: unavailable"));
-        }
+        loadAuction();
+        loadWallet();
     }
 
     private void updateAuctionGrid(List<Auction> auctions) {
-        auctionGrid.getChildren().clear();
-        for (Auction auction : auctions) {
-            VBox card = createAuctionCard(auction);
-            auctionGrid.getChildren().add(card);
+
+        // Existing cards map
+        Map<String, VBox> existingCards = new HashMap<>();
+
+        for (var node : auctionGrid.getChildren()) {
+
+            if (node instanceof VBox card) {
+
+                Object userData = card.getUserData();
+
+                if (userData != null) {
+                    existingCards.put(userData.toString(), card);
+                }
+            }
         }
+
+        // Update existing or add new
+        for (Auction auction : auctions) {
+
+            String id = auction.getId();
+
+            if (existingCards.containsKey(id)) {
+
+                VBox card = existingCards.get(id);
+
+                Label nameLabel =
+                        (Label) card.getProperties()
+                                .get("nameLabel");
+
+                Label priceLabel =
+                        (Label) card.getProperties()
+                                .get("priceLabel");
+
+                Label statusLabel =
+                        (Label) card.getProperties()
+                                .get("statusLabel");
+
+                Label startsLabel =
+                        (Label) card.getProperties()
+                                .get("startsLabel");
+
+                Label endsLabel =
+                        (Label) card.getProperties()
+                                .get("endsLabel");
+
+                if (nameLabel != null) {
+                    nameLabel.setText(
+                            auction.getItem().getName()
+                    );
+                }
+
+                if (priceLabel != null) {
+                    priceLabel.setText(
+                            "Current Bid: $" +
+                                    auction.getCurrentPrice()
+                    );
+                }
+
+                if (statusLabel != null) {
+                    statusLabel.setText(
+                            auction.getStatus().toString()
+                    );
+                }
+
+                if (startsLabel != null) {
+                    startsLabel.setText(
+                            "Starts: " +
+                                    formatEndTime(
+                                            auction.getStartTime()
+                                    )
+                    );
+                }
+
+                if (endsLabel != null) {
+                    endsLabel.setText(
+                            "Ends: " +
+                                    formatEndTime(
+                                            auction.getEndTime()
+                                    )
+                    );
+                }
+
+                existingCards.remove(id);
+
+            } else {
+
+                VBox card = createAuctionCard(auction);
+
+                card.setUserData(id);
+
+                auctionGrid.getChildren().add(card);
+            }
+        }
+
+        // Remove deleted auctions
+        auctionGrid.getChildren()
+                .removeAll(existingCards.values());
     }
 
     private VBox createAuctionCard(Auction auction) {
@@ -167,6 +417,11 @@ public class BidderHomeController {
         Label startsAtLabel = new Label();
         Label endsInLabel = new Label();
         VBox card = new VBox(10);
+        card.getProperties().put("priceLabel", priceLabel);
+        card.getProperties().put("nameLabel", nameLabel);
+        card.getProperties().put("statusLabel", statusLabel);
+        card.getProperties().put("startsLabel", startsAtLabel);
+        card.getProperties().put("endsLabel", endsInLabel);
 
         imageView.setFitHeight(150);
         imageView.setFitWidth(150);
@@ -187,13 +442,28 @@ public class BidderHomeController {
         statusLabel.setText(auction.getStatus().toString());
         startsAtLabel.setText("Starts: " + formatEndTime(auction.getStartTime()));
         endsInLabel.setText("Ends: " + formatEndTime(auction.getEndTime()));
-
         card.setOnMouseClicked(event -> {
+
             if (event.getClickCount() == 2) {
-                showAuctionDetails(auction);
+
+                Auction latestAuction =
+                        allAuctions.stream()
+                                .filter(a ->
+                                        a.getId()
+                                                .equals(
+                                                        auction.getId()
+                                                )
+                                )
+                                .findFirst()
+                                .orElse(auction);
+
+                showAuctionDetails(latestAuction);
             }
         });
 
+        card.setUserData(auction.getId());
+
+        auctionCardMap.put(auction.getId(), card);
         return card;
     }
 
@@ -300,24 +570,6 @@ public class BidderHomeController {
         }
 
         auctionDetailPane.getChildren().addAll(titleBox, imageView, detailsGrid, actionBox);
-    }
-
-    private void refreshAuctions() {
-        try {
-            Response response = ctx.sendRequestAndWait(new Request("GET_AUCTIONS", new HashMap<>()), 15);
-            if ("SUCCESS".equals(response.getStatus())) {
-                List<Auction> auctions = gson.fromJson(response.getMessage(), new TypeToken<List<Auction>>() {
-                }.getType());
-                List<Auction> activeAuctions = auctions.stream()
-                        .filter(a -> a.getStatus() != shared.enums.AuctionStatus.CANCELED)
-                        .collect(Collectors.toList());
-                Platform.runLater(() -> {
-                    allAuctions.setAll(activeAuctions);
-                });
-            }
-        } catch (Exception e) {
-            alertService.showAlert("Error", "Failed to refresh auctions: " + e.getMessage(), welcomeLabel);
-        }
     }
 
     @FXML
@@ -621,11 +873,13 @@ public class BidderHomeController {
 
             Request req = new Request("PLACE_BID", data);
             Response response = ctx.sendRequestAndWait(req, 15);
-
             if ("SUCCESS".equals(response.getStatus())) {
-                refreshAuctions();
+
+                loadAuction();
+
                 showAlert("Success", "Bid placed successfully!");
-            } else {
+            }
+            else {
                 showAlert("Error", response.getMessage());
             }
         } catch (Exception e) {
@@ -633,26 +887,73 @@ public class BidderHomeController {
         }
     }
 
-    private void registerAutoBid(Auction auction, String maxAmount) {
+    private void registerAutoBid(
+            Auction auction,
+            String maxAmount
+    ) {
+
         try {
-            Map<String, String> data = new HashMap<>();
-            data.put("auctionId", auction.getId());
-            data.put("maxBid", maxAmount);
-            data.put("username", ctx.getCurrentUser().getUsername());
 
-            Request req = new Request("REGISTER_AUTOBID", data);
-            Response response = ctx.sendRequestAndWait(req, 15);
+            Map<String, String> data =
+                    new HashMap<>();
 
-            if ("SUCCESS".equals(response.getStatus())) {
-                refreshAuctions();
-                showAlert("Success", "Auto-bid registered successfully!");
+            data.put(
+                    "auctionId",
+                    auction.getId()
+            );
+
+            data.put(
+                    "maxBid",
+                    maxAmount
+            );
+
+            data.put(
+                    "username",
+                    ctx.getCurrentUser()
+                            .getUsername()
+            );
+
+            Request req =
+                    new Request(
+                            "REGISTER_AUTOBID",
+                            data
+                    );
+
+            Response response =
+                    ctx.sendRequestAndWait(
+                            req,
+                            15
+                    );
+
+            if ("SUCCESS".equals(
+                    response.getStatus()
+            )) {
+
+                loadAuction();
+
+                showAlert(
+                        "Success",
+                        "Auto-bid registered successfully!"
+                );
+
             } else {
-                showAlert("Error", response.getMessage());
+
+                showAlert(
+                        "Error",
+                        response.getMessage()
+                );
             }
+
         } catch (Exception e) {
-            showAlert("Error", "Failed to register auto-bid: " + e.getMessage());
+
+            showAlert(
+                    "Error",
+                    "Failed to register auto-bid: "
+                            + e.getMessage()
+            );
         }
     }
+
 
     private void showAlert(String title, String message) {
         alertService.showAlert(title, message, welcomeLabel.getScene().getWindow());

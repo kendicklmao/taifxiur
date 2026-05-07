@@ -59,6 +59,6 @@ public class AlertServiceImpl implements IAlertService {
         closeButton.setManaged(false);
 
 
-        dialog.showAndWait();
+        dialog.show();
     }
 }

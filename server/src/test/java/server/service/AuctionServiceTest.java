@@ -62,35 +62,38 @@ public class AuctionServiceTest {
 
     private void cleanupDatabase() {
         // FIXME: Commented out to prevent wiping the actual database during tests
-        // try (java.sql.Connection conn = DatabaseConfig.getDataSource().getConnection();
-        //      java.sql.Statement stmt = conn.createStatement()) {
-        //     stmt.executeUpdate("DELETE FROM bids");
-        //     stmt.executeUpdate("DELETE FROM auto_bids");
-        //     stmt.executeUpdate("DELETE FROM items");
-        //     stmt.executeUpdate("DELETE FROM wallets");
-        //     stmt.executeUpdate("DELETE FROM users");
+        // try (java.sql.Connection conn =
+        // DatabaseConfig.getDataSource().getConnection();
+        // java.sql.Statement stmt = conn.createStatement()) {
+        // stmt.executeUpdate("DELETE FROM bids");
+        // stmt.executeUpdate("DELETE FROM auto_bids");
+        // stmt.executeUpdate("DELETE FROM items");
+        // stmt.executeUpdate("DELETE FROM wallets");
+        // stmt.executeUpdate("DELETE FROM users");
         // } catch (java.sql.SQLException e) {
-        //     e.printStackTrace();
+        // e.printStackTrace();
         // }
     }
-    
+
     private static void cleanupDatabaseOnce() {
         // FIXME: Commented out to prevent wiping the actual database during tests
-        // try (java.sql.Connection conn = DatabaseConfig.getDataSource().getConnection();
-        //      java.sql.Statement stmt = conn.createStatement()) {
-        //     stmt.executeUpdate("DELETE FROM bids");
-        //     stmt.executeUpdate("DELETE FROM auto_bids");
-        //     stmt.executeUpdate("DELETE FROM items");
-        //     stmt.executeUpdate("DELETE FROM wallets");
-        //     stmt.executeUpdate("DELETE FROM users");
+        // try (java.sql.Connection conn =
+        // DatabaseConfig.getDataSource().getConnection();
+        // java.sql.Statement stmt = conn.createStatement()) {
+        // stmt.executeUpdate("DELETE FROM bids");
+        // stmt.executeUpdate("DELETE FROM auto_bids");
+        // stmt.executeUpdate("DELETE FROM items");
+        // stmt.executeUpdate("DELETE FROM wallets");
+        // stmt.executeUpdate("DELETE FROM users");
         // } catch (java.sql.SQLException e) {
-        //     e.printStackTrace();
+        // e.printStackTrace();
         // }
     }
 
     @Test
     public void testCreateAuction() {
-        Electronic item = new Electronic("Test Item", "Description", seller, new BigDecimal("10.00"), "Brand", ItemStatus.NEW);
+        Electronic item = new Electronic("Test Item", "Description", seller, new BigDecimal("10.00"), "Brand",
+                ItemStatus.NEW);
         item.setMinIncrement(new BigDecimal("10.00")); // Thêm dòng này
         Instant startTime = Instant.now().plus(1, ChronoUnit.HOURS);
         Instant endTime = startTime.plus(1, ChronoUnit.HOURS);
@@ -99,10 +102,11 @@ public class AuctionServiceTest {
         assertNotNull(auction);
         assertEquals(AuctionStatus.OPEN, auction.getStatus());
     }
-    
+
     @Test
     public void testPlaceBid() {
-        Electronic item = new Electronic("Test Item", "Description", seller, new BigDecimal("10.00"), "Brand", ItemStatus.NEW);
+        Electronic item = new Electronic("Test Item", "Description", seller, new BigDecimal("10.00"), "Brand",
+                ItemStatus.NEW);
         item.setMinIncrement(new BigDecimal("10.00")); // Thêm dòng này
         Instant startTime = Instant.now().minus(1, ChronoUnit.MINUTES); // Auction starts immediately
         Instant endTime = startTime.plus(1, ChronoUnit.HOURS);
@@ -110,21 +114,22 @@ public class AuctionServiceTest {
 
         boolean result = auctionService.placeBid(auction.getId(), bidder, new BigDecimal("150.00"));
         assertTrue(result);
-        
+
         Auction updatedAuction = auctionService.getAuction(auction.getId());
         assertEquals(0, updatedAuction.getCurrentPrice().compareTo(new BigDecimal("150.00")));
     }
 
     @Test
     public void testRegisterAutoBid() {
-        Electronic item = new Electronic("Test Item", "Description", seller, new BigDecimal("10.00"), "Brand", ItemStatus.NEW);
+        Electronic item = new Electronic("Test Item", "Description", seller, new BigDecimal("10.00"), "Brand",
+                ItemStatus.NEW);
         item.setMinIncrement(new BigDecimal("10.00")); // Thêm dòng này
         Instant startTime = Instant.now().minus(1, ChronoUnit.MINUTES); // Auction starts immediately
         Instant endTime = startTime.plus(1, ChronoUnit.HOURS);
         Auction auction = auctionService.createAuction(seller, item, new BigDecimal("100.00"), startTime, endTime);
 
         auctionService.registerAutoBid(auction.getId(), bidder, new BigDecimal("200.00"));
-        
+
         Auction updatedAuction = auctionService.getAuction(auction.getId());
         assertNotNull(updatedAuction.getHighestBidder());
         assertEquals(bidder.getUsername(), updatedAuction.getHighestBidder().getUsername());

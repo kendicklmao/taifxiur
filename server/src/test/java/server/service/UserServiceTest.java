@@ -39,12 +39,13 @@ public class UserServiceTest {
 
     private void cleanupDatabase() {
         // FIXME: Commented out to prevent wiping the actual database during tests
-        // try (java.sql.Connection conn = DatabaseConfig.getDataSource().getConnection();
-        //      java.sql.Statement stmt = conn.createStatement()) {
-        //     stmt.executeUpdate("DELETE FROM wallets");
-        //     stmt.executeUpdate("DELETE FROM users");
+        // try (java.sql.Connection conn =
+        // DatabaseConfig.getDataSource().getConnection();
+        // java.sql.Statement stmt = conn.createStatement()) {
+        // stmt.executeUpdate("DELETE FROM wallets");
+        // stmt.executeUpdate("DELETE FROM users");
         // } catch (java.sql.SQLException e) {
-        //     e.printStackTrace();
+        // e.printStackTrace();
         // }
     }
 
@@ -66,8 +67,22 @@ public class UserServiceTest {
 
     @Test
     public void testRegisterUser() {
-        boolean result = userService.register("newuser", "Password@123", "newuser@test.com", "q", "a", "q", "a", Role.BIDDER);
-        assertEquals(true, result);
+        String suffix = java.util.UUID.randomUUID().toString().substring(0, 8);
+        String testUser = "newuser_" + suffix;
+        String testEmail = testUser + "@test.com";
+
+        boolean result = userService.register(testUser, "Password@123", testEmail, "q", "a", "q", "a",
+                Role.BIDDER);
+        assertEquals(true, result, "Registration should succeed for a new unique user");
+
+        // Dọn dẹp: Xóa user vừa tạo để không rác DB
+        try (java.sql.Connection conn = DatabaseConfig.getDataSource().getConnection();
+             java.sql.PreparedStatement stmt = conn.prepareStatement("DELETE FROM users WHERE username = ?")) {
+            stmt.setString(1, testUser);
+            stmt.executeUpdate();
+        } catch (java.sql.SQLException e) {
+            e.printStackTrace();
+        }
     }
 
     @Test
