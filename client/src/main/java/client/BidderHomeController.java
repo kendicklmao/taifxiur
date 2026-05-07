@@ -2,6 +2,7 @@ package client;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
+import javafx.animation.PauseTransition;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
@@ -25,6 +26,7 @@ import javafx.scene.layout.TilePane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
+import javafx.util.Duration;
 import shared.models.Auction;
 import shared.network.Request;
 import shared.network.Response;
@@ -64,6 +66,8 @@ public class BidderHomeController {
     private final AppContext ctx = AppContext.getInstance();
     private final Gson gson = GsonUtils.createGson();
     private final IAlertService alertService = new AlertServiceImpl();
+    private final Map<String, VBox> auctionCardMap =
+            new HashMap<>();
 
     private Consumer<String> messageListener;
     private final ObservableList<Auction> allAuctions = FXCollections.observableArrayList();
@@ -146,7 +150,73 @@ public class BidderHomeController {
 
             loadWallet();
         });
+        messageListener = line -> {
+
+            try {
+
+                Response res =
+                        gson.fromJson(
+                                line,
+                                Response.class
+                        );
+
+                if ("UPDATE_PRICE".equals(res.getStatus())) {
+
+                    Type type =
+                            new TypeToken<Map<String, String>>(){}.getType();
+
+                    Map<String, String> payload =
+                            gson.fromJson(
+                                    res.getMessage(),
+                                    type
+                            );
+
+                    String auctionId =
+                            payload.get("auctionId");
+
+                    String newPrice =
+                            payload.get("newPrice");
+
+                    Platform.runLater(() -> {
+
+                        VBox card =
+                                auctionCardMap.get(auctionId);
+
+                        if (card != null) {
+
+                            Label priceLabel =
+                                    (Label) card.getProperties()
+                                            .get("priceLabel");
+
+                            if (priceLabel != null) {
+
+                                priceLabel.setText(
+                                        "Current Bid: $" + newPrice
+                                );
+                                PauseTransition delay =
+                                        new PauseTransition(
+                                                Duration.millis(300)
+                                        );
+
+                                delay.setOnFinished(e -> loadAuction());
+
+                                delay.play();
+
+                            }
+                        }
+                    });
+                }
+
+            } catch (Exception e) {
+
+                e.printStackTrace();
+            }
+        };
+
+        ctx.addMessageListener(messageListener);
+
     }
+
 
     private void loadAuction() {
         Task<List<Auction>> task = new Task<>() {
@@ -347,8 +417,8 @@ public class BidderHomeController {
         Label startsAtLabel = new Label();
         Label endsInLabel = new Label();
         VBox card = new VBox(10);
-        card.getProperties().put("nameLabel", nameLabel);
         card.getProperties().put("priceLabel", priceLabel);
+        card.getProperties().put("nameLabel", nameLabel);
         card.getProperties().put("statusLabel", statusLabel);
         card.getProperties().put("startsLabel", startsAtLabel);
         card.getProperties().put("endsLabel", endsInLabel);
@@ -372,13 +442,28 @@ public class BidderHomeController {
         statusLabel.setText(auction.getStatus().toString());
         startsAtLabel.setText("Starts: " + formatEndTime(auction.getStartTime()));
         endsInLabel.setText("Ends: " + formatEndTime(auction.getEndTime()));
-
         card.setOnMouseClicked(event -> {
+
             if (event.getClickCount() == 2) {
-                showAuctionDetails(auction);
+
+                Auction latestAuction =
+                        allAuctions.stream()
+                                .filter(a ->
+                                        a.getId()
+                                                .equals(
+                                                        auction.getId()
+                                                )
+                                )
+                                .findFirst()
+                                .orElse(auction);
+
+                showAuctionDetails(latestAuction);
             }
         });
 
+        card.setUserData(auction.getId());
+
+        auctionCardMap.put(auction.getId(), card);
         return card;
     }
 
@@ -788,11 +873,13 @@ public class BidderHomeController {
 
             Request req = new Request("PLACE_BID", data);
             Response response = ctx.sendRequestAndWait(req, 15);
-
             if ("SUCCESS".equals(response.getStatus())) {
+
                 loadAuction();
+
                 showAlert("Success", "Bid placed successfully!");
-            } else {
+            }
+            else {
                 showAlert("Error", response.getMessage());
             }
         } catch (Exception e) {
@@ -800,26 +887,73 @@ public class BidderHomeController {
         }
     }
 
-    private void registerAutoBid(Auction auction, String maxAmount) {
+    private void registerAutoBid(
+            Auction auction,
+            String maxAmount
+    ) {
+
         try {
-            Map<String, String> data = new HashMap<>();
-            data.put("auctionId", auction.getId());
-            data.put("maxBid", maxAmount);
-            data.put("username", ctx.getCurrentUser().getUsername());
 
-            Request req = new Request("REGISTER_AUTOBID", data);
-            Response response = ctx.sendRequestAndWait(req, 15);
+            Map<String, String> data =
+                    new HashMap<>();
 
-            if ("SUCCESS".equals(response.getStatus())) {
+            data.put(
+                    "auctionId",
+                    auction.getId()
+            );
+
+            data.put(
+                    "maxBid",
+                    maxAmount
+            );
+
+            data.put(
+                    "username",
+                    ctx.getCurrentUser()
+                            .getUsername()
+            );
+
+            Request req =
+                    new Request(
+                            "REGISTER_AUTOBID",
+                            data
+                    );
+
+            Response response =
+                    ctx.sendRequestAndWait(
+                            req,
+                            15
+                    );
+
+            if ("SUCCESS".equals(
+                    response.getStatus()
+            )) {
+
                 loadAuction();
-                showAlert("Success", "Auto-bid registered successfully!");
+
+                showAlert(
+                        "Success",
+                        "Auto-bid registered successfully!"
+                );
+
             } else {
-                showAlert("Error", response.getMessage());
+
+                showAlert(
+                        "Error",
+                        response.getMessage()
+                );
             }
+
         } catch (Exception e) {
-            showAlert("Error", "Failed to register auto-bid: " + e.getMessage());
+
+            showAlert(
+                    "Error",
+                    "Failed to register auto-bid: "
+                            + e.getMessage()
+            );
         }
     }
+
 
     private void showAlert(String title, String message) {
         alertService.showAlert(title, message, welcomeLabel.getScene().getWindow());

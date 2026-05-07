@@ -252,9 +252,25 @@ public class ClientHandler implements Runnable {
                     try {
                         boolean success = auctionService.placeBid(pAuctionId, bidder, amount);
                         if (success) {
-                            Response updateResponse = new Response("UPDATE_PRICE",
-                                    "UPDATE: Auction " + pAuctionId + " just had a new price: " + pAmount);
+                            Map<String, String> payload = new HashMap<>();
+
+                            payload.put("auctionId", pAuctionId);
+
+                            payload.put("newPrice", pAmount);
+
+                            payload.put(
+                                    "highestBidder",
+                                    bidder.getUsername()
+                            );
+
+                            Response updateResponse =
+                                    new Response(
+                                            "UPDATE_PRICE",
+                                            gson.toJson(payload)
+                                    );
+
                             broadcast(gson.toJson(updateResponse));
+
                             return new Response("SUCCESS", "Bid placed successfully");
                         } else {
                             // Sửa lỗi: Sử dụng walletService đã được tiêm vào
@@ -297,17 +313,65 @@ public class ClientHandler implements Runnable {
                 }
 
             case "REGISTER_AUTOBID":
-                String raAuctionId = request.getData().get("auctionId");
-                String raAmount = request.getData().get("maxBid");
-                String raUsername = request.getData().get("username");
 
-                User raUser = userService.getUser(raUsername);
+                String raAuctionId =
+                        request.getData()
+                                .get("auctionId");
+
+                String raAmount =
+                        request.getData()
+                                .get("maxBid");
+
+                String raUsername =
+                        request.getData()
+                                .get("username");
+
+                User raUser =
+                        userService.getUser(
+                                raUsername
+                        );
+
                 if (raUser instanceof Bidder bidder) {
-                    BigDecimal maxBid = new BigDecimal(raAmount);
-                    auctionService.registerAutoBid(raAuctionId, bidder, maxBid);
-                    return new Response("SUCCESS", "Auto-bid registered successfully");
+
+                    BigDecimal maxBid =
+                            new BigDecimal(raAmount)
+                                    .setScale(
+                                            2,
+                                            RoundingMode.HALF_UP
+                                    );
+
+                    auctionService.registerAutoBid(
+                            raAuctionId,
+                            bidder,
+                            maxBid
+                    );
+
+                    Auction updatedAuction =
+                            auctionService.getAuction(
+                                    raAuctionId
+                            );
+
+                    Response updateResponse =
+                            new Response(
+                                    "UPDATE_PRICE",
+                                    gson.toJson(updatedAuction)
+                            );
+
+                    broadcast(
+                            gson.toJson(updateResponse)
+                    );
+
+                    return new Response(
+                            "SUCCESS",
+                            "Auto-bid registered successfully"
+                    );
+
                 } else {
-                    return new Response("FAIL", "Invalid user for auto-bidding");
+
+                    return new Response(
+                            "FAIL",
+                            "Invalid user for auto-bidding"
+                    );
                 }
 
             case "ITEM_PAID":
