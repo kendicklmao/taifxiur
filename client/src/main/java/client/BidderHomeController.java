@@ -4,16 +4,15 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
-import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
-import javafx.collections.transformation.FilteredList;
-import javafx.collections.transformation.SortedList;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.concurrent.Task;
 import javafx.scene.image.Image;
+import java.lang.reflect.Type;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
@@ -37,7 +36,6 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.Arrays;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -69,65 +67,95 @@ public class BidderHomeController {
     @FXML
     public void initialize() {
         welcomeLabel.setText("Welcome " + ctx.getCurrentUser().getUsername());
-
-        // Setup sorting options
-        sortComboBox.getItems().addAll("Name (A-Z)", "Price (Low to High)");
-
-        // 1. Wrap the ObservableList in a FilteredList (initially display all data).
-        FilteredList<Auction> filteredData = new FilteredList<>(allAuctions, p -> true);
-
-        // 2. Set the filter Predicate whenever the filter changes.
-        searchField.textProperty().addListener((observable, oldValue, newValue) -> {
-            filteredData.setPredicate(auction -> {
-                if (newValue == null || newValue.isEmpty()) {
-                    return true; // Display all auctions if search field is empty.
-                }
-                String lowerCaseFilter = newValue.toLowerCase();
-                // Filter matches item name.
-                return auction.getItem().getName().toLowerCase().contains(lowerCaseFilter);
-            });
+        Platform.runLater(() -> {
+            loadAuction();
+            loadWallet();
         });
+    }
 
-        // 3. Wrap the FilteredList in a SortedList.
-        SortedList<Auction> sortedData = new SortedList<>(filteredData);
+    private void loadAuction() {
+        Task<List<Auction>> task = new Task<>() {
+            @Override
+            protected List<Auction> call() throws Exception {
 
-        // 4. Bind the SortedList comparator to the ComboBox selection.
-        sortComboBox.valueProperty().addListener((observable, oldValue, newValue) -> {
-            if (newValue == null) {
-                sortedData.setComparator(null);
-                return;
-            }
-            switch (newValue) {
-                case "Name (A-Z)":
-                    sortedData.setComparator(Comparator.comparing(a -> a.getItem().getName()));
-                    break;
-                case "Price (Low to High)":
-                    sortedData.setComparator(Comparator.comparing(Auction::getCurrentPrice));
-                    break;
-                default:
-                    sortedData.setComparator(null);
-                    break;
-            }
-        });
+                Map<String, String> data = new HashMap<>();
 
-        // 5. Add a listener to the SortedList to update the UI whenever it changes.
-        sortedData.addListener((ListChangeListener<Auction>) c -> updateAuctionGrid(sortedData));
+                Response response =
+                        ctx.sendRequestAndWait(
+                                new Request("GET_AUCTIONS", data),
+                                15
+                        );
 
-        messageListener = line -> {
-            try {
-                Response res = gson.fromJson(line, Response.class);
-                if ("UPDATE_PRICE".equals(res.getStatus()) || "AUCTION_UPDATED".equals(res.getStatus())
-                        || "AUCTION_FINISHED".equals(res.getStatus()) || "AUCTION_CREATED".equals(res.getStatus())) {
-                    Platform.runLater(this::refreshAuctions);
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
+                Type type = new TypeToken<List<Auction>>(){}.getType();
+
+                return gson.fromJson(response.getMessage(), type);
             }
         };
-        ctx.addMessageListener(messageListener);
 
-        refreshWalletBalance();
-        refreshAuctions();
+        task.setOnSucceeded(e -> {
+            updateAuctionGrid(task.getValue());
+        });
+
+        task.setOnFailed(e -> {
+            alertService.showAlert(
+                    "Error",
+                    "Cannot load auctions",
+                    auctionGrid
+            );
+        });
+
+        new Thread(task).start();
+    }
+
+    private void loadWallet() {
+        Task<String> task = new Task<>() {
+
+            @Override
+            protected String call() throws Exception {
+
+                Map<String, String> data = new HashMap<>();
+
+                data.put(
+                        "username",
+                        ctx.getCurrentUser().getUsername()
+                );
+
+                Response response =
+                        ctx.sendRequestAndWait(
+                                new Request("GET_WALLET_BALANCE", data),
+                                15
+                        );
+
+                if ("SUCCESS".equals(response.getStatus())) {
+                    return response.getMessage();
+                }
+
+                return null;
+            }
+        };
+
+        task.setOnSucceeded(e -> {
+
+            String balance = task.getValue();
+
+            if (balance != null) {
+                walletBalanceLabel.setText(
+                        "Balance: $" + balance
+                );
+            } else {
+                walletBalanceLabel.setText(
+                        "Balance unavailable"
+                );
+            }
+        });
+
+        task.setOnFailed(e -> {
+            walletBalanceLabel.setText(
+                    "Balance unavailable"
+            );
+        });
+
+        new Thread(task).start();
     }
 
     @FXML
