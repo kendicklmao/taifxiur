@@ -1,5 +1,6 @@
 package client;
 
+import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.control.SpinnerValueFactory;
@@ -26,6 +27,7 @@ import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.lang.reflect.Type;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -103,7 +105,11 @@ public class SellerHomeController {
 
     @FXML
     public void initialize() {
-        welcomeLabel.setText("Welcome " + ctx.getCurrentUser().getUsername());
+
+        welcomeLabel.setText(
+                "Welcome " + ctx.getCurrentUser().getUsername()
+        );
+
         categoryBox.getItems().addAll(Category.values());
         categoryBox.setOnAction(e -> updateForm());
 
@@ -113,40 +119,90 @@ public class SellerHomeController {
         LocalDateTime endTime = startTime.plusMinutes(30);
 
         startDatePicker.setValue(startTime.toLocalDate());
-        startHourSpinner
-                .setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 23, startTime.getHour()));
-        startMinuteSpinner
-                .setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 59, startTime.getMinute()));
+
+        startHourSpinner.setValueFactory(
+                new SpinnerValueFactory.IntegerSpinnerValueFactory(
+                        0,
+                        23,
+                        startTime.getHour()
+                )
+        );
+
+        startMinuteSpinner.setValueFactory(
+                new SpinnerValueFactory.IntegerSpinnerValueFactory(
+                        0,
+                        59,
+                        startTime.getMinute()
+                )
+        );
 
         endDatePicker.setValue(endTime.toLocalDate());
-        endHourSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 23, endTime.getHour()));
-        endMinuteSpinner
-                .setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 59, endTime.getMinute()));
 
-        // Initialize increment type box
-        incrementTypeBox.getItems().addAll("Default (5%)", "Custom Amount");
+        endHourSpinner.setValueFactory(
+                new SpinnerValueFactory.IntegerSpinnerValueFactory(
+                        0,
+                        23,
+                        endTime.getHour()
+                )
+        );
+
+        endMinuteSpinner.setValueFactory(
+                new SpinnerValueFactory.IntegerSpinnerValueFactory(
+                        0,
+                        59,
+                        endTime.getMinute()
+                )
+        );
+
+        // Increment type
+        incrementTypeBox.getItems().addAll(
+                "Default (5%)",
+                "Custom Amount"
+        );
+
         incrementTypeBox.setValue("Default (5%)");
+
         incrementTypeBox.setOnAction(e -> {
-            boolean isCustom = "Custom Amount".equals(incrementTypeBox.getValue());
+
+            boolean isCustom =
+                    "Custom Amount".equals(
+                            incrementTypeBox.getValue()
+                    );
+
             customIncrementPane.setVisible(isCustom);
             customIncrementPane.setManaged(isCustom);
         });
 
-        // Fetch all auctions on initialization
-        fetchAllAuctions();
-        refreshWalletBalance();
+        // Loading state
+        walletBalanceLabel.setText("Loading...");
 
+        Platform.runLater(() -> {
+
+            refreshWalletBalance();
+            fetchAllAuctions();
+        });
+
+        // Listener realtime update
         messageListener = line -> {
+
             try {
-                Response res = gson.fromJson(line, Response.class);
-                if ("UPDATE_PRICE".equals(res.getStatus()) || "AUCTION_UPDATED".equals(res.getStatus())
-                        || "AUCTION_FINISHED".equals(res.getStatus()) || "AUCTION_CREATED".equals(res.getStatus())) {
-                    Platform.runLater(this::fetchAllAuctions);
+
+                Response res =
+                        gson.fromJson(line, Response.class);
+
+                if ("UPDATE_PRICE".equals(res.getStatus())
+                        || "AUCTION_UPDATED".equals(res.getStatus())
+                        || "AUCTION_FINISHED".equals(res.getStatus())
+                        || "AUCTION_CREATED".equals(res.getStatus())) {
+
+                    fetchAllAuctions();
                 }
+
             } catch (Exception e) {
                 // Ignore malformed broadcast
             }
         };
+
         ctx.addMessageListener(messageListener);
     }
 
@@ -680,35 +736,104 @@ public class SellerHomeController {
 
     // ================= FETCH ALL AUCTIONS =================
     private void fetchAllAuctions() {
-        try {
-            Request req = new Request("GET_AUCTIONS", new HashMap<>());
-            Response response = ctx.sendRequestAndWait(req, 15);
-            if ("SUCCESS".equals(response.getStatus())) {
-                List<Auction> auctions = gson.fromJson(response.getMessage(), new TypeToken<List<Auction>>() {
-                }.getType());
-                List<Auction> activeAuctions = auctions.stream()
-                        .filter(a -> a.getStatus() != shared.enums.AuctionStatus.CANCELED)
-                        .collect(Collectors.toList());
-                Platform.runLater(() -> updateAuctionGrid(activeAuctions));
+        Task<List<Auction>> task = new Task<>() {
+
+            @Override
+            protected List<Auction> call() throws Exception {
+
+                Response response =
+                        ctx.sendRequestAndWait(
+                                new Request(
+                                        "GET_AUCTIONS",
+                                        new HashMap<>()
+                                ),
+                                15
+                        );
+
+                Type type =
+                        new TypeToken<List<Auction>>(){}.getType();
+
+                return gson.fromJson(
+                        response.getMessage(),
+                        type
+                );
             }
-        } catch (Exception e) {
-            System.out.println("Failed to refresh auctions: " + e.getMessage());
-        }
+        };
+
+        task.setOnSucceeded(e -> {
+
+            updateAuctionGrid(task.getValue());
+        });
+
+        task.setOnFailed(e -> {
+
+            alertService.showAlert(
+                    "Error",
+                    "Cannot load auctions",
+                    auctionGrid
+            );
+        });
+
+        new Thread(task).start();
     }
 
     private void refreshWalletBalance() {
-        try {
-            Map<String, String> data = new HashMap<>();
-            data.put("username", ctx.getCurrentUser().getUsername());
-            Response response = ctx.sendRequestAndWait(new Request("GET_WALLET_BALANCE", data), 15);
-            if ("SUCCESS".equals(response.getStatus())) {
-                Platform.runLater(() -> walletBalanceLabel.setText("Balance: $" + response.getMessage()));
-            } else {
-                Platform.runLater(() -> walletBalanceLabel.setText("Balance: unavailable"));
+        Task<String> task = new Task<>() {
+
+            @Override
+            protected String call() throws Exception {
+
+                Map<String, String> data =
+                        new HashMap<>();
+
+                data.put(
+                        "username",
+                        ctx.getCurrentUser().getUsername()
+                );
+
+                Response response =
+                        ctx.sendRequestAndWait(
+                                new Request(
+                                        "GET_WALLET_BALANCE",
+                                        data
+                                ),
+                                15
+                        );
+
+                if ("SUCCESS".equals(response.getStatus())) {
+                    return response.getMessage();
+                }
+
+                return null;
             }
-        } catch (Exception e) {
-            Platform.runLater(() -> walletBalanceLabel.setText("Balance: unavailable"));
-        }
+        };
+
+        task.setOnSucceeded(e -> {
+
+            String balance = task.getValue();
+
+            if (balance != null) {
+
+                walletBalanceLabel.setText(
+                        "Balance: $" + balance
+                );
+
+            } else {
+
+                walletBalanceLabel.setText(
+                        "Balance unavailable"
+                );
+            }
+        });
+
+        task.setOnFailed(e -> {
+
+            walletBalanceLabel.setText(
+                    "Balance unavailable"
+            );
+        });
+
+        new Thread(task).start();
     }
 
     @FXML
