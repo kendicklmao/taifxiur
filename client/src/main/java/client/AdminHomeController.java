@@ -5,6 +5,7 @@ import com.google.gson.reflect.TypeToken;
 
 import javafx.application.Platform;
 import javafx.fxml.FXML;
+import javafx.concurrent.Task;
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
@@ -61,10 +62,16 @@ public class AdminHomeController {
         setupDepositRequestListCell();
         setupWithdrawRequestListCell();
 
-        refreshAuctions();
-        refreshUsers();
-        refreshAdminActionLogs();
-        refreshWalletRequests();
+        Platform.runLater(() -> {
+
+            refreshAuctions();
+
+            refreshUsers();
+
+            refreshAdminActionLogs();
+
+            refreshWalletRequests();
+        });
 
         // Tìm kiếm gợi ý (Autocomplete)
         usernameField.getEditor().textProperty().addListener((obs, oldText, newText) -> {
@@ -85,7 +92,7 @@ public class AdminHomeController {
                 Response res = gson.fromJson(line, Response.class);
                 if ("AUCTION_CREATED".equals(res.getStatus()) || "AUCTION_UPDATED".equals(res.getStatus()) || "UPDATE_PRICE".equals(res.getStatus())) {
                     System.out.println("[ADMIN] Received auction update from server, refreshing auction list...");
-                    Platform.runLater(() -> this.refreshAuctions());
+                    this.refreshAuctions();
                 }
             } catch (Exception e) {
                 // Bỏ qua các tin nhắn không hợp lệ
@@ -306,43 +313,128 @@ public class AdminHomeController {
     }
 
     @FXML
-    public void refreshAuctions() {
-        try {
-            Request req = new Request("GET_AUCTIONS", new HashMap<>());
-            Response response = ctx.sendRequestAndWait(req, 15);
-            if ("SUCCESS".equals(response.getStatus())) {
-                Auction[] auctions = gson.fromJson(response.getMessage(), Auction[].class);
-                List<Auction> activeAuctions = java.util.Arrays.stream(auctions)
-                        .filter(a -> a.getStatus() != shared.enums.AuctionStatus.CANCELED)
-                        .collect(Collectors.toList());
-                Platform.runLater(() -> allAuctionsList.getItems().setAll(activeAuctions));
+    public void refreshUsers() {
+
+        Task<User[]> task = new Task<>() {
+
+            @Override
+            protected User[] call() throws Exception {
+
+                Request req =
+                        new Request(
+                                "GET_ALL_USERS",
+                                new HashMap<>()
+                        );
+
+                Response response =
+                        ctx.sendRequestAndWait(req, 15);
+
+                if (!"SUCCESS".equals(response.getStatus())) {
+                    return new User[0];
+                }
+
+                return gson.fromJson(
+                        response.getMessage(),
+                        User[].class
+                );
             }
-        } catch (Exception e) {
-            alertService.showAlert("Error", "Failed to load auctions: " + e.getMessage(), welcomeLabel);
-        }
+        };
+
+        task.setOnSucceeded(e -> {
+
+            User[] users = task.getValue();
+
+            allUsersList.getItems().setAll(users);
+
+            List<String> usernames =
+                    java.util.Arrays.stream(users)
+                            .map(User::getUsername)
+                            .collect(Collectors.toList());
+
+            allUsernames.clear();
+
+            allUsernames.addAll(usernames);
+
+            usernameField.setItems(
+                    javafx.collections.FXCollections
+                            .observableArrayList(allUsernames)
+            );
+
+            allUsersList.refresh();
+        });
+
+        task.setOnFailed(e -> {
+
+            alertService.showAlert(
+                    "Error",
+                    "Failed to load users",
+                    welcomeLabel
+            );
+        });
+
+        Thread thread = new Thread(task);
+
+        thread.setDaemon(true);
+
+        thread.start();
     }
 
     @FXML
-    public void refreshUsers() {
-        try {
-            Request req = new Request("GET_ALL_USERS", new HashMap<>());
-            Response response = ctx.sendRequestAndWait(req, 15);
-            if ("SUCCESS".equals(response.getStatus())) {
-                User[] users = gson.fromJson(response.getMessage(), User[].class);
-                Platform.runLater(() -> {
-                    allUsersList.getItems().setAll(users);
-                    List<String> usernames = java.util.Arrays.stream(users)
-                            .map(User::getUsername)
-                            .collect(Collectors.toList());
-                    allUsernames.clear();
-                    allUsernames.addAll(usernames);
-                    usernameField.setItems(javafx.collections.FXCollections.observableArrayList(allUsernames));
-                    allUsersList.refresh();
-                });
+    public void refreshAuctions() {
+
+        Task<List<Auction>> task = new Task<>() {
+
+            @Override
+            protected List<Auction> call() throws Exception {
+
+                Request req =
+                        new Request(
+                                "GET_AUCTIONS",
+                                new HashMap<>()
+                        );
+
+                Response response =
+                        ctx.sendRequestAndWait(req, 15);
+
+                if (!"SUCCESS".equals(response.getStatus())) {
+                    return List.of();
+                }
+
+                Auction[] auctions =
+                        gson.fromJson(
+                                response.getMessage(),
+                                Auction[].class
+                        );
+
+                return java.util.Arrays.stream(auctions)
+                        .filter(a ->
+                                a.getStatus()
+                                        != shared.enums.AuctionStatus.CANCELED
+                        )
+                        .collect(Collectors.toList());
             }
-        } catch (Exception e) {
-            alertService.showAlert("Error", "Failed to load users: " + e.getMessage(), welcomeLabel);
-        }
+        };
+
+        task.setOnSucceeded(e -> {
+
+            allAuctionsList.getItems()
+                    .setAll(task.getValue());
+        });
+
+        task.setOnFailed(e -> {
+
+            alertService.showAlert(
+                    "Error",
+                    "Failed to load auctions",
+                    welcomeLabel
+            );
+        });
+
+        Thread thread = new Thread(task);
+
+        thread.setDaemon(true);
+
+        thread.start();
     }
 
     @FXML
