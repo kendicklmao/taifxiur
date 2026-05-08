@@ -3,6 +3,7 @@ package shared.models;
 import shared.enums.AuctionStatus;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -124,6 +125,7 @@ public class Auction {
                     if (newPrice.compareTo(highest.getMaxBid()) > 0) {
                         newPrice = highest.getMaxBid();
                     }
+                    newPrice = newPrice.setScale(2, RoundingMode.UP);
                     if (newPrice.compareTo(currentPrice) > 0) {
                         currentPrice = newPrice;
                         bidHistory.add(new BidTransaction(highest.getBidder(), newPrice, Instant.now()));
@@ -147,6 +149,8 @@ public class Auction {
                     newPrice = highest.getMaxBid();
                 }
 
+                newPrice = newPrice.setScale(2, RoundingMode.UP);
+
                 if (newPrice.compareTo(currentPrice.add(increment)) >= 0) {
                     currentPrice = newPrice;
                     highestBidder = highest.getBidder();
@@ -164,6 +168,8 @@ public class Auction {
             if (bidder == null || maxBid == null) {
                 throw new IllegalArgumentException();
             }
+
+            maxBid = maxBid.setScale(2, RoundingMode.UP);
 
             if (maxBid.compareTo(currentPrice.add(item.getMinIncrement())) < 0) {
                 throw new IllegalArgumentException("Bid amount must be at least current price + minimum increment");
@@ -250,6 +256,8 @@ public class Auction {
             if (bidder == null || amount == null) {
                 throw new IllegalArgumentException();
             }
+
+            amount = amount.setScale(2, RoundingMode.UP);
 
             if (bidder.isBanned()) {
                 throw new IllegalStateException("User is banned");

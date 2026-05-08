@@ -35,8 +35,16 @@ public class PlaceBidHandler implements RequestHandler {
             try {
                 boolean success = auctionService.placeBid(pAuctionId, bidder, amount);
                 if (success) {
-                    Response updateResponse = new Response("UPDATE_PRICE", "UPDATE: Auction " + pAuctionId + " just had a new price: " + pAmount);
-                    ClientHandler.broadcast(gson.toJson(updateResponse));
+                    try {
+                        var updatedAuction = auctionService.getAuction(pAuctionId);
+                        java.util.Map<String, String> payload = new java.util.HashMap<>();
+                        payload.put("auctionId", pAuctionId);
+                        payload.put("newPrice", updatedAuction.getCurrentPrice().toPlainString());
+                        Response updateResponse = new Response("UPDATE_PRICE", gson.toJson(payload));
+                        ClientHandler.broadcast(gson.toJson(updateResponse));
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
                     return new Response("SUCCESS", "Bid placed successfully");
                 } else {
                     BigDecimal balance = this.walletService.getWalletBalance(pUsername);

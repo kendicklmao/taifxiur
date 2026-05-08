@@ -8,6 +8,8 @@ import shared.models.Bidder;
 import shared.models.User;
 import shared.network.Request;
 import shared.network.Response;
+import shared.utils.GsonUtils;
+import com.google.gson.Gson;
 
 public class RegisterAutobidHandler implements RequestHandler {
     private final UserService userService;
@@ -28,6 +30,19 @@ public class RegisterAutobidHandler implements RequestHandler {
         if (raUser instanceof Bidder bidder) {
             BigDecimal maxBid = new BigDecimal(raAmount);
             auctionService.registerAutoBid(raAuctionId, bidder, maxBid);
+            
+            try {
+                var updatedAuction = auctionService.getAuction(raAuctionId);
+                java.util.Map<String, String> payload = new java.util.HashMap<>();
+                payload.put("auctionId", raAuctionId);
+                payload.put("newPrice", updatedAuction.getCurrentPrice().toPlainString());
+                Gson gson = GsonUtils.createGson();
+                Response updateResponse = new Response("UPDATE_PRICE", gson.toJson(payload));
+                ClientHandler.broadcast(gson.toJson(updateResponse));
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
             return new Response("SUCCESS", "Auto-bid registered successfully");
         } else {
             return new Response("FAIL", "Invalid user for auto-bidding");
