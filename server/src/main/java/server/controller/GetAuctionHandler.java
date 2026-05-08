@@ -8,10 +8,11 @@ import server.service.AuctionService;
 import shared.models.Auction;
 import shared.network.Request;
 import shared.network.Response;
+import shared.utils.GsonUtils;
 
 public class GetAuctionHandler implements RequestHandler {
     private final AuctionService auctionService;
-    private final Gson gson = new Gson();
+    private final Gson gson = GsonUtils.createGson();
     
     public GetAuctionHandler(AuctionService auctionService) {
         this.auctionService = auctionService;

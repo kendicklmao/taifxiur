@@ -109,8 +109,8 @@ public class BidderHomeController {
         sortedData.addListener((ListChangeListener<Auction>) c -> updateAuctionGrid(sortedData));
 
         Platform.runLater(() -> {
-            loadAuction();
             loadWallet();
+            loadAuction();
         });
 
         messageListener = line -> {
@@ -128,9 +128,6 @@ public class BidderHomeController {
                             Label priceLabel = (Label) card.getProperties().get("priceLabel");
                             if (priceLabel != null) {
                                 priceLabel.setText("Current Bid: $" + newPrice);
-                                PauseTransition delay = new PauseTransition(Duration.millis(300));
-                                delay.setOnFinished(e -> loadAuction());
-                                delay.play();
                             }
                         }
                     });
@@ -149,7 +146,7 @@ public class BidderHomeController {
             @Override
             protected List<Auction> call() throws Exception {
                 Map<String, String> data = new HashMap<>();
-                Response response = ctx.sendRequestAndWait(new Request("GET_AUCTIONS", data), 15);
+                Response response = ctx.sendRequestAndWait(new Request("GET_AUCTIONS", data), 20);
                 Type type = new TypeToken<List<Auction>>(){}.getType();
                 return gson.fromJson(response.getMessage(), type);
             }
@@ -161,6 +158,7 @@ public class BidderHomeController {
         });
 
         task.setOnFailed(e -> {
+            task.getException().printStackTrace();
             alertService.showAlert("Error", "Cannot load auctions", auctionGrid);
         });
 
@@ -174,7 +172,7 @@ public class BidderHomeController {
             protected String call() throws Exception {
                 Map<String, String> data = new HashMap<>();
                 data.put("username", ctx.getCurrentUser().getUsername());
-                Response response = ctx.sendRequestAndWait(new Request("GET_WALLET_BALANCE", data), 15);
+                Response response = ctx.sendRequestAndWait(new Request("GET_WALLET_BALANCE", data), 20);
                 if ("SUCCESS".equals(response.getStatus())) {
                     return response.getMessage();
                 }

@@ -122,7 +122,7 @@ public class AppContext {
         listenerThread.start();
     }
 
-    public Response sendRequestAndWait(Request req, long timeoutSeconds) throws Exception {
+    public synchronized Response sendRequestAndWait(Request req, long timeoutSeconds) throws Exception {
         String requestId = UUID.randomUUID().toString();
         req.setRequestId(requestId);
         CompletableFuture<Response> future = new CompletableFuture<>();

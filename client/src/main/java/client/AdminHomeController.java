@@ -218,7 +218,7 @@ public class AdminHomeController {
             data.put("auctionId", auction.getId());
             data.put("username", ctx.getCurrentUser().getUsername());
             Request req = new Request("TERMINATE_AUCTION", data);
-            Response response = ctx.sendRequestAndWait(req, 15);
+            Response response = ctx.sendRequestAndWait(req, 20);
 
             if ("SUCCESS".equals(response.getStatus())) {
                 alertService.showAlert("Success", "Auction terminated successfully.", welcomeLabel);
@@ -308,7 +308,7 @@ public class AdminHomeController {
     public void refreshAdminActionLogs() {
         try {
             Request req = new Request("GET_ADMIN_ACTION_LOGS", new HashMap<>());
-            Response response = ctx.sendRequestAndWait(req, 15);
+            Response response = ctx.sendRequestAndWait(req, 20);
             if ("SUCCESS".equals(response.getStatus())) {
                 AdminActionLog[] logs = gson.fromJson(response.getMessage(), AdminActionLog[].class);
                 Platform.runLater(() -> adminActionLogsList.getItems().setAll(logs));
@@ -325,7 +325,7 @@ public class AdminHomeController {
             @Override
             protected User[] call() throws Exception {
                 Request req = new Request("GET_ALL_USERS", new HashMap<>());
-                Response response = ctx.sendRequestAndWait(req, 15);
+                Response response = ctx.sendRequestAndWait(req, 20);
                 if (!"SUCCESS".equals(response.getStatus())) {
                     return new User[0];
                 }
@@ -359,7 +359,7 @@ public class AdminHomeController {
             @Override
             protected List<Auction> call() throws Exception {
                 Request req = new Request("GET_AUCTIONS", new HashMap<>());
-                Response response = ctx.sendRequestAndWait(req, 15);
+                Response response = ctx.sendRequestAndWait(req, 20);
                 if (!"SUCCESS".equals(response.getStatus())) {
                     return List.of();
                 }
@@ -429,7 +429,7 @@ public class AdminHomeController {
             Map<String, String> data = new HashMap<>();
             data.put("username", username);
             Request req = new Request("BAN_USER", data);
-            Response response = ctx.sendRequestAndWait(req, 15);
+            Response response = ctx.sendRequestAndWait(req, 20);
 
             if ("SUCCESS".equals(response.getStatus())) {
                 alertService.showAlert("Success", "User " + username + " has been banned!", welcomeLabel);
@@ -458,7 +458,7 @@ public class AdminHomeController {
             Map<String, String> data = new HashMap<>();
             data.put("username", username);
             Request req = new Request("UNBAN_USER", data);
-            Response response = ctx.sendRequestAndWait(req, 15);
+            Response response = ctx.sendRequestAndWait(req, 20);
 
             if ("SUCCESS".equals(response.getStatus())) {
                 alertService.showAlert("Success", "User " + username + " has been unbanned!", welcomeLabel);

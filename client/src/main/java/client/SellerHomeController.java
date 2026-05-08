@@ -362,7 +362,7 @@ public class SellerHomeController {
             data.put("auctionId", auction.getId());
             data.put("username", ctx.getCurrentUser().getUsername());
             Request req = new Request("TERMINATE_AUCTION", data);
-            Response response = ctx.sendRequestAndWait(req, 15);
+            Response response = ctx.sendRequestAndWait(req, 30);
 
             if ("SUCCESS".equals(response.getStatus())) {
                 alertService.showAlert("Success", "Auction terminated successfully.", welcomeLabel);
@@ -608,7 +608,7 @@ public class SellerHomeController {
 
             Request req = new Request("CREATE_AUCTION", data);
 
-            Response response = ctx.sendRequestAndWait(req, 15);
+            Response response = ctx.sendRequestAndWait(req, 30);
 
             System.out.println("MESSAGE = " + response.getMessage());
             if ("SUCCESS".equals(response.getStatus())) {
@@ -667,7 +667,7 @@ public class SellerHomeController {
             Map<String, String> data = new HashMap<>();
             data.put("username", ctx.getCurrentUser().getUsername());
             Request req = new Request("LOGOUT", data);
-            ctx.sendRequestAndWait(req, 15);
+            ctx.sendRequestAndWait(req, 30);
         } catch (Exception e) {
             // Bỏ qua ngoại lệ khi logout
         }
@@ -685,7 +685,7 @@ public class SellerHomeController {
         Task<List<Auction>> task = new Task<>() {
             @Override
             protected List<Auction> call() throws Exception {
-                Response response = ctx.sendRequestAndWait(new Request("GET_AUCTIONS", new HashMap<>()), 15);
+                Response response = ctx.sendRequestAndWait(new Request("GET_AUCTIONS", new HashMap<>()), 30);
                 Type type = new TypeToken<List<Auction>>(){}.getType();
                 return gson.fromJson(response.getMessage(), type);
             }
@@ -708,7 +708,7 @@ public class SellerHomeController {
             protected String call() throws Exception {
                 Map<String, String> data = new HashMap<>();
                 data.put("username", ctx.getCurrentUser().getUsername());
-                Response response = ctx.sendRequestAndWait(new Request("GET_WALLET_BALANCE", data), 15);
+                Response response = ctx.sendRequestAndWait(new Request("GET_WALLET_BALANCE", data), 30);
                 if ("SUCCESS".equals(response.getStatus())) {
                     return response.getMessage();
                 }
@@ -807,7 +807,7 @@ public class SellerHomeController {
                     data.put("amount", amount.toPlainString());
                     data.put("bankName", bankName.trim());
                     data.put("accountNumber", accountNumber.trim());
-                    Response response = ctx.sendRequestAndWait(new Request("CREATE_WITHDRAW_REQUEST", data), 15);
+                    Response response = ctx.sendRequestAndWait(new Request("CREATE_WITHDRAW_REQUEST", data), 20);
                     if ("SUCCESS".equals(response.getStatus())) {
                         alertService.showAlert("Success", response.getMessage(), welcomeLabel);
                     } else {
