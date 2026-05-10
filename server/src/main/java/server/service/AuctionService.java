@@ -44,7 +44,7 @@ public class AuctionService {
              Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery("SELECT id, seller_id, base_price, current_price, auction_status, " +
                              "start_time, end_time, auction_id " +
-                             "FROM items WHERE auction_id IS NOT NULL AND auction_status != 'CANCELED'")) {
+                             "FROM items WHERE auction_id IS NOT NULL")) {
 
             while (rs.next()) {
                 String auctionId = "Unknown";
@@ -110,7 +110,7 @@ public class AuctionService {
     // Tải item từ database
     private Item loadItemFromDatabase(Connection conn, int itemId) {
         try (PreparedStatement pstmt = conn.prepareStatement(
-                "SELECT name, description, category, item_type, image_url, base_price, " +
+                "SELECT name, description, category, image_url, base_price, " +
                 "brand, item_status, model_year, km_travel, artist, year_created, is_original, seller_id, min_increment " +
                 "FROM items WHERE id = ?")) {
 
@@ -637,11 +637,11 @@ public class AuctionService {
     private int saveItemAndAuctionToDatabase(Item item, Seller seller, BigDecimal startPrice, Instant startTime, Instant endTime, String auctionId) {
         try (Connection conn = DatabaseConfig.getDataSource().getConnection();
                 PreparedStatement pstmt = conn.prepareStatement(
-                        "INSERT INTO items (seller_id, name, description, category, status, item_type, " +
-                                "base_price, current_price, legit_check, seller_name, " +
+                        "INSERT INTO items (seller_id, name, description, category, status, " +
+                                "base_price, current_price, seller_name, " +
                                 "brand, item_status, model_year, km_travel, artist, year_created, is_original, image_url, min_increment, " +
                                 "auction_id, auction_status, start_time, end_time) " +
-                                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                         Statement.RETURN_GENERATED_KEYS)) {
 
             int sellerId = getUserIdFromDatabase(seller.getUsername());
@@ -663,48 +663,45 @@ public class AuctionService {
 
             pstmt.setString(4, category);
             pstmt.setString(5, "AVAILABLE"); // Default status
-            pstmt.setString(6, item.getClass().getSimpleName()); // item_type
-
             // Set pricing information
-            pstmt.setBigDecimal(7, startPrice); // base_price
-            pstmt.setBigDecimal(8, startPrice); // current_price
-            pstmt.setBoolean(9, false); // legit_check
-            pstmt.setString(10, seller.getUsername()); // seller_name
+            pstmt.setBigDecimal(6, startPrice); // base_price
+            pstmt.setBigDecimal(7, startPrice); // current_price
+            pstmt.setString(8, seller.getUsername()); // seller_name
 
             // Initialize all item-specific fields to null first
-            pstmt.setNull(11, java.sql.Types.VARCHAR); // brand
-            pstmt.setNull(12, java.sql.Types.VARCHAR); // item_status
-            pstmt.setNull(13, java.sql.Types.INTEGER); // model_year
-            pstmt.setNull(14, java.sql.Types.INTEGER); // km_travel
-            pstmt.setNull(15, java.sql.Types.VARCHAR); // artist
-            pstmt.setNull(16, java.sql.Types.INTEGER); // year_created
-            pstmt.setNull(17, java.sql.Types.BOOLEAN); // is_original
-            pstmt.setString(18, item.getImageUrl()); // image_url
-            pstmt.setBigDecimal(19, item.getMinIncrement()); // min_increment
+            pstmt.setNull(9, java.sql.Types.VARCHAR); // brand
+            pstmt.setNull(10, java.sql.Types.VARCHAR); // item_status
+            pstmt.setNull(11, java.sql.Types.INTEGER); // model_year
+            pstmt.setNull(12, java.sql.Types.INTEGER); // km_travel
+            pstmt.setNull(13, java.sql.Types.VARCHAR); // artist
+            pstmt.setNull(14, java.sql.Types.INTEGER); // year_created
+            pstmt.setNull(15, java.sql.Types.BOOLEAN); // is_original
+            pstmt.setString(16, item.getImageUrl()); // image_url
+            pstmt.setBigDecimal(17, item.getMinIncrement()); // min_increment
 
             // Set auction information
-            pstmt.setString(20, auctionId);
-            pstmt.setString(21, AuctionStatus.OPEN.name());
-            pstmt.setTimestamp(22, Timestamp.from(startTime));
-            pstmt.setTimestamp(23, Timestamp.from(endTime));
+            pstmt.setString(18, auctionId);
+            pstmt.setString(19, AuctionStatus.OPEN.name());
+            pstmt.setTimestamp(20, Timestamp.from(startTime));
+            pstmt.setTimestamp(21, Timestamp.from(endTime));
 
             // Set item-specific fields based on type
             if (item instanceof shared.models.Electronic electronic) {
-                pstmt.setString(11, electronic.getBrand()); // brand
-                pstmt.setString(12, electronic.getStatus().name()); // item_status
+                pstmt.setString(9, electronic.getBrand()); // brand
+                pstmt.setString(10, electronic.getStatus().name()); // item_status
             } else if (item instanceof shared.models.Vehicle vehicle) {
-                pstmt.setString(11, vehicle.getBrand()); // brand
-                pstmt.setInt(13, vehicle.getModel()); // model_year
-                pstmt.setInt(14, vehicle.getKMTravel()); // km_travel
+                pstmt.setString(9, vehicle.getBrand()); // brand
+                pstmt.setInt(11, vehicle.getModel()); // model_year
+                pstmt.setInt(12, vehicle.getKMTravel()); // km_travel
             } else if (item instanceof shared.models.Art art) {
-                pstmt.setString(15, art.getArtist()); // artist
-                pstmt.setInt(16, art.getYearCreated()); // year_created
-                pstmt.setBoolean(17, art.getIsOriginal()); // is_original
+                pstmt.setString(13, art.getArtist()); // artist
+                pstmt.setInt(14, art.getYearCreated()); // year_created
+                pstmt.setBoolean(15, art.getIsOriginal()); // is_original
             } else if (item instanceof shared.models.Fashion fashion) {
-                pstmt.setString(11, fashion.getBrand()); // brand
-                pstmt.setString(12, fashion.getStatus().name()); // item_status
+                pstmt.setString(9, fashion.getBrand()); // brand
+                pstmt.setString(10, fashion.getStatus().name()); // item_status
             } else if (item instanceof shared.models.Collectible collectible) {
-                pstmt.setInt(16, collectible.getYearCreated()); // year_created
+                pstmt.setInt(14, collectible.getYearCreated()); // year_created
             }
 
             int affectedRows = pstmt.executeUpdate();
