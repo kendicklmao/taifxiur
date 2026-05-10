@@ -4,6 +4,8 @@ import shared.enums.Category;
 import shared.enums.ItemStatus;
 
 import java.math.BigDecimal;
+import java.util.Map;
+import java.util.LinkedHashMap;
 
 public class Fashion extends Item {
     private final String brand; // Hãng
@@ -13,6 +15,14 @@ public class Fashion extends Item {
         super(name, description, seller, Category.FASHIONS, startingPrice);
         this.brand = brand;
         this.status = status;
+    }
+
+    @Override
+    public Map<String, String> getAdditionalDetails() {
+        Map<String, String> details = new LinkedHashMap<>();
+        details.put("Brand", brand);
+        details.put("Item Status", status.toString());
+        return details;
     }
 
     public String getBrand() {

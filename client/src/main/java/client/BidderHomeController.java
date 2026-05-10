@@ -2,7 +2,6 @@ package client;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
-import javafx.animation.PauseTransition;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
@@ -19,24 +18,15 @@ import javafx.collections.transformation.SortedList;
 import javafx.scene.image.Image;
 import java.lang.reflect.Type;
 import javafx.scene.image.ImageView;
-import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
-import javafx.scene.layout.Priority;
 import javafx.scene.layout.TilePane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
-import javafx.util.Duration;
 import shared.models.Auction;
 import shared.network.Request;
 import shared.network.Response;
 import shared.utils.GsonUtils;
-import shared.models.Item;
-import shared.models.Electronic;
-import shared.models.Vehicle;
-import shared.models.Art;
-import shared.models.Fashion;
-import shared.models.Collectible;
 
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -306,86 +296,8 @@ public class BidderHomeController {
     }
 
     private void showAuctionDetails(Auction auction) {
-        auctionDetailPane.getChildren().clear();
-        auctionDetailPane.setVisible(true);
-        auctionDetailPane.setManaged(true);
+        AuctionDetailViewBuilder.populateBasicDetails(auctionDetailPane, auction, () -> {});
 
-        Label titleLabel = new Label("Auction Details");
-        titleLabel.getStyleClass().add("dashboard-section-title");
-        Button closeButton = new Button("X");
-        closeButton.getStyleClass().add("dashboard-btn-ghost");
-        closeButton.setOnAction(e -> {
-            auctionDetailPane.setVisible(false);
-            auctionDetailPane.setManaged(false);
-        });
-        HBox titleBox = new HBox(10, titleLabel, closeButton);
-        HBox.setHgrow(titleLabel, Priority.ALWAYS);
-
-        ImageView imageView = new ImageView();
-        if (auction.getItem().getImageUrl() != null && !auction.getItem().getImageUrl().isEmpty()) {
-            imageView.setImage(new Image(auction.getItem().getImageUrl(), 200, 200, true, true));
-        }
-
-        GridPane detailsGrid = new GridPane();
-        detailsGrid.setHgap(10);
-        detailsGrid.setVgap(8);
-        detailsGrid.getStyleClass().add("details-grid");
-
-        int rowIndex = 0;
-        detailsGrid.add(new Label("Name:"), 0, rowIndex);
-        detailsGrid.add(new Label(auction.getItem().getName()), 1, rowIndex++);
-        detailsGrid.add(new Label("Description:"), 0, rowIndex);
-        Label descLabel = new Label(auction.getItem().getDescription());
-        descLabel.setWrapText(true);
-        detailsGrid.add(descLabel, 1, rowIndex++);
-        detailsGrid.add(new Label("Base Price:"), 0, rowIndex);
-        detailsGrid.add(new Label("$" + auction.getItem().getStartingPrice()), 1, rowIndex++);
-        detailsGrid.add(new Label("Current Price:"), 0, rowIndex);
-        detailsGrid.add(new Label("$" + auction.getCurrentPrice()), 1, rowIndex++);
-        detailsGrid.add(new Label("Start Time:"), 0, rowIndex);
-        detailsGrid.add(new Label(formatEndTime(auction.getStartTime())), 1, rowIndex++);
-        detailsGrid.add(new Label("End Time:"), 0, rowIndex);
-        detailsGrid.add(new Label(formatEndTime(auction.getEndTime())), 1, rowIndex++);
-        detailsGrid.add(new Label("Status:"), 0, rowIndex);
-        detailsGrid.add(new Label(auction.getStatus().toString()), 1, rowIndex++);
-        detailsGrid.add(new Label("Seller:"), 0, rowIndex);
-        detailsGrid.add(new Label(auction.getSeller().getUsername()), 1, rowIndex++);
-
-        Item item = auction.getItem();
-        if (item instanceof Electronic) {
-            Electronic electronic = (Electronic) item;
-            detailsGrid.add(new Label("Brand:"), 0, rowIndex);
-            detailsGrid.add(new Label(electronic.getBrand()), 1, rowIndex++);
-            detailsGrid.add(new Label("Item Status:"), 0, rowIndex);
-            detailsGrid.add(new Label(electronic.getStatus().toString()), 1, rowIndex++);
-        } else if (item instanceof Vehicle) {
-            Vehicle vehicle = (Vehicle) item;
-            detailsGrid.add(new Label("Brand:"), 0, rowIndex);
-            detailsGrid.add(new Label(vehicle.getBrand()), 1, rowIndex++);
-            detailsGrid.add(new Label("Model Year:"), 0, rowIndex);
-            detailsGrid.add(new Label(String.valueOf(vehicle.getModel())), 1, rowIndex++);
-            detailsGrid.add(new Label("KM Traveled:"), 0, rowIndex);
-            detailsGrid.add(new Label(String.valueOf(vehicle.getKMTravel())), 1, rowIndex++);
-        } else if (item instanceof Art) {
-            Art art = (Art) item;
-            detailsGrid.add(new Label("Artist:"), 0, rowIndex);
-            detailsGrid.add(new Label(art.getArtist()), 1, rowIndex++);
-            detailsGrid.add(new Label("Year Created:"), 0, rowIndex);
-            detailsGrid.add(new Label(String.valueOf(art.getYearCreated())), 1, rowIndex++);
-            detailsGrid.add(new Label("Original:"), 0, rowIndex);
-            detailsGrid.add(new Label(art.getIsOriginal() ? "Yes" : "No"), 1, rowIndex++);
-        } else if (item instanceof Fashion) {
-            Fashion fashion = (Fashion) item;
-            detailsGrid.add(new Label("Brand:"), 0, rowIndex);
-            detailsGrid.add(new Label(fashion.getBrand()), 1, rowIndex++);
-            detailsGrid.add(new Label("Item Status:"), 0, rowIndex);
-            detailsGrid.add(new Label(fashion.getStatus().toString()), 1, rowIndex++);
-        } else if (item instanceof Collectible) {
-            Collectible collectible = (Collectible) item;
-            detailsGrid.add(new Label("Year Created:"), 0, rowIndex);
-            detailsGrid.add(new Label(String.valueOf(collectible.getYearCreated())), 1, rowIndex++);
-        }
-    
         HBox actionBox = new HBox(10);
         Button chartButton = new Button("View Chart");
         chartButton.getStyleClass().add("dashboard-btn-ghost");
@@ -403,7 +315,7 @@ public class BidderHomeController {
             actionBox.getChildren().addAll(bidButton, autoBidButton);
         }
 
-        auctionDetailPane.getChildren().addAll(titleBox, imageView, detailsGrid, actionBox);
+        auctionDetailPane.getChildren().add(actionBox);
     }
 
     @FXML

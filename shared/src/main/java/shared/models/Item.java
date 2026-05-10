@@ -4,6 +4,7 @@ import shared.enums.Category;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
+import java.util.Map;
 
 // Lớp các mặt hàng
 public abstract class Item implements Serializable {
@@ -24,6 +25,8 @@ public abstract class Item implements Serializable {
         this.category = category;
         this.startingPrice = startingPrice;
     }
+    
+    public abstract Map<String, String> getAdditionalDetails();
 
     public int getDbId() {
         return dbId;

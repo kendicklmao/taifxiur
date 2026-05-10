@@ -3,6 +3,8 @@ package shared.models;
 import shared.enums.Category;
 
 import java.math.BigDecimal;
+import java.util.Map;
+import java.util.LinkedHashMap;
 
 // Tác phẩm nghệ thuật
 public class Art extends Item {
@@ -15,6 +17,15 @@ public class Art extends Item {
         this.artist = artist;
         this.yearCreated = yearCreated;
         this.isOriginal = isOriginal;
+    }
+
+    @Override
+    public Map<String, String> getAdditionalDetails() {
+        Map<String, String> details = new LinkedHashMap<>();
+        details.put("Artist", artist);
+        details.put("Year Created", String.valueOf(yearCreated));
+        details.put("Original", isOriginal ? "Yes" : "No");
+        return details;
     }
 
     public boolean getIsOriginal() {

@@ -3,6 +3,8 @@ package shared.models;
 import shared.enums.Category;
 
 import java.math.BigDecimal;
+import java.util.Map;
+import java.util.LinkedHashMap;
 
 // Mặt hàng xe cộ
 public class Vehicle extends Item {
@@ -15,6 +17,15 @@ public class Vehicle extends Item {
         this.brand = brand;
         this.model = model;
         this.kmTravel = kmTravel;
+    }
+
+    @Override
+    public Map<String, String> getAdditionalDetails() {
+        Map<String, String> details = new LinkedHashMap<>();
+        details.put("Brand", brand);
+        details.put("Model Year", String.valueOf(model));
+        details.put("KM Traveled", String.valueOf(kmTravel));
+        return details;
     }
 
     public String getBrand() {
