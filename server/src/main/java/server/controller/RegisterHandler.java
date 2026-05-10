@@ -23,6 +23,14 @@ public class RegisterHandler implements RequestHandler {
         String rA2 = request.getData().get("a2");
 
         Role rRole = Role.valueOf(request.getData().get("role"));
+        
+        if (userService.exists(rUser)) {
+            return new Response("FAIL", "USERNAME_EXISTS");
+        }
+        
+        if (userService.emailExists(rEmail)) {
+            return new Response("FAIL", "EMAIL_EXISTS");
+        }
 
         if (userService.register(rUser, rPass, rEmail, rQ1, rA1, rQ2, rA2, rRole)) {
             return new Response("SUCCESS", "Registration successful!");

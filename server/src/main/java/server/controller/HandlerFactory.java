@@ -17,6 +17,8 @@ public class HandlerFactory {
 
         handlers.put("LOGIN", new LoginHandler(userService));
         handlers.put("REGISTER", new RegisterHandler(userService));
+        handlers.put("CHECK_USERNAME", new CheckUsernameHandler(userService));
+        handlers.put("CHECK_EMAIL", new CheckEmailHandler(userService));
         handlers.put("FORGOT_PASSWORD_INIT", new ForgotPasswordInitHandler(userService));
         handlers.put("RESET_PASSWORD", new ResetPasswordHandler(userService));
         handlers.put("CHANGE_PASSWORD", new ChangePasswordHandler(userService));

@@ -430,7 +430,7 @@ public class AuctionService {
 
     private void loadSingleAuctionFromDB(Connection conn, String targetAuctionId) {
         String sql = "SELECT id, seller_id, base_price, current_price, auction_status, " +
-                     "start_time, end_time, winner_id, auction_id " + "FROM items WHERE auction_id = ?";
+                     "start_time, end_time, auction_id " + "FROM items WHERE auction_id = ?";
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, targetAuctionId);
             try (ResultSet rs = pstmt.executeQuery()) {

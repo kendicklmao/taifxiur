@@ -230,7 +230,11 @@
     -fx-border-width: 0 0 0 3;
 }
 .text-field.error-field,
-.password-field.error-field {
+.password-field.error-field,
+.register-input.error-field,
+.login-input.error-field,
+.dashboard-input.error-field,
+.error-field {
     -fx-border-color: #e74c3c;
 }
 

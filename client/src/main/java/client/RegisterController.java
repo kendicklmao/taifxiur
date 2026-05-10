@@ -50,103 +50,177 @@ public class RegisterController {
         roleBox.getItems().addAll(Role.BIDDER, Role.SELLER);
         roleBox.setValue(Role.BIDDER);
 
+        // Đảm bảo đã kết nối tới Server để thực hiện kiểm tra thời gian thực
+        try {
+            if (!ctx.isConnected()) {
+                ctx.connect();
+            }
+        } catch (Exception e) {
+            System.err.println("Error establishing connection on register view load: " + e.getMessage());
+        }
+
         usernameField.focusedProperty().addListener((obs, oldVal, newVal) -> {
             if (!newVal) {
-                String username = usernameField.getText().trim();
-                if (!username.isEmpty() && !Validator.isValidUsername(username)) {
+                String text = usernameField.getText();
+                String username = text == null ? "" : text.trim();
+                if (username.isEmpty()) {
+                    usernameError.setText("Username cannot be empty");
+                    addErrorStyle(usernameField);
+                } else if (!Validator.isValidUsername(username)) {
                     usernameError.setText("Username must be 3+ characters, contain only letters, numbers, and underscores (no spaces)");
-                    usernameField.getStyleClass().add("error-field");
+                    addErrorStyle(usernameField);
                 } else {
-                    usernameError.setText("");
-                    usernameField.getStyleClass().remove("error-field");
+                    java.util.Map<String, String> data = new java.util.HashMap<>();
+                    data.put("username", username);
+                    new Thread(() -> {
+                        try {
+                            if (!ctx.isConnected()) {
+                                ctx.connect();
+                            }
+                            shared.network.Request req = new shared.network.Request("CHECK_USERNAME", data);
+                            shared.network.Response res = ctx.sendRequestAndWait(req, 5);
+                            javafx.application.Platform.runLater(() -> {
+                                if ("EXISTS".equals(res.getStatus())) {
+                                    usernameError.setText("Username is already taken");
+                                    addErrorStyle(usernameField);
+                                } else {
+                                    usernameError.setText("");
+                                    clearErrorStyle(usernameField);
+                                }
+                            });
+                        } catch (Exception e) {
+                            System.err.println("Error checking username existence: " + e.getMessage());
+                        }
+                    }).start();
                 }
             }
         });
 
         passwordField.focusedProperty().addListener((obs, oldVal, newVal) -> {
             if (!newVal) {
-                String password = passwordField.getText();
-                if (!password.isEmpty() && !Validator.isValidPassword(password)) {
+                String text = passwordField.getText();
+                String password = text == null ? "" : text;
+                if (password.isEmpty()) {
+                    passwordError.setText("Password cannot be empty");
+                    addErrorStyle(passwordField);
+                } else if (!Validator.isValidPassword(password)) {
                     passwordError.setText("Password must contain lowercase, uppercase, special characters, and numbers with length > 6");
-                    passwordField.getStyleClass().add("error-field");
+                    addErrorStyle(passwordField);
                 } else {
                     passwordError.setText("");
-                    passwordField.getStyleClass().remove("error-field");
+                    clearErrorStyle(passwordField);
                 }
             }
-
         });
 
         confirmPasswordField.focusedProperty().addListener((obs, oldVal, newVal) -> {
             if (!newVal) {
-                String password = passwordField.getText();
-                String confirmPassword = confirmPasswordField.getText();
-                if (!confirmPassword.isEmpty() && !password.equals(confirmPassword)) {
+                String pText = passwordField.getText();
+                String password = pText == null ? "" : pText;
+                String cpText = confirmPasswordField.getText();
+                String confirmPassword = cpText == null ? "" : cpText;
+                if (confirmPassword.isEmpty()) {
+                    confirmPasswordError.setText("Confirm password cannot be empty");
+                    addErrorStyle(confirmPasswordField);
+                } else if (!password.equals(confirmPassword)) {
                     confirmPasswordError.setText("Passwords do not match");
-                    confirmPasswordField.getStyleClass().add("error-field");
+                    addErrorStyle(confirmPasswordField);
                 } else {
                     confirmPasswordError.setText("");
-                    confirmPasswordField.getStyleClass().remove("error-field");
+                    clearErrorStyle(confirmPasswordField);
                 }
             }
         });
 
         emailField.focusedProperty().addListener((obs, oldVal, newVal) -> {
             if (!newVal) {
-                if (!emailField.getText().isEmpty() && !Validator.isValidEmail(emailField.getText())) {
+                String text = emailField.getText();
+                String email = text == null ? "" : text.trim();
+                if (email.isEmpty()) {
+                    emailError.setText("Email cannot be empty");
+                    addErrorStyle(emailField);
+                } else if (!Validator.isValidEmail(email)) {
                     emailError.setText("Invalid email format");
-                    emailField.getStyleClass().add("error-field");
+                    addErrorStyle(emailField);
                 } else {
-                    emailError.setText("");
-                    emailField.getStyleClass().remove("error-field");
+                    java.util.Map<String, String> data = new java.util.HashMap<>();
+                    data.put("email", email);
+                    new Thread(() -> {
+                        try {
+                            if (!ctx.isConnected()) {
+                                ctx.connect();
+                            }
+                            shared.network.Request req = new shared.network.Request("CHECK_EMAIL", data);
+                            shared.network.Response res = ctx.sendRequestAndWait(req, 5);
+                            javafx.application.Platform.runLater(() -> {
+                                if ("EXISTS".equals(res.getStatus())) {
+                                    emailError.setText("Email is already registered");
+                                    addErrorStyle(emailField);
+                                } else {
+                                    emailError.setText("");
+                                    clearErrorStyle(emailField);
+                                }
+                            });
+                        } catch (Exception e) {
+                            System.err.println("Error checking email existence: " + e.getMessage());
+                        }
+                    }).start();
                 }
             }
         });
 
         q1Field.focusedProperty().addListener((obs, oldVal, newVal) -> {
             if (!newVal) {
-                if (q1Field.getText().isEmpty()) {
+                String text = q1Field.getText();
+                String q1 = text == null ? "" : text.trim();
+                if (q1.isEmpty()) {
                     q1Error.setText("Security question cannot be empty");
-                    q1Field.getStyleClass().add("error-field");
+                    addErrorStyle(q1Field);
                 } else {
                     q1Error.setText("");
-                    q1Field.getStyleClass().remove("error-field");
+                    clearErrorStyle(q1Field);
                 }
             }
         });
 
         q2Field.focusedProperty().addListener((obs, oldVal, newVal) -> {
             if (!newVal) {
-                if (q2Field.getText().isEmpty()) {
+                String text = q2Field.getText();
+                String q2 = text == null ? "" : text.trim();
+                if (q2.isEmpty()) {
                     q2Error.setText("Security question cannot be empty");
-                    q2Field.getStyleClass().add("error-field");
+                    addErrorStyle(q2Field);
                 } else {
                     q2Error.setText("");
-                    q2Field.getStyleClass().remove("error-field");
+                    clearErrorStyle(q2Field);
                 }
             }
         });
 
         a1Field.focusedProperty().addListener((obs, oldVal, newVal) -> {
             if (!newVal) {
-                if (a1Field.getText().isEmpty()) {
+                String text = a1Field.getText();
+                String a1 = text == null ? "" : text.trim();
+                if (a1.isEmpty()) {
                     a1Error.setText("Security answer cannot be empty");
-                    a1Field.getStyleClass().add("error-field");
+                    addErrorStyle(a1Field);
                 } else {
                     a1Error.setText("");
-                    a1Field.getStyleClass().remove("error-field");
+                    clearErrorStyle(a1Field);
                 }
             }
         });
 
         a2Field.focusedProperty().addListener((obs, oldVal, newVal) -> {
             if (!newVal) {
-                if (a2Field.getText().isEmpty()) {
+                String text = a2Field.getText();
+                String a2 = text == null ? "" : text.trim();
+                if (a2.isEmpty()) {
                     a2Error.setText("Security answer cannot be empty");
-                    a2Field.getStyleClass().add("error-field");
+                    addErrorStyle(a2Field);
                 } else {
                     a2Error.setText("");
-                    a2Field.getStyleClass().remove("error-field");
+                    clearErrorStyle(a2Field);
                 }
             }
         });
@@ -170,22 +244,34 @@ public class RegisterController {
 
         if (!Validator.isValidUsername(usernameField.getText())) {
             usernameError.setText("Username must be 3+ characters, contain only letters, numbers, and underscores (no spaces)");
+            addErrorStyle(usernameField);
             isValid = false;
+        } else {
+            clearErrorStyle(usernameField);
         }
 
         if (!Validator.isValidPassword(passwordField.getText())) {
             passwordError.setText("Password must be >= 6 characters with uppercase, lowercase, numbers and special characters");
+            addErrorStyle(passwordField);
             isValid = false;
+        } else {
+            clearErrorStyle(passwordField);
         }
 
         if (!passwordField.getText().equals(confirmPasswordField.getText())) {
             confirmPasswordError.setText("Passwords do not match");
+            addErrorStyle(confirmPasswordField);
             isValid = false;
+        } else {
+            clearErrorStyle(confirmPasswordField);
         }
 
         if (!Validator.isValidEmail(emailField.getText())) {
             emailError.setText("Invalid email format (example: user@example.com)");
+            addErrorStyle(emailField);
             isValid = false;
+        } else {
+            clearErrorStyle(emailField);
         }
 
         return isValid;
@@ -205,42 +291,59 @@ public class RegisterController {
         clearErrorStyle(q2Field);
         clearErrorStyle(a2Field);
 
+        usernameError.setText("");
+        passwordError.setText("");
+        confirmPasswordError.setText("");
+        emailError.setText("");
+        q1Error.setText("");
+        a1Error.setText("");
+        q2Error.setText("");
+        a2Error.setText("");
+
         if (usernameField.getText() == null || usernameField.getText().trim().isEmpty()) {
+            usernameError.setText("Username cannot be empty");
             addErrorStyle(usernameField);
             valid = false;
         }
 
-        if (passwordField.getText() == null || passwordField.getText().trim().isEmpty()) {
+        if (passwordField.getText() == null || passwordField.getText().isEmpty()) {
+            passwordError.setText("Password cannot be empty");
             addErrorStyle(passwordField);
             valid = false;
         }
 
-        if (confirmPasswordField.getText() == null || confirmPasswordField.getText().trim().isEmpty()) {
+        if (confirmPasswordField.getText() == null || confirmPasswordField.getText().isEmpty()) {
+            confirmPasswordError.setText("Confirm password cannot be empty");
             addErrorStyle(confirmPasswordField);
             valid = false;
         }
 
         if (emailField.getText() == null || emailField.getText().trim().isEmpty()) {
+            emailError.setText("Email cannot be empty");
             addErrorStyle(emailField);
             valid = false;
         }
 
         if (q1Field.getText() == null || q1Field.getText().trim().isEmpty()) {
+            q1Error.setText("Security question cannot be empty");
             addErrorStyle(q1Field);
             valid = false;
         }
 
         if (a1Field.getText() == null || a1Field.getText().trim().isEmpty()) {
+            a1Error.setText("Security answer cannot be empty");
             addErrorStyle(a1Field);
             valid = false;
         }
 
         if (q2Field.getText() == null || q2Field.getText().trim().isEmpty()) {
+            q2Error.setText("Security question cannot be empty");
             addErrorStyle(q2Field);
             valid = false;
         }
 
         if (a2Field.getText() == null || a2Field.getText().trim().isEmpty()) {
+            a2Error.setText("Security answer cannot be empty");
             addErrorStyle(a2Field);
             valid = false;
         }
@@ -281,7 +384,16 @@ public class RegisterController {
                 showAlert("Success", "Registered successfully!");
                 Navigator.switchSceneStatic("login.fxml");
             } else {
-                showAlert("Error", res.getMessage());
+                String errorMsg = res.getMessage();
+                if ("USERNAME_EXISTS".equals(errorMsg)) {
+                    usernameError.setText("Username already exists");
+                    addErrorStyle(usernameField);
+                } else if ("EMAIL_EXISTS".equals(errorMsg)) {
+                    emailError.setText("Email already exists");
+                    addErrorStyle(emailField);
+                } else {
+                    showAlert("Error", errorMsg);
+                }
             }
 
         } catch (Exception e) {
@@ -291,10 +403,12 @@ public class RegisterController {
     }
 
     private void addErrorStyle(javafx.scene.control.TextField field) {
-        field.getStyleClass().add("error-field");
+        if (!field.getStyleClass().contains("error-field")) {
+            field.getStyleClass().add("error-field");
+        }
     }
 
     private void clearErrorStyle(javafx.scene.control.TextField field) {
-        field.getStyleClass().remove("error-field");
+        field.getStyleClass().removeAll(java.util.Collections.singleton("error-field"));
     }
 }
