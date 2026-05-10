@@ -130,19 +130,42 @@
 }
 .date-picker-popup {
     -fx-background-color: #1c1c2e;
-    -fx-border-color: #2a2a3e;
+    -fx-border-color: #3f3f5a;
+    -fx-text-fill: #ffffff;
 }
 .date-picker-popup .month-year-pane {
     -fx-background-color: #161629;
 }
+.date-picker-popup > * > .calendar-grid {
+    -fx-background-color: #1c1c2e;
+}
+.date-picker-popup .day-name-cell {
+    -fx-text-fill: #a0a0c0;
+    -fx-font-weight: bold;
+    -fx-background-color: #161629;
+}
 .date-picker-popup .day-cell {
-    -fx-background-color: transparent;
+    -fx-background-color: #1c1c2e;
     -fx-text-fill: #ffffff;
 }
-.date-picker-popup .day-cell:hover,
+.date-picker-popup .day-cell:hover {
+    -fx-background-color: #3f3f5a;
+    -fx-text-fill: #ffffff;
+}
 .date-picker-popup .selected {
     -fx-background-color: #7c5dfa;
     -fx-text-fill: #ffffff;
+}
+.date-picker-popup .today {
+    -fx-background-color: #2a2350;
+    -fx-text-fill: #ffffff;
+    -fx-border-color: #7c5dfa;
+    -fx-border-width: 1;
+}
+.date-picker-popup .previous-month,
+.date-picker-popup .next-month {
+    -fx-text-fill: #5b5b7a;
+    -fx-background-color: #1c1c2e;
 }
 
 /* Spinner */

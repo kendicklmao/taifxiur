@@ -24,7 +24,7 @@ public class Vehicle extends Item {
         Map<String, String> details = new LinkedHashMap<>();
         details.put("Brand", brand);
         details.put("Model Year", String.valueOf(model));
-        details.put("KM Traveled", String.valueOf(kmTravel));
+        details.put("Km Traveled", String.valueOf(kmTravel));
         return details;
     }
 

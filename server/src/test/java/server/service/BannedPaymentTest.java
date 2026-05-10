@@ -1,9 +1,7 @@
 package server.service;
 
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
-import server.database.DatabaseConfig;
 import shared.enums.Role;
 import java.math.BigDecimal;
 import java.util.UUID;
