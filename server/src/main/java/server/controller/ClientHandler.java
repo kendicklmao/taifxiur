@@ -41,12 +41,12 @@ public class ClientHandler implements Runnable {
 
             String clientMessage;
             while ((clientMessage = in.readLine()) != null) {
-                System.out.println("Server received: " + clientMessage);
+                // System.out.println("Server received: " + clientMessage);
 
                 Request request = gson.fromJson(clientMessage, Request.class);
-                System.out.println("DEBUG: Handling request " + request.getAction() + " (" + request.getRequestId() + ")");
+                // System.out.println("DEBUG: Handling request " + request.getAction() + " (" + request.getRequestId() + ")");
                 Response response = handleRequest(request);
-                System.out.println("DEBUG: Request " + request.getAction() + " handled. Status: " + (response != null ? response.getStatus() : "null"));
+                // System.out.println("DEBUG: Request " + request.getAction() + " handled. Status: " + (response != null ? response.getStatus() : "null"));
 
                 if (response != null) {
                     if (request.getRequestId() != null) {
@@ -54,7 +54,7 @@ public class ClientHandler implements Runnable {
                     }
 
                     String responseJson = gson.toJson(response);
-                    System.out.println("DEBUG: Sending response: " + responseJson);
+                    // System.out.println("DEBUG: Sending response: " + responseJson);
                     sendMessage(responseJson);
                 }
             }

@@ -84,22 +84,22 @@ public class AppContext {
                 String line;
                 while (currentIn != null && (line = currentIn.readLine()) != null) {
                     final String message = line;
-                    System.out.println("DEBUG CLIENT: Received from server: " + message);
+                    // System.out.println("DEBUG CLIENT: Received from server: " + message);
                     try {
                         Response res = gson.fromJson(message, Response.class);
                         if (res.getRequestId() != null) {
                             CompletableFuture<Response> future = pendingRequests.get(res.getRequestId());
                             if (future != null) {
-                                System.out.println("DEBUG CLIENT: Completing future for request " + res.getRequestId());
+                                // System.out.println("DEBUG CLIENT: Completing future for request " + res.getRequestId());
                                 future.complete(res);
                                 pendingRequests.remove(res.getRequestId());
                             } else {
-                                System.out.println("DEBUG CLIENT: No pending request found for ID " + res.getRequestId());
+                                // System.out.println("DEBUG CLIENT: No pending request found for ID " + res.getRequestId());
                             }
                         }
 
                     } catch (Exception e) {
-                        System.out.println("DEBUG CLIENT: Message is not a standard Response or has no ID: " + e.getMessage());
+                        // System.out.println("DEBUG CLIENT: Message is not a standard Response or has no ID: " + e.getMessage());
                     }
 
                     for (Consumer<String> listener : messageListeners) {

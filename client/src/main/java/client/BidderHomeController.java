@@ -129,6 +129,15 @@ public class BidderHomeController {
         };
 
         ctx.addMessageListener(messageListener);
+
+        // Tự động làm mới giao diện và ví mỗi 2 giây
+        javafx.animation.Timeline autoRefresh = new javafx.animation.Timeline(
+            new javafx.animation.KeyFrame(javafx.util.Duration.seconds(2), e -> {
+                handleRefresh();
+            })
+        );
+        autoRefresh.setCycleCount(javafx.animation.Timeline.INDEFINITE);
+        autoRefresh.play();
     }
 
     private void loadAuction() {

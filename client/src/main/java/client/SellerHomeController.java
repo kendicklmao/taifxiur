@@ -143,6 +143,15 @@ public class SellerHomeController {
         };
 
         ctx.addMessageListener(messageListener);
+
+        // Tự động làm mới danh sách đấu giá và ví người bán mỗi 2 giây
+        javafx.animation.Timeline autoRefresh = new javafx.animation.Timeline(
+            new javafx.animation.KeyFrame(javafx.util.Duration.seconds(2), e -> {
+                handleRefresh();
+            })
+        );
+        autoRefresh.setCycleCount(javafx.animation.Timeline.INDEFINITE);
+        autoRefresh.play();
     }
 
     @FXML

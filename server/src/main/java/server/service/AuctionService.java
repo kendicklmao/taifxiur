@@ -379,7 +379,7 @@ public class AuctionService {
     // Lấy tất cả phiên đấu giá và cập nhật trạng thái nếu cần
     public List<Auction> getAllAuctions() {
         syncWithDatabase(); // Luôn đồng bộ với DB trước khi trả về cho Client
-        System.out.println(" [QUERY] Sync completed. Client requested all auctions. Total: " + auctions.size());
+        // System.out.println(" [QUERY] Sync completed. Client requested all auctions. Total: " + auctions.size());
         for (Auction auction : auctions.values()) {
             auction.updateStatus();
         }

@@ -94,6 +94,18 @@ public class AdminHomeController {
             }
         };
         ctx.addMessageListener(messageListener);
+
+        // Tự động làm mới toàn bộ danh sách Admin mỗi 2 giây
+        javafx.animation.Timeline autoRefresh = new javafx.animation.Timeline(
+            new javafx.animation.KeyFrame(javafx.util.Duration.seconds(2), e -> {
+                refreshAuctions();
+                refreshUsers();
+                refreshAdminActionLogs();
+                refreshWalletRequests();
+            })
+        );
+        autoRefresh.setCycleCount(javafx.animation.Timeline.INDEFINITE);
+        autoRefresh.play();
     }
 
     private void showAuctionDetails(Auction auction) {
@@ -214,16 +226,32 @@ public class AdminHomeController {
 
     @FXML
     public void refreshAdminActionLogs() {
-        try {
-            Request req = new Request("GET_ADMIN_ACTION_LOGS", new HashMap<>());
-            Response response = ctx.sendRequestAndWait(req, 20);
-            if ("SUCCESS".equals(response.getStatus())) {
-                AdminActionLog[] logs = gson.fromJson(response.getMessage(), AdminActionLog[].class);
-                Platform.runLater(() -> adminActionLogsList.getItems().setAll(logs));
-            }
-        } catch (Exception e) {
-            alertService.showAlert("Error", "Failed to load admin action logs: " + e.getMessage(), welcomeLabel);
+        if (adminActionLogsList == null) {
+            return;
         }
+        Task<AdminActionLog[]> task = new Task<>() {
+            @Override
+            protected AdminActionLog[] call() throws Exception {
+                Request req = new Request("GET_ADMIN_ACTION_LOGS", new HashMap<>());
+                Response response = ctx.sendRequestAndWait(req, 20);
+                if ("SUCCESS".equals(response.getStatus())) {
+                    return gson.fromJson(response.getMessage(), AdminActionLog[].class);
+                }
+                return new AdminActionLog[0];
+            }
+        };
+
+        task.setOnSucceeded(e -> {
+            adminActionLogsList.getItems().setAll(task.getValue());
+        });
+
+        task.setOnFailed(e -> {
+            System.err.println("Failed to load admin action logs: " + task.getException().getMessage());
+        });
+
+        Thread thread = new Thread(task);
+        thread.setDaemon(true);
+        thread.start();
     }
 
     @FXML
@@ -298,30 +326,56 @@ public class AdminHomeController {
 
     @FXML
     public void refreshDepositRequests() {
-        try {
-            Response response = ctx.sendRequestAndWait(new Request("GET_PENDING_DEPOSIT_REQUESTS", new HashMap<>()), 15);
-            if ("SUCCESS".equals(response.getStatus())) {
-                Type listType = new TypeToken<List<Map<String, String>>>() {}.getType();
-                List<Map<String, String>> requests = gson.fromJson(response.getMessage(), listType);
-                Platform.runLater(() -> depositRequestsList.getItems().setAll(requests));
+        Task<List<Map<String, String>>> task = new Task<>() {
+            @Override
+            protected List<Map<String, String>> call() throws Exception {
+                Response response = ctx.sendRequestAndWait(new Request("GET_PENDING_DEPOSIT_REQUESTS", new HashMap<>()), 15);
+                if ("SUCCESS".equals(response.getStatus())) {
+                    Type listType = new TypeToken<List<Map<String, String>>>() {}.getType();
+                    return gson.fromJson(response.getMessage(), listType);
+                }
+                return List.of();
             }
-        } catch (Exception e) {
-            alertService.showAlert("Error", "Failed to load deposit requests: " + e.getMessage(), welcomeLabel);
-        }
+        };
+
+        task.setOnSucceeded(e -> {
+            depositRequestsList.getItems().setAll(task.getValue());
+        });
+
+        task.setOnFailed(e -> {
+            System.err.println("Failed to load deposit requests: " + task.getException().getMessage());
+        });
+
+        Thread thread = new Thread(task);
+        thread.setDaemon(true);
+        thread.start();
     }
 
     @FXML
     public void refreshWithdrawRequests() {
-        try {
-            Response response = ctx.sendRequestAndWait(new Request("GET_PENDING_WITHDRAW_REQUESTS", new HashMap<>()), 15);
-            if ("SUCCESS".equals(response.getStatus())) {
-                Type listType = new TypeToken<List<Map<String, String>>>() {}.getType();
-                List<Map<String, String>> requests = gson.fromJson(response.getMessage(), listType);
-                Platform.runLater(() -> withdrawRequestsList.getItems().setAll(requests));
+        Task<List<Map<String, String>>> task = new Task<>() {
+            @Override
+            protected List<Map<String, String>> call() throws Exception {
+                Response response = ctx.sendRequestAndWait(new Request("GET_PENDING_WITHDRAW_REQUESTS", new HashMap<>()), 15);
+                if ("SUCCESS".equals(response.getStatus())) {
+                    Type listType = new TypeToken<List<Map<String, String>>>() {}.getType();
+                    return gson.fromJson(response.getMessage(), listType);
+                }
+                return List.of();
             }
-        } catch (Exception e) {
-            alertService.showAlert("Error", "Failed to load withdraw requests: " + e.getMessage(), welcomeLabel);
-        }
+        };
+
+        task.setOnSucceeded(e -> {
+            withdrawRequestsList.getItems().setAll(task.getValue());
+        });
+
+        task.setOnFailed(e -> {
+            System.err.println("Failed to load withdraw requests: " + task.getException().getMessage());
+        });
+
+        Thread thread = new Thread(task);
+        thread.setDaemon(true);
+        thread.start();
     }
 
     @FXML
