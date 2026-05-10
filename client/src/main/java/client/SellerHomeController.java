@@ -544,7 +544,7 @@ public class SellerHomeController {
                 selectedImageFile = null;
                 croppedImageBytes = null;
             } else {
-                alertService.showAlert("Lỗi", response.getMessage(), welcomeLabel);
+                alertService.showAlert("Error", response.getMessage(), welcomeLabel);
             }
 
         } catch (Exception e) {
