@@ -43,7 +43,7 @@
 
                         <!-- Header -->
                         <VBox spacing="6">
-                            <Label text="Welcome back" styleClass="login-title-main"/>
+                            <Label text="Welcome back!" styleClass="login-title-main"/>
                             <Label text="Sign in to continue bidding"
                                    styleClass="login-subtitle-main"/>
                         </VBox>

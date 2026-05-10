@@ -422,9 +422,8 @@ public class WalletService {
     private void updateDepositRequestStatus(Connection conn, String requestId, RequestStatus status)
             throws SQLException {
         try (PreparedStatement pstmt = conn.prepareStatement(
-                "UPDATE deposit_requests SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?")) {
-            pstmt.setString(1, status.name());
-            pstmt.setString(2, requestId);
+                "DELETE FROM deposit_requests WHERE id = ?")) {
+            pstmt.setString(1, requestId);
             pstmt.executeUpdate();
         }
     }
@@ -432,9 +431,8 @@ public class WalletService {
     private void updateWithdrawRequestStatus(Connection conn, String requestId, RequestStatus status)
             throws SQLException {
         try (PreparedStatement pstmt = conn.prepareStatement(
-                "UPDATE withdraw_requests SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?")) {
-            pstmt.setString(1, status.name());
-            pstmt.setString(2, requestId);
+                "DELETE FROM withdraw_requests WHERE id = ?")) {
+            pstmt.setString(1, requestId);
             pstmt.executeUpdate();
         }
     }

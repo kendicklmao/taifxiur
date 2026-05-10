@@ -73,7 +73,7 @@ public class AdminHomeController {
                 usernameField.setItems(javafx.collections.FXCollections.observableArrayList(allUsernames));
             } else {
                 List<String> filteredList = allUsernames.stream()
-                .filter(s -> s.toLowerCase().contains(newText.toLowerCase())).collect(Collectors.toList());
+                        .filter(s -> s.toLowerCase().contains(newText.toLowerCase())).collect(Collectors.toList());
                 usernameField.setItems(javafx.collections.FXCollections.observableArrayList(filteredList));
                 usernameField.show();
             }
@@ -84,8 +84,8 @@ public class AdminHomeController {
             try {
                 Response res = gson.fromJson(line, Response.class);
                 if ("AUCTION_CREATED".equals(res.getStatus()) ||
-                    "AUCTION_UPDATED".equals(res.getStatus()) ||
-                    "UPDATE_PRICE".equals(res.getStatus())) {
+                        "AUCTION_UPDATED".equals(res.getStatus()) ||
+                        "UPDATE_PRICE".equals(res.getStatus())) {
                     System.out.println("[ADMIN] Received auction update from server, refreshing auction list...");
                     this.refreshAuctions();
                 }
@@ -95,28 +95,28 @@ public class AdminHomeController {
         };
         ctx.addMessageListener(messageListener);
 
-        // Tự động làm mới toàn bộ danh sách Admin mỗi 2 giây
+        // Tự động làm mới toàn bộ danh sách Admin mỗi 2 giây (ngoại trừ danh sách
+        // nạp/rút tiền để tránh bấm hụt)
         javafx.animation.Timeline autoRefresh = new javafx.animation.Timeline(
-            new javafx.animation.KeyFrame(javafx.util.Duration.seconds(2), e -> {
-                refreshAuctions();
-                refreshUsers();
-                refreshAdminActionLogs();
-                refreshWalletRequests();
-            })
-        );
+                new javafx.animation.KeyFrame(javafx.util.Duration.seconds(2), e -> {
+                    refreshAuctions();
+                    refreshUsers();
+                    refreshAdminActionLogs();
+                }));
         autoRefresh.setCycleCount(javafx.animation.Timeline.INDEFINITE);
         autoRefresh.play();
     }
 
     private void showAuctionDetails(Auction auction) {
-    AuctionDetailViewBuilder.populateBasicDetails(auctionDetailPane, auction, () -> {});
+        AuctionDetailViewBuilder.populateBasicDetails(auctionDetailPane, auction, () -> {
+        });
 
-    Button terminateButton = new Button("Terminate Auction");
-    terminateButton.getStyleClass().add("dashboard-btn-logout");
-    terminateButton.setOnAction(e -> handleTerminateAuction(auction));
+        Button terminateButton = new Button("Terminate Auction");
+        terminateButton.getStyleClass().add("dashboard-btn-logout");
+        terminateButton.setOnAction(e -> handleTerminateAuction(auction));
 
-    auctionDetailPane.getChildren().add(terminateButton);
-}
+        auctionDetailPane.getChildren().add(terminateButton);
+    }
 
     private void handleTerminateAuction(Auction auction) {
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
@@ -329,9 +329,11 @@ public class AdminHomeController {
         Task<List<Map<String, String>>> task = new Task<>() {
             @Override
             protected List<Map<String, String>> call() throws Exception {
-                Response response = ctx.sendRequestAndWait(new Request("GET_PENDING_DEPOSIT_REQUESTS", new HashMap<>()), 15);
+                Response response = ctx.sendRequestAndWait(new Request("GET_PENDING_DEPOSIT_REQUESTS", new HashMap<>()),
+                        15);
                 if ("SUCCESS".equals(response.getStatus())) {
-                    Type listType = new TypeToken<List<Map<String, String>>>() {}.getType();
+                    Type listType = new TypeToken<List<Map<String, String>>>() {
+                    }.getType();
                     return gson.fromJson(response.getMessage(), listType);
                 }
                 return List.of();
@@ -356,9 +358,11 @@ public class AdminHomeController {
         Task<List<Map<String, String>>> task = new Task<>() {
             @Override
             protected List<Map<String, String>> call() throws Exception {
-                Response response = ctx.sendRequestAndWait(new Request("GET_PENDING_WITHDRAW_REQUESTS", new HashMap<>()), 15);
+                Response response = ctx
+                        .sendRequestAndWait(new Request("GET_PENDING_WITHDRAW_REQUESTS", new HashMap<>()), 15);
                 if ("SUCCESS".equals(response.getStatus())) {
-                    Type listType = new TypeToken<List<Map<String, String>>>() {}.getType();
+                    Type listType = new TypeToken<List<Map<String, String>>>() {
+                    }.getType();
                     return gson.fromJson(response.getMessage(), listType);
                 }
                 return List.of();
@@ -386,25 +390,37 @@ public class AdminHomeController {
             return;
         }
 
-        try {
-            Map<String, String> data = new HashMap<>();
-            data.put("username", username);
-            Request req = new Request("BAN_USER", data);
-            Response response = ctx.sendRequestAndWait(req, 20);
+        javafx.concurrent.Task<Response> task = new javafx.concurrent.Task<>() {
+            @Override
+            protected Response call() throws Exception {
+                Map<String, String> data = new HashMap<>();
+                data.put("username", username);
+                Request req = new Request("BAN_USER", data);
+                return ctx.sendRequestAndWait(req, 20);
+            }
+        };
 
-            if ("SUCCESS".equals(response.getStatus())) {
+        task.setOnSucceeded(e -> {
+            Response response = task.getValue();
+            if (response != null && "SUCCESS".equals(response.getStatus())) {
                 alertService.showAlert("Success", "User " + username + " has been banned!", welcomeLabel);
                 userStatusArea.appendText("\nBanned user: " + username);
                 usernameField.setValue(null);
                 usernameField.getEditor().clear();
                 refreshUsers();
             } else {
-                alertService.showAlert("Error", response.getMessage(), welcomeLabel);
+                String errorMsg = response != null ? response.getMessage() : "Unknown error";
+                alertService.showAlert("Error", errorMsg, welcomeLabel);
             }
+        });
 
-        } catch (Exception e) {
-            alertService.showAlert("Error", "Failed to ban user: " + e.getMessage(), welcomeLabel);
-        }
+        task.setOnFailed(e -> {
+            alertService.showAlert("Error", "Failed to ban user: " + task.getException().getMessage(), welcomeLabel);
+        });
+
+        Thread thread = new Thread(task);
+        thread.setDaemon(true);
+        thread.start();
     }
 
     @FXML
@@ -415,25 +431,37 @@ public class AdminHomeController {
             return;
         }
 
-        try {
-            Map<String, String> data = new HashMap<>();
-            data.put("username", username);
-            Request req = new Request("UNBAN_USER", data);
-            Response response = ctx.sendRequestAndWait(req, 20);
+        javafx.concurrent.Task<Response> task = new javafx.concurrent.Task<>() {
+            @Override
+            protected Response call() throws Exception {
+                Map<String, String> data = new HashMap<>();
+                data.put("username", username);
+                Request req = new Request("UNBAN_USER", data);
+                return ctx.sendRequestAndWait(req, 20);
+            }
+        };
 
-            if ("SUCCESS".equals(response.getStatus())) {
+        task.setOnSucceeded(e -> {
+            Response response = task.getValue();
+            if (response != null && "SUCCESS".equals(response.getStatus())) {
                 alertService.showAlert("Success", "User " + username + " has been unbanned!", welcomeLabel);
                 userStatusArea.appendText("\nUnbanned user: " + username);
                 usernameField.setValue(null);
                 usernameField.getEditor().clear();
                 refreshUsers();
             } else {
-                alertService.showAlert("Error", response.getMessage(), welcomeLabel);
+                String errorMsg = response != null ? response.getMessage() : "Unknown error";
+                alertService.showAlert("Error", errorMsg, welcomeLabel);
             }
+        });
 
-        } catch (Exception e) {
-            alertService.showAlert("Error", "Failed to unban user: " + e.getMessage(), welcomeLabel);
-        }
+        task.setOnFailed(e -> {
+            alertService.showAlert("Error", "Failed to unban user: " + task.getException().getMessage(), welcomeLabel);
+        });
+
+        Thread thread = new Thread(task);
+        thread.setDaemon(true);
+        thread.start();
     }
 
     @FXML
@@ -482,21 +510,33 @@ public class AdminHomeController {
             return;
         }
 
-        try {
-            Map<String, String> data = new HashMap<>();
-            data.put("requestId", requestItem.get("id"));
-            Response response = ctx.sendRequestAndWait(new Request(action, data), 15);
+        javafx.concurrent.Task<Response> task = new javafx.concurrent.Task<>() {
+            @Override
+            protected Response call() throws Exception {
+                Map<String, String> data = new HashMap<>();
+                data.put("requestId", requestItem.get("id"));
+                return ctx.sendRequestAndWait(new Request(action, data), 15);
+            }
+        };
 
-            if ("SUCCESS".equals(response.getStatus())) {
+        task.setOnSucceeded(e -> {
+            Response response = task.getValue();
+            if (response != null && "SUCCESS".equals(response.getStatus())) {
                 alertService.showAlert("Success", response.getMessage(), welcomeLabel);
                 refreshWalletRequests();
             } else {
-                alertService.showAlert("Error", response.getMessage(), welcomeLabel);
+                String errorMsg = response != null ? response.getMessage() : "Unknown error";
+                alertService.showAlert("Error", errorMsg, welcomeLabel);
             }
+        });
 
-        } catch (Exception e) {
-            alertService.showAlert("Error", "Failed to process request: " + e.getMessage(), welcomeLabel);
-        }
+        task.setOnFailed(e -> {
+            alertService.showAlert("Error", "Failed to process request: " + task.getException().getMessage(), welcomeLabel);
+        });
+
+        Thread thread = new Thread(task);
+        thread.setDaemon(true);
+        thread.start();
     }
 
     private String formatTime(java.time.Instant instant) {
