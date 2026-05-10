@@ -97,14 +97,8 @@
                         </VBox>
 
                         <VBox styleClass="dash-card" spacing="16">
-                            <VBox spacing="4">
-                                <Label text="Status &amp; Activity" styleClass="dashboard-section-title"/>
-                                <Label text="Recent admin actions and selected user state"
-                                       styleClass="dashboard-section-subtitle"/>
-                            </VBox>
-                            <ListView fx:id="adminActionLogsList" prefHeight="240"/>
                             <TextArea fx:id="userStatusArea" editable="false" wrapText="true"
-                                      prefRowCount="6" styleClass="dashboard-input"/>
+                                      prefRowCount="20" styleClass="dashboard-input"/>
                         </VBox>
 
                     </VBox>
