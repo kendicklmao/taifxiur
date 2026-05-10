@@ -92,6 +92,7 @@ public class SellerHomeController {
     private final AppContext ctx = AppContext.getInstance();
     private final IAlertService alertService = new AlertServiceImpl();
     private Consumer<String> messageListener;
+    private Auction selectedAuction;
 
     @FXML
     public void initialize() {
@@ -247,6 +248,7 @@ public class SellerHomeController {
     }
 
     private void showAuctionDetails(Auction auction) {
+        this.selectedAuction = auction;
         AuctionDetailViewBuilder.populateBasicDetails(auctionDetailPane, auction, () -> {});
         Button terminateButton = new Button("Terminate Auction");
         terminateButton.getStyleClass().add("dashboard-btn-logout");
@@ -607,7 +609,16 @@ public class SellerHomeController {
         };
 
         task.setOnSucceeded(e -> {
-            updateAuctionGrid(task.getValue());
+            List<Auction> list = task.getValue();
+            if (list != null) {
+                updateAuctionGrid(list);
+                if (selectedAuction != null) {
+                    Auction updated = list.stream().filter(a -> a.getId().equals(selectedAuction.getId())).findFirst().orElse(null);
+                    if (updated != null) {
+                        showAuctionDetails(updated);
+                    }
+                }
+            }
         });
 
         task.setOnFailed(e -> {

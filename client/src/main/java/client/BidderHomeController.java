@@ -60,6 +60,9 @@ public class BidderHomeController {
 
     private Consumer<String> messageListener;
     private final ObservableList<Auction> allAuctions = FXCollections.observableArrayList();
+    private Auction selectedAuction;
+    private AuctionChartController activeChartController;
+    private Auction activeChartAuction;
 
     @FXML
     public void initialize() {
@@ -120,6 +123,10 @@ public class BidderHomeController {
                                 priceLabel.setText("Current Bid: $" + newPrice);
                             }
                         }
+                        if (selectedAuction != null && selectedAuction.getId().equals(auctionId)) {
+                            selectedAuction.setCurrentPriceForDBRestore(new java.math.BigDecimal(newPrice));
+                            showAuctionDetails(selectedAuction);
+                        }
                     });
                 }
             } catch (Exception e) {
@@ -153,7 +160,23 @@ public class BidderHomeController {
         };
 
         task.setOnSucceeded(e -> {
-            allAuctions.setAll(task.getValue());
+            List<Auction> list = task.getValue();
+            if (list != null) {
+                allAuctions.setAll(list);
+                if (selectedAuction != null) {
+                    Auction updated = list.stream().filter(a -> a.getId().equals(selectedAuction.getId())).findFirst().orElse(null);
+                    if (updated != null) {
+                        showAuctionDetails(updated);
+                    }
+                }
+                if (activeChartController != null && activeChartAuction != null) {
+                    Auction updatedChartAuction = list.stream().filter(a -> a.getId().equals(activeChartAuction.getId())).findFirst().orElse(null);
+                    if (updatedChartAuction != null) {
+                        activeChartAuction = updatedChartAuction;
+                        activeChartController.populateChart(updatedChartAuction);
+                    }
+                }
+            }
         });
 
         task.setOnFailed(e -> {
@@ -305,6 +328,7 @@ public class BidderHomeController {
     }
 
     private void showAuctionDetails(Auction auction) {
+        this.selectedAuction = auction;
         AuctionDetailViewBuilder.populateBasicDetails(auctionDetailPane, auction, () -> {});
 
         HBox actionBox = new HBox(10);
@@ -546,10 +570,17 @@ public class BidderHomeController {
             AuctionChartController controller = loader.getController();
             controller.populateChart(auction);
 
+            this.activeChartController = controller;
+            this.activeChartAuction = auction;
+
             Stage stage = new Stage();
             stage.setTitle("Price Chart");
             stage.initModality(Modality.APPLICATION_MODAL);
             stage.setScene(new Scene(root));
+            stage.setOnHidden(e -> {
+                this.activeChartController = null;
+                this.activeChartAuction = null;
+            });
             stage.showAndWait();
 
         } catch (IOException e) {

@@ -23,6 +23,7 @@ public class AuctionChartController {
 
     public void populateChart(Auction auction) {
         chartTitleLabel.setText("Price History for: " + auction.getItem().getName());
+        priceChart.getData().clear();
 
         XYChart.Series<String, Number> series = new XYChart.Series<>();
         series.setName("Bid Price");
