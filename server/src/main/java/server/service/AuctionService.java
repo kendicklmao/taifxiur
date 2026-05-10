@@ -110,7 +110,7 @@ public class AuctionService {
     // Tải item từ database
     private Item loadItemFromDatabase(Connection conn, int itemId) {
         try (PreparedStatement pstmt = conn.prepareStatement(
-                "SELECT name, description, category, item_type, image_url, base_price, " +
+                "SELECT name, description, category, image_url, base_price, " +
                 "brand, item_status, model_year, km_travel, artist, year_created, is_original, seller_id, min_increment " +
                 "FROM items WHERE id = ?")) {
 

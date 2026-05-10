@@ -47,20 +47,4 @@ public class Validator {
         email = normalizeAndLowercase(email);
         return !email.contains(" ") && email.matches("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$");
     }
-
-    // Kiểm tra format câu hỏi xác nhận danh tính
-    public static boolean isValidQuestion(String question) {
-        if (question == null) {
-            return false;
-        }
-        return !normalize(question).isEmpty();
-    }
-
-    // Kiểm tra format câu trả lời xác nhận danh tính
-    public static boolean isValidAnswer(String answer) {
-        if (answer == null) {
-            return false;
-        }
-        return !normalizeAndLowercase(answer).isEmpty();
-    }
 }
