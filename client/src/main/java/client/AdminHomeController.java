@@ -272,8 +272,7 @@ public class AdminHomeController {
                     return List.of();
                 }
                 Auction[] auctions = gson.fromJson(response.getMessage(), Auction[].class);
-                return java.util.Arrays.stream(auctions)
-                        .filter(a -> a.getStatus() != shared.enums.AuctionStatus.CANCELED).collect(Collectors.toList());
+                return java.util.Arrays.stream(auctions).collect(Collectors.toList());
             }
 
         };

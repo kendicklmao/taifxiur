@@ -584,8 +584,6 @@ public class AuctionService {
         if (user.getRole() != shared.enums.Role.ADMIN && !auction.getSeller().getUsername().equals(username)) {
             return "You are not authorized to terminate this auction.";
         }
-
-        auction.cancel();
         auctions.remove(auctionId);
 
         // Giải phóng toàn bộ tiền đang bị đóng băng (hold) của những người đã đặt giá
