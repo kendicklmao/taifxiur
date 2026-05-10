@@ -1,5 +1,6 @@
 package client;
 
+import javafx.application.Platform;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
@@ -24,6 +25,44 @@ public class AlertServiceImpl implements IAlertService {
         if (ownerWindow != null) {
             dialog.initOwner(ownerWindow);
         }
+
+        dialog.setOnShown(ev -> {
+            Platform.runLater(() -> {
+                double dw = dialog.getWidth();
+                double dh = dialog.getHeight();
+                
+                if (dw <= 0 || Double.isNaN(dw)) {
+                    dw = dialog.getDialogPane().getWidth();
+                    if (dw <= 0) {
+                        dw = dialog.getDialogPane().prefWidth(-1);
+                    }
+                }
+                if (dh <= 0 || Double.isNaN(dh)) {
+                    dh = dialog.getDialogPane().getHeight();
+                    if (dh <= 0) {
+                        dh = dialog.getDialogPane().prefHeight(-1);
+                    }
+                }
+                
+                javafx.stage.Screen screen = javafx.stage.Screen.getPrimary();
+                if (ownerWindow != null && ownerWindow.getWidth() > 0 && ownerWindow.getHeight() > 0) {
+                    java.util.List<javafx.stage.Screen> screens = javafx.stage.Screen.getScreensForRectangle(
+                        ownerWindow.getX(), ownerWindow.getY(), ownerWindow.getWidth(), ownerWindow.getHeight()
+                    );
+                    if (!screens.isEmpty()) {
+                        screen = screens.get(0);
+                    }
+                }
+                
+                if (dw > 0 && dh > 0) {
+                    javafx.geometry.Rectangle2D bounds = screen.getVisualBounds();
+                    double x = bounds.getMinX() + (bounds.getWidth() - dw) / 2;
+                    double y = bounds.getMinY() + (bounds.getHeight() - dh) / 2;
+                    dialog.setX(x);
+                    dialog.setY(y);
+                }
+            });
+        });
 
         dialog.initStyle(StageStyle.TRANSPARENT);
 
