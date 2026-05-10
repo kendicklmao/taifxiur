@@ -23,7 +23,7 @@
                 <Label text="JOIN THE COMMUNITY" styleClass="hero-pill"/>
                 <Label text="Create your account in under a minute."
                        styleClass="hero-headline" wrapText="true"/>
-                <Label text="Become a bidder, seller or admin and start exploring exclusive lots."
+                <Label text="Become a bidder, seller and start exploring exclusive lots."
                        styleClass="hero-subline" wrapText="true"/>
             </VBox>
 
