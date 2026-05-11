@@ -1,6 +1,9 @@
-package client;
+package client.controller;
 
 import com.google.gson.reflect.TypeToken;
+
+import client.support.AuctionDetailViewBuilder;
+import client.support.ChangePasswordSupport;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
@@ -505,22 +508,6 @@ public class BidderHomeController extends BaseHomeController {
                 }
             }
         });
-    }
-
-    @FXML
-    public void handleLogout() {
-        ctx.removeMessageListener(messageListener);
-        try {
-            Map<String, String> data = new HashMap<>();
-            data.put("username", ctx.getCurrentUser().getUsername());
-            Request req = new Request("LOGOUT", data);
-            ctx.sendRequestAndWait(req, 15);
-        } catch (Exception e) {
-            // Bỏ qua và tiếp tục đăng xuất
-        }
-
-        ctx.setCurrentUser(null);
-        Navigator.switchSceneStatic("login.fxml");
     }
 
     private void showPriceChart(Auction auction) {

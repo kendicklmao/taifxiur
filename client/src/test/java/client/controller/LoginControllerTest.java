@@ -1,10 +1,14 @@
-package client;
+package client.controller;
 
 import javafx.embed.swing.JFXPanel;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
+import client.FakeAlertService;
+import client.FakeAppContext;
+import client.FakeNavigator;
 import shared.network.Response;
 
 import static org.junit.jupiter.api.Assertions.*;

@@ -1,6 +1,8 @@
-package client;
+package client.controller;
 
 import com.google.gson.reflect.TypeToken;
+
+import client.Navigator;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.Control;

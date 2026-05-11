@@ -8,7 +8,7 @@
 <?import java.net.URL?>
 
 <VBox xmlns:fx="http://javafx.com/fxml/1"
-      fx:controller="client.AuctionChartController"
+      fx:controller="client.controller.AuctionChartController"
       alignment="TOP_CENTER" spacing="16"
       styleClass="app-shell"
       style="-fx-padding: 24; -fx-background-color: #0d0d17;">

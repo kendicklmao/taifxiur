@@ -75,6 +75,9 @@ public class Auction {
         this.startTime = startTime;
         this.endTime = endTime;
         this.status = startTime.isBefore(Instant.now()) ? AuctionStatus.RUNNING : AuctionStatus.OPEN;
+    }
+
+    public void startScheduler() {
         scheduleStart();
         scheduleFinish();
     }

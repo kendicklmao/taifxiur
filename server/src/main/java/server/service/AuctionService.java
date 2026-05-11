@@ -90,6 +90,8 @@ public class AuctionService {
                     // Load and restore auto-bids
                     loadAutoBidsForAuction(conn, auction, userService);
 
+                    auction.startScheduler();
+
                     auctions.put(auctionId, auction);
                     System.out.println("Loaded auction: " + auctionId + " (status: " + statusStr + ")");
                 } catch (IllegalArgumentException e) {
@@ -273,6 +275,7 @@ public class AuctionService {
         // Đăng ký finish callback để service có thể tự động thanh toán khi phiên đấu giá kết thúc
         auction.setFinishCallback(a -> finalizeAuction(a));
         auction.setBanChecker(username -> userService.isUserBanned(username));
+        auction.startScheduler();
         auctions.put(id, auction);
         System.out.println(" [MEMORY] Added new auction to map. Current total in memory: " + auctions.size());
 
@@ -481,6 +484,8 @@ public class AuctionService {
                         // Load bid history & auto-bids
                         loadBidHistoryForAuction(conn, auction, userService);
                         loadAutoBidsForAuction(conn, auction, userService);
+
+                        auction.startScheduler();
 
                         auctions.put(targetAuctionId, auction);
                         System.out.println("[SYNC] Loaded new auction from DB: " + targetAuctionId);

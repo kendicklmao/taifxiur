@@ -4,7 +4,7 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.image.ImageView?>
 
-<BorderPane xmlns:fx="http://javafx.com/fxml" fx:controller="client.SellerHomeController"
+<BorderPane xmlns:fx="http://javafx.com/fxml" fx:controller="client.controller.SellerHomeController"
             styleClass="app-shell">
 
     <!-- TOP APP BAR -->

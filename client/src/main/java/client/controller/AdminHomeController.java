@@ -1,7 +1,9 @@
-package client;
+package client.controller;
 
 import com.google.gson.reflect.TypeToken;
 
+import client.support.AuctionDetailViewBuilder;
+import client.support.ChangePasswordSupport;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.concurrent.Task;
@@ -471,21 +473,6 @@ public class AdminHomeController extends BaseHomeController {
     @FXML
     public void handleChangePassword() {
         ChangePasswordSupport.showDialog(ctx, welcomeLabel);
-    }
-
-    @FXML
-    public void handleLogout() {
-        try {
-            Map<String, String> data = new HashMap<>();
-            data.put("username", ctx.getCurrentUser().getUsername());
-            Request req = new Request("LOGOUT", data);
-            ctx.sendRequestAndWait(req, 5);
-        } catch (Exception e) {
-            // Ignore, proceed with logout
-        }
-
-        ctx.setCurrentUser(null);
-        Navigator.switchSceneStatic("login.fxml");
     }
 
     private void processWalletRequest(Map<String, String> requestItem, String action) {

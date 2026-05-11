@@ -3,7 +3,7 @@
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.control.*?>
 
-<BorderPane xmlns:fx="http://javafx.com/fxml" fx:controller="client.AdminHomeController"
+<BorderPane xmlns:fx="http://javafx.com/fxml" fx:controller="client.controller.AdminHomeController"
             styleClass="app-shell">
 
     <!-- TOP APP BAR -->

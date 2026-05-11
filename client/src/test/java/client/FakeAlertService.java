@@ -1,5 +1,6 @@
 package client;
 
+import client.service.IAlertService;
 import javafx.scene.Node;
 import javafx.stage.Window;
 

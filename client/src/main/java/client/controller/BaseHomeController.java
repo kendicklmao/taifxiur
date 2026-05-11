@@ -1,4 +1,4 @@
-package client;
+package client.controller;
 
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
@@ -9,6 +9,9 @@ import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Consumer;
+
+import client.Navigator;
+import client.support.ChangePasswordSupport;
 
 public abstract class BaseHomeController extends UserController {
     

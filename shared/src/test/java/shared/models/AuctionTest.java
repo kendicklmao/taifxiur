@@ -31,6 +31,7 @@ public class AuctionTest {
         item = new Electronic("Laptop", "Old laptop", seller, new BigDecimal("1000"), "Dell", ItemStatus.USED);
         item.setMinIncrement(new BigDecimal("100000")); // Set a default minimum increment
         auction = new Auction("auc123", item, new BigDecimal("1000"), seller, startTime, endTime);
+        auction.startScheduler();
     }
 
     // Test auction creation

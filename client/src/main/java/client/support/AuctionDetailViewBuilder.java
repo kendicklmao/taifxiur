@@ -1,4 +1,4 @@
-package client;
+package client.support;
 
 import java.util.Map;
 
