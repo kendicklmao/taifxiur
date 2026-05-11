@@ -34,8 +34,8 @@ public class ClientHandler implements Runnable {
     @Override
     public void run() {
         try {
-            BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-            out = new PrintWriter(socket.getOutputStream(), true);
+            BufferedReader in = new BufferedReader(new java.io.InputStreamReader(socket.getInputStream(), java.nio.charset.StandardCharsets.UTF_8));
+            out = new PrintWriter(new java.io.OutputStreamWriter(socket.getOutputStream(), java.nio.charset.StandardCharsets.UTF_8), true);
 
             activeClients.add(this);
 

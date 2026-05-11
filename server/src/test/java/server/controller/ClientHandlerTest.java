@@ -65,8 +65,8 @@ public class ClientHandlerTest {
         userService.initializeDefaultUsers();
 
         clientSocket = new Socket("localhost", serverSocket.getLocalPort());
-        out = new PrintWriter(clientSocket.getOutputStream(), true);
-        in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+        out = new PrintWriter(new java.io.OutputStreamWriter(clientSocket.getOutputStream(), java.nio.charset.StandardCharsets.UTF_8), true);
+        in = new BufferedReader(new java.io.InputStreamReader(clientSocket.getInputStream(), java.nio.charset.StandardCharsets.UTF_8));
         gson = GsonUtils.createGson();
     }
 
