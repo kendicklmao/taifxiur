@@ -140,6 +140,6 @@ public class ClientHandlerTest {
         Response response = gson.fromJson(responseJson, Response.class);
 
         assertEquals("SUCCESS", response.getStatus());
-        assertEquals("Registered successfully", response.getMessage());
+        assertEquals("Registration successful!", response.getMessage());
     }
 }
