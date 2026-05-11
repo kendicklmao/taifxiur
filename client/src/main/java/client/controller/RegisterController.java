@@ -1,5 +1,6 @@
-package client;
+package client.controller;
 
+import client.Navigator;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import shared.enums.Role;

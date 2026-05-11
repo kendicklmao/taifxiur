@@ -1,4 +1,4 @@
-package client;
+package client.support;
 
 import javafx.application.Platform;
 import javafx.concurrent.Task;
@@ -18,6 +18,8 @@ import shared.utils.Validator;
 
 import java.util.HashMap;
 import java.util.Map;
+
+import client.AppContext;
 
 public final class ChangePasswordSupport {
 

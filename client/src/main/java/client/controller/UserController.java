@@ -1,7 +1,10 @@
-package client;
+package client.controller;
 
 import com.google.gson.Gson;
 
+import client.AppContext;
+import client.service.AlertServiceImpl;
+import client.service.IAlertService;
 import shared.utils.GsonUtils;
 
 public abstract class UserController {

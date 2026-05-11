@@ -1,4 +1,4 @@
-package client;
+package client.controller;
 
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
@@ -18,11 +18,21 @@ import shared.network.Response;
 import java.util.HashMap;
 import java.util.Map;
 
+import client.AppContext;
+import client.INavigator;
+import client.Navigator;
+import client.service.IAlertService;
+
 public class LoginController extends UserController {
-    @FXML TextField usernameField;
-    @FXML PasswordField passwordField;
-    @FXML Button loginButton;
-    @FXML Label countdownLabel;
+    @FXML
+    TextField usernameField;
+    @FXML
+    PasswordField passwordField;
+    @FXML
+    Button loginButton;
+
+    @FXML
+    Label countdownLabel;
 
     private INavigator navigator;
 

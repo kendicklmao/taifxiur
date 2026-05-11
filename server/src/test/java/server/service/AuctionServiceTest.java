@@ -5,6 +5,7 @@ import server.database.DatabaseConfig;
 import server.database.DatabaseInitializer;
 import shared.enums.AuctionStatus;
 import shared.enums.ItemStatus;
+import shared.enums.Role;
 import shared.models.Auction;
 import shared.models.Bidder;
 import shared.models.Electronic;
@@ -13,6 +14,8 @@ import shared.models.Seller;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -24,28 +27,48 @@ public class AuctionServiceTest {
     private Seller seller;
     private Bidder bidder;
 
+    private String testSeller;
+    private String testBidder;
+    private String testAdmin;
+    private List<String> createdAuctionIds;
+
     @BeforeAll
     public static void setUpClass() throws Exception {
         DatabaseInitializer.initializeDatabase();
-        // Dọn dẹp DB một lần trước khi khởi tạo service để tránh lỗi "min_increment is null"
-        cleanupDatabaseOnce(); 
         userService = new UserService();
         walletService = new WalletService();
         auctionService = new AuctionService(userService, walletService);
-        }
+    }
 
     @BeforeEach
     public void setUp() {
-        cleanupDatabase();
         auctionService.clearCache(); // Xóa cache trước mỗi test
-        userService.initializeDefaultUsers();
-        seller = (Seller) userService.getUser("seller");
-        bidder = (Bidder) userService.getUser("bidder");
+        createdAuctionIds = new ArrayList<>();
+        
+        String suffix = java.util.UUID.randomUUID().toString().substring(0, 8);
+        testSeller = "seller_" + suffix;
+        testBidder = "bidder_" + suffix;
+        testAdmin = "admin_" + suffix;
+
+        // Register unique test users
+        userService.register(testSeller, "Password@123", "seller" + suffix + "@test.com", "q", "a", "q", "a", Role.SELLER);
+        userService.register(testBidder, "Password@123", "bidder" + suffix + "@test.com", "q", "a", "q", "a", Role.BIDDER);
+        userService.register(testAdmin, "Password@123", "admin" + suffix + "@test.com", "q", "a", "q", "a", Role.ADMIN);
+
+        seller = (Seller) userService.getUser(testSeller);
+        bidder = (Bidder) userService.getUser(testBidder);
 
         // Đảm bảo bidder có tiền để test
-        walletService.createDepositRequest(bidder.getUsername(), new BigDecimal("1000.00"), "Test Bank", "12345");
-        String requestId = walletService.getPendingDepositRequests().get(0).get("id");
-        walletService.approveDeposit(requestId, "admin");
+        walletService.createDepositRequest(testBidder, new BigDecimal("1000.00"), "Test Bank", "12345");
+        String requestId = walletService.getPendingDepositRequests().stream()
+                .filter(r -> r.get("username").equals(testBidder))
+                .findFirst()
+                .map(r -> r.get("id"))
+                .orElse(null);
+                
+        if (requestId != null) {
+            walletService.approveDeposit(requestId, testAdmin);
+        }
     }
 
     @AfterEach
@@ -60,35 +83,55 @@ public class AuctionServiceTest {
     }
 
     private void cleanupDatabase() {
-        // FIXME: Commented out to prevent wiping the actual database during tests try (java.sql.Connection conn = DatabaseConfig.getDataSource().getConnection();
-        // java.sql.Statement stmt = conn.createStatement()) { stmt.executeUpdate("DELETE FROM bids");
-        // stmt.executeUpdate("DELETE FROM auto_bids");
-        // stmt.executeUpdate("DELETE FROM items");
-        // stmt.executeUpdate("DELETE FROM wallets");
-        // stmt.executeUpdate("DELETE FROM users");
-        // } catch (java.sql.SQLException e) { e.printStackTrace();
-        // }
-    }
+        try (java.sql.Connection conn = DatabaseConfig.getDataSource().getConnection()) {
+            conn.setAutoCommit(false);
+            try {
+                // 1. Delete bids, autobids, and items for test auctions
+                for (String auctionId : createdAuctionIds) {
+                    try (java.sql.PreparedStatement pstmt = conn.prepareStatement("DELETE FROM bids WHERE auction_id = ?")) {
+                        pstmt.setString(1, auctionId);
+                        pstmt.executeUpdate();
+                    }
+                    try (java.sql.PreparedStatement pstmt = conn.prepareStatement("DELETE FROM auto_bids WHERE auction_id = ?")) {
+                        pstmt.setString(1, auctionId);
+                        pstmt.executeUpdate();
+                    }
+                    try (java.sql.PreparedStatement pstmt = conn.prepareStatement("DELETE FROM items WHERE auction_id = ?")) {
+                        pstmt.setString(1, auctionId);
+                        pstmt.executeUpdate();
+                    }
+                }
 
-    private static void cleanupDatabaseOnce() {
-        // FIXME: Commented out to prevent wiping the actual database during tests try (java.sql.Connection conn = DatabaseConfig.getDataSource().getConnection();
-        // java.sql.Statement stmt = conn.createStatement()) { stmt.executeUpdate("DELETE FROM bids");
-        // stmt.executeUpdate("DELETE FROM auto_bids");
-        // stmt.executeUpdate("DELETE FROM items");
-        // stmt.executeUpdate("DELETE FROM wallets");
-        // stmt.executeUpdate("DELETE FROM users");
-        // } catch (java.sql.SQLException e) { e.printStackTrace();
-        // }
+                // 2. Delete test users (wallets & deposit requests will cascade delete)
+                try (java.sql.PreparedStatement pstmt = conn.prepareStatement("DELETE FROM users WHERE username IN (?, ?, ?)")) {
+                    pstmt.setString(1, testSeller);
+                    pstmt.setString(2, testBidder);
+                    pstmt.setString(3, testAdmin);
+                    pstmt.executeUpdate();
+                }
+
+                conn.commit();
+            } catch (java.sql.SQLException e) {
+                conn.rollback();
+                e.printStackTrace();
+            }
+        } catch (java.sql.SQLException e) {
+            e.printStackTrace();
+        }
     }
 
     @Test
     public void testCreateAuction() {
         Electronic item = new Electronic("Test Item", "Description", seller, new BigDecimal("10.00"), "Brand",
                 ItemStatus.NEW);
-        item.setMinIncrement(new BigDecimal("10.00")); // Thêm dòng này
+        item.setMinIncrement(new BigDecimal("10.00"));
         Instant startTime = Instant.now().plus(1, ChronoUnit.HOURS);
         Instant endTime = startTime.plus(1, ChronoUnit.HOURS);
         Auction auction = auctionService.createAuction(seller, item, new BigDecimal("100.00"), startTime, endTime);
+
+        if (auction != null) {
+            createdAuctionIds.add(auction.getId());
+        }
 
         assertNotNull(auction);
         assertEquals(AuctionStatus.OPEN, auction.getStatus());
@@ -98,10 +141,14 @@ public class AuctionServiceTest {
     public void testPlaceBid() {
         Electronic item = new Electronic("Test Item", "Description", seller, new BigDecimal("10.00"), "Brand",
                 ItemStatus.NEW);
-        item.setMinIncrement(new BigDecimal("10.00")); // Thêm dòng này
+        item.setMinIncrement(new BigDecimal("10.00"));
         Instant startTime = Instant.now().minus(1, ChronoUnit.MINUTES); // Auction starts immediately
         Instant endTime = startTime.plus(1, ChronoUnit.HOURS);
         Auction auction = auctionService.createAuction(seller, item, new BigDecimal("100.00"), startTime, endTime);
+
+        if (auction != null) {
+            createdAuctionIds.add(auction.getId());
+        }
 
         boolean result = auctionService.placeBid(auction.getId(), bidder, new BigDecimal("150.00"));
         assertTrue(result);
@@ -114,10 +161,14 @@ public class AuctionServiceTest {
     public void testRegisterAutoBid() {
         Electronic item = new Electronic("Test Item", "Description", seller, new BigDecimal("10.00"), "Brand",
                 ItemStatus.NEW);
-        item.setMinIncrement(new BigDecimal("10.00")); // Thêm dòng này
+        item.setMinIncrement(new BigDecimal("10.00"));
         Instant startTime = Instant.now().minus(1, ChronoUnit.MINUTES); // Auction starts immediately
         Instant endTime = startTime.plus(1, ChronoUnit.HOURS);
         Auction auction = auctionService.createAuction(seller, item, new BigDecimal("100.00"), startTime, endTime);
+
+        if (auction != null) {
+            createdAuctionIds.add(auction.getId());
+        }
 
         auctionService.registerAutoBid(auction.getId(), bidder, new BigDecimal("200.00"));
 
@@ -125,7 +176,6 @@ public class AuctionServiceTest {
         assertNotNull(updatedAuction.getHighestBidder());
         assertEquals(bidder.getUsername(), updatedAuction.getHighestBidder().getUsername());
 
-        // Sửa lỗi: Kỳ vọng giá hiện tại là giá khởi điểm + một bước giá
         BigDecimal expectedPrice = new BigDecimal("100.00").add(item.getMinIncrement());
         assertEquals(0, updatedAuction.getCurrentPrice().compareTo(expectedPrice));
     }

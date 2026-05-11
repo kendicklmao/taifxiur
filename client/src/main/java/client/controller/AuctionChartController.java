@@ -1,4 +1,4 @@
-package client;
+package client.controller;
 
 import javafx.fxml.FXML;
 import javafx.scene.chart.LineChart;

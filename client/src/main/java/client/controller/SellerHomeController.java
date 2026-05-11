@@ -1,4 +1,4 @@
-package client;
+package client.controller;
 
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
@@ -36,6 +36,9 @@ import javafx.collections.ObservableList;
 import javafx.application.Platform;
 
 import com.google.gson.reflect.TypeToken;
+
+import client.support.AuctionDetailViewBuilder;
+import client.support.ChangePasswordSupport;
 import shared.enums.Category;
 import shared.enums.ItemStatus;
 import shared.enums.BankList;
@@ -564,27 +567,13 @@ public class SellerHomeController extends BaseHomeController {
         ChangePasswordSupport.showDialog(ctx, welcomeLabel);
     }
 
-    @FXML
-    public void handleLogout() {
-        try {
-            Map<String, String> data = new HashMap<>();
-            data.put("username", ctx.getCurrentUser().getUsername());
-            Request req = new Request("LOGOUT", data);
-            ctx.sendRequestAndWait(req, 30);
-        } catch (Exception e) {
-            // Bỏ qua ngoại lệ khi logout
-        }
-
-        ctx.removeMessageListener(messageListener);
-        ctx.setCurrentUser(null);
-        Navigator.switchSceneStatic("login.fxml");
-    }
-
     private void fetchAllAuctions() {
         Task<List<Auction>> task = new Task<>() {
             @Override
             protected List<Auction> call() throws Exception {
-                Response response = ctx.sendRequestAndWait(new Request("GET_AUCTIONS", new HashMap<>()), 30);
+                Map<String, String> data = new HashMap<>();
+                data.put("username", ctx.getCurrentUser().getUsername());
+                Response response = ctx.sendRequestAndWait(new Request("GET_SELLER_AUCTIONS", data), 30);
                 Type type = new TypeToken<List<Auction>>(){}.getType();
                 return gson.fromJson(response.getMessage(), type);
             }

@@ -1,4 +1,4 @@
-package client;
+package client.service;
 
 import javafx.scene.media.AudioClip;
 

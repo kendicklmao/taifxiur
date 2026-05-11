@@ -1,6 +1,9 @@
-package client;
+package client.controller;
 
 import com.google.gson.reflect.TypeToken;
+
+import client.support.AuctionDetailViewBuilder;
+import client.support.ChangePasswordSupport;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
@@ -507,22 +510,6 @@ public class BidderHomeController extends BaseHomeController {
         });
     }
 
-    @FXML
-    public void handleLogout() {
-        ctx.removeMessageListener(messageListener);
-        try {
-            Map<String, String> data = new HashMap<>();
-            data.put("username", ctx.getCurrentUser().getUsername());
-            Request req = new Request("LOGOUT", data);
-            ctx.sendRequestAndWait(req, 15);
-        } catch (Exception e) {
-            // Bỏ qua và tiếp tục đăng xuất
-        }
-
-        ctx.setCurrentUser(null);
-        Navigator.switchSceneStatic("login.fxml");
-    }
-
     private void showPriceChart(Auction auction) {
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/auction_chart.fxml"));
@@ -561,12 +548,19 @@ public class BidderHomeController extends BaseHomeController {
         amountField.setPromptText("Enter amount");
         amountField.getStyleClass().add("dashboard-input");
 
-        BigDecimal minBid = auction.getCurrentPrice().add(auction.getItem().getMinIncrement());
+        // Lần đầu tiên bid: chỉ cần >= startPrice; đã có người bid: >= currentPrice + minIncrement
+        boolean noBidYet = auction.getHighestBidder() == null;
+        BigDecimal minBid = noBidYet
+                ? auction.getStartPrice()
+                : auction.getCurrentPrice().add(auction.getItem().getMinIncrement());
+        String minBidHint = noBidYet
+                ? "Minimum bid: " + minBid + " (starting price)"
+                : "Minimum bid: " + minBid + " (current + " + auction.getItem().getMinIncrement() + ")";
 
         VBox content = new VBox(10);
         content.setStyle("-fx-padding: 20px;");
         content.getChildren().add(new Label("Current price: " + auction.getCurrentPrice()));
-        content.getChildren().add(new Label("Minimum bid: " + minBid + " (current + " + auction.getItem().getMinIncrement() + ")"));
+        content.getChildren().add(new Label(minBidHint));
         content.getChildren().add(new Label("Enter amount:"));
         content.getChildren().add(amountField);
 
@@ -585,7 +579,8 @@ public class BidderHomeController extends BaseHomeController {
                 try {
                     BigDecimal bidAmount = new BigDecimal(amount);
                     if (bidAmount.compareTo(minBid) < 0) {
-                        showAlert("Error", "Bid amount must be at least " + minBid + " (current price + minimum increment)");
+                        showAlert("Error", "Bid amount must be at least " + minBid +
+                                (noBidYet ? " (starting price)" : " (current price + minimum increment)"));
                         return;
                     }
 
