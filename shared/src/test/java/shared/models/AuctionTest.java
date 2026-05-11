@@ -87,10 +87,18 @@ public class AuctionTest {
         assertEquals(0, auction.getCurrentPrice().compareTo(new BigDecimal("2100000")));
     }
 
-    // Test placing bid with invalid amount
+    // Test placing bid with invalid amount (below starting price)
     @Test
     public void testPlaceBidInvalidAmount() {
-        boolean result = auction.placeBid(bidder1, new BigDecimal("1000")); // Try to bid less than minimum increment
+        boolean result = auction.placeBid(bidder1, new BigDecimal("999")); // Below startPrice — always invalid
         assertFalse(result);
+    }
+
+    // Test that first bid at exactly startPrice is accepted
+    @Test
+    public void testPlaceBidAtStartPrice() {
+        boolean result = auction.placeBid(bidder1, new BigDecimal("1000")); // Exactly startPrice — valid first bid
+        assertTrue(result);
+        assertEquals(0, auction.getCurrentPrice().compareTo(new BigDecimal("1000")));
     }
 }

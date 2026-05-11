@@ -164,8 +164,11 @@ public class Auction {
 
             maxBid = maxBid.setScale(2, RoundingMode.UP);
 
-            if (maxBid.compareTo(currentPrice.add(item.getMinIncrement())) < 0) {
-                throw new IllegalArgumentException("Bid amount must be at least current price + minimum increment");
+            BigDecimal minRequired = (highestBidder == null)
+                    ? startPrice
+                    : currentPrice.add(item.getMinIncrement());
+            if (maxBid.compareTo(minRequired) < 0) {
+                throw new IllegalArgumentException("Bid amount must be at least " + minRequired);
             }
 
             if (bidder.isBanned()) {
@@ -265,7 +268,12 @@ public class Auction {
                 return false;
             }
 
-            if (amount.compareTo(currentPrice.add(item.getMinIncrement())) < 0) {
+            // Lần đầu tiên bid: chỉ cần >= startPrice
+            // Đã có người bid: phải >= currentPrice + minIncrement
+            BigDecimal minRequired = (highestBidder == null)
+                    ? startPrice
+                    : currentPrice.add(item.getMinIncrement());
+            if (amount.compareTo(minRequired) < 0) {
                 return false;
             }
 
