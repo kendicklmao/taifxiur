@@ -18,21 +18,17 @@ import shared.network.Response;
 import java.util.HashMap;
 import java.util.Map;
 
-public class LoginController {
+public class LoginController extends UserController {
     @FXML TextField usernameField;
     @FXML PasswordField passwordField;
     @FXML Button loginButton;
     @FXML Label countdownLabel;
 
-    private final AppContext ctx;
-    private final INavigator navigator;
-    private final IAlertService alertService;
+    private INavigator navigator;
 
     // Constructor mặc định cho FXML loading
     public LoginController() {
-        this.ctx = AppContext.getInstance();
         this.navigator = Navigator.getInstance();
-        this.alertService = new AlertServiceImpl();
     }
 
     // Constructor cho testing (Dependency Injection)

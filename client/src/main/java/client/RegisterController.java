@@ -5,7 +5,7 @@ import javafx.scene.control.*;
 import shared.enums.Role;
 import shared.utils.Validator;
 
-public class RegisterController {
+public class RegisterController extends UserController {
     @FXML
     private TextField usernameField;
     @FXML
@@ -42,8 +42,6 @@ public class RegisterController {
     private Label a2Error;
     @FXML
     private Label formError;
-    private final AppContext ctx = AppContext.getInstance();
-    private final IAlertService alertService = new AlertServiceImpl();
 
     @FXML
     public void initialize() {

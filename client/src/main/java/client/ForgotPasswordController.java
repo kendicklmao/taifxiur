@@ -1,6 +1,5 @@
 package client;
 
-import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
@@ -11,7 +10,6 @@ import javafx.scene.control.TextField;
 import javafx.scene.layout.VBox;
 import shared.network.Request;
 import shared.network.Response;
-import shared.utils.GsonUtils;
 import shared.utils.Validator;
 
 import java.lang.reflect.Type;
@@ -20,7 +18,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class ForgotPasswordController {
+public class ForgotPasswordController extends UserController {
     @FXML
     private TextField usernameField;
     @FXML
@@ -46,9 +44,6 @@ public class ForgotPasswordController {
     @FXML
     private PasswordField confirmPasswordField;
 
-    private final AppContext ctx = AppContext.getInstance();
-    private final Gson gson = GsonUtils.createGson();
-    private final IAlertService alertService = new AlertServiceImpl();
     private String loadedUsername;
     private String loadedEmail;
 
