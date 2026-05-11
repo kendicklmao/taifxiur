@@ -366,6 +366,22 @@ public class Auction {
         }
     }
 
+    public boolean hasBidder(String username) {
+        synchronized (bidLock) {
+            for (BidTransaction tx : bidHistory) {
+                if (tx.getBidder().getUsername().equals(username)) {
+                    return true;
+                }
+            }
+            for (AutoBid ab : autoBids) {
+                if (ab.getBidder().getUsername().equals(username)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+    }
+
     public void setCurrentPriceForDBRestore(BigDecimal price) {
         synchronized (bidLock) {
             this.currentPrice = price;

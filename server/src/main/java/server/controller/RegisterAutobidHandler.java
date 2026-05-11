@@ -29,21 +29,27 @@ public class RegisterAutobidHandler implements RequestHandler {
         User raUser = userService.getUser(raUsername);
         if (raUser instanceof Bidder bidder) {
             BigDecimal maxBid = new BigDecimal(raAmount);
-            auctionService.registerAutoBid(raAuctionId, bidder, maxBid);
-            
             try {
-                var updatedAuction = auctionService.getAuction(raAuctionId);
-                java.util.Map<String, String> payload = new java.util.HashMap<>();
-                payload.put("auctionId", raAuctionId);
-                payload.put("newPrice", updatedAuction.getCurrentPrice().toPlainString());
-                Gson gson = GsonUtils.createGson();
-                Response updateResponse = new Response("UPDATE_PRICE", gson.toJson(payload));
-                ClientHandler.broadcast(gson.toJson(updateResponse));
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+                auctionService.registerAutoBid(raAuctionId, bidder, maxBid);
+                
+                try {
+                    var updatedAuction = auctionService.getAuction(raAuctionId);
+                    java.util.Map<String, String> payload = new java.util.HashMap<>();
+                    payload.put("auctionId", raAuctionId);
+                    payload.put("newPrice", updatedAuction.getCurrentPrice().toPlainString());
+                    Gson gson = GsonUtils.createGson();
+                    Response updateResponse = new Response("UPDATE_PRICE", gson.toJson(payload));
+                    ClientHandler.broadcast(gson.toJson(updateResponse));
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
 
-            return new Response("SUCCESS", "Auto-bid registered successfully");
+                return new Response("SUCCESS", "Auto-bid registered successfully");
+            } catch (IllegalStateException | IllegalArgumentException ex) {
+                return new Response("FAIL", ex.getMessage());
+            } catch (Exception e) {
+                return new Response("FAIL", "Error during auto-bid registration: " + e.getMessage());
+            }
         } else {
             return new Response("FAIL", "Invalid user for auto-bidding");
         }

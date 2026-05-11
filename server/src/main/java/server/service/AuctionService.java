@@ -294,6 +294,16 @@ public class AuctionService {
             throw new IllegalArgumentException();
         }
 
+        // Restrict bidder to 1 active auction at a time
+        for (Auction a : auctions.values()) {
+            if (!a.getId().equals(auctionId) && 
+                (a.getStatus() == AuctionStatus.RUNNING || a.getStatus() == AuctionStatus.OPEN)) {
+                if (a.hasBidder(bidder.getUsername())) {
+                    throw new IllegalStateException("You can only participate in 1 auction at a time!");
+                }
+            }
+        }
+
         // Đảm bảo bidder có đủ số dư (không có hệ thống hold)
         BigDecimal balance = walletService.getWalletBalance(bidder.getUsername());
         if (balance == null || balance.compareTo(amount) < 0) {
@@ -342,6 +352,16 @@ public class AuctionService {
         Auction auction = auctions.get(auctionId);
         if (auction == null) {
             throw new IllegalArgumentException();
+        }
+
+        // Restrict bidder to 1 active auction at a time
+        for (Auction a : auctions.values()) {
+            if (!a.getId().equals(auctionId) && 
+                (a.getStatus() == AuctionStatus.RUNNING || a.getStatus() == AuctionStatus.OPEN)) {
+                if (a.hasBidder(bidder.getUsername())) {
+                    throw new IllegalStateException("You can only participate in 1 auction at a time!");
+                }
+            }
         }
 
         auction.registerAutoBid(bidder, maxBid);
