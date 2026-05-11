@@ -89,6 +89,9 @@ public class AlertServiceImpl implements IAlertService {
         closeButton.setVisible(false);
         closeButton.setManaged(false);
 
+        dialog.setOnHidden(ev -> SoundManager.stopPopup());
+
+        SoundManager.playPopup();
         dialog.show();
     }
 }

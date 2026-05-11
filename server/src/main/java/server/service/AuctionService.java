@@ -668,7 +668,7 @@ public class AuctionService {
             pstmt.setString(2, item.getName());
             pstmt.setString(3, item.getDescription());
 
-            String category = item.getClass().getSimpleName().toUpperCase(); // Get category from item class type
+            String category = item.getClass().getSimpleName().toUpperCase() + "S"; // Get category from item class type
 
             pstmt.setString(4, category);
             pstmt.setString(5, "AVAILABLE"); // Default status

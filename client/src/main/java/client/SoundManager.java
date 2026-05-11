@@ -3,17 +3,19 @@ package client;
 import javafx.scene.media.AudioClip;
 
 public class SoundManager {
-    private static final AudioClip transitionSound =
+    private static final AudioClip popupSound =
             new AudioClip(
                     SoundManager.class
-                            .getResource("/sounds/transition.mp3")
+                            .getResource("/sounds/popup.mp3")
                             .toExternalForm()
             );
 
-    public static void playTransition() {
+    public static void playPopup() {
+        popupSound.setVolume(0.5);
+        popupSound.play();
+    }
 
-        transitionSound.setVolume(0.5);
-
-        transitionSound.play();
+    public static void stopPopup() {
+        popupSound.stop();
     }
 }

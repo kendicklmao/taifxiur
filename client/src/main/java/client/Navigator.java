@@ -4,7 +4,6 @@ import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
-import javafx.scene.input.MouseEvent;
 import javafx.stage.Stage;
 import javafx.animation.*;
 import javafx.util.Duration;
@@ -269,7 +268,6 @@ public class Navigator implements INavigator {
 
                     fullTransition.play();
                 });
-                SoundManager.playTransition();
                 outTransition.play();
             }
 
