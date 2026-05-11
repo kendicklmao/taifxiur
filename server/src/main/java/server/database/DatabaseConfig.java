@@ -3,7 +3,7 @@ package server.database;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 
-// Database configuration for Supabase PostgreSQL connection using HikariCP <p> This class reads connection info from environment variables if available.
+// Database configuration for Supabase PostgreSQL connection using HikariCP
 public class DatabaseConfig {
     private static volatile HikariDataSource dataSource;
 
@@ -18,7 +18,7 @@ public class DatabaseConfig {
     }
 
     // Lazy-initialize the HikariCP data source.
-// DNS resolution is handled by the PostgreSQL JDBC driver which supports IPv4 and IPv6.
+    // DNS resolution is handled by the PostgreSQL JDBC driver which supports IPv4 and IPv6.
     public static HikariDataSource getDataSource() {
         if (dataSource == null) {
             synchronized (DatabaseConfig.class) {
@@ -94,6 +94,7 @@ public class DatabaseConfig {
     public static void closeDataSource() {
         if (dataSource != null) {
             dataSource.close();
+            dataSource = null;
             System.out.println("Database connection pool closed");
         }
     }

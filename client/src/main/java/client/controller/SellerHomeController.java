@@ -571,7 +571,9 @@ public class SellerHomeController extends BaseHomeController {
         Task<List<Auction>> task = new Task<>() {
             @Override
             protected List<Auction> call() throws Exception {
-                Response response = ctx.sendRequestAndWait(new Request("GET_AUCTIONS", new HashMap<>()), 30);
+                Map<String, String> data = new HashMap<>();
+                data.put("username", ctx.getCurrentUser().getUsername());
+                Response response = ctx.sendRequestAndWait(new Request("GET_SELLER_AUCTIONS", data), 30);
                 Type type = new TypeToken<List<Auction>>(){}.getType();
                 return gson.fromJson(response.getMessage(), type);
             }

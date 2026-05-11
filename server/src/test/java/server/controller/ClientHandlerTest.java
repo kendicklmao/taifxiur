@@ -15,7 +15,9 @@ import shared.utils.GsonUtils;
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -33,6 +35,7 @@ public class ClientHandlerTest {
     private PrintWriter out;
     private BufferedReader in;
     private Gson gson;
+    private List<String> testUsers;
 
     @BeforeAll
     public static void setUpClass() throws Exception {
@@ -41,7 +44,8 @@ public class ClientHandlerTest {
         walletService = new WalletService();
         auctionService = new AuctionService(userService, walletService);
         storageService = new StorageService();
-        Map<String, RequestHandler> handlers = HandlerFactory.createHandlers(userService, auctionService, walletService, storageService);
+        Map<String, RequestHandler> handlers = HandlerFactory.createHandlers(userService, auctionService, walletService,
+                storageService);
 
         serverSocket = new ServerSocket(0);
         serverThread = new Thread(() -> {
@@ -61,12 +65,15 @@ public class ClientHandlerTest {
 
     @BeforeEach
     public void setUp() throws Exception {
-        cleanupDatabase();
+        testUsers = new ArrayList<>();
         userService.initializeDefaultUsers();
 
         clientSocket = new Socket("localhost", serverSocket.getLocalPort());
-        out = new PrintWriter(new java.io.OutputStreamWriter(clientSocket.getOutputStream(), java.nio.charset.StandardCharsets.UTF_8), true);
-        in = new BufferedReader(new java.io.InputStreamReader(clientSocket.getInputStream(), java.nio.charset.StandardCharsets.UTF_8));
+        out = new PrintWriter(
+                new java.io.OutputStreamWriter(clientSocket.getOutputStream(), java.nio.charset.StandardCharsets.UTF_8),
+                true);
+        in = new BufferedReader(
+                new java.io.InputStreamReader(clientSocket.getInputStream(), java.nio.charset.StandardCharsets.UTF_8));
         gson = GsonUtils.createGson();
     }
 
@@ -75,7 +82,7 @@ public class ClientHandlerTest {
         cleanupDatabase();
         if (clientSocket != null) {
             clientSocket.close();
-        }  
+        }
     }
 
     @AfterAll
@@ -86,6 +93,18 @@ public class ClientHandlerTest {
     }
 
     private void cleanupDatabase() {
+        if (testUsers == null || testUsers.isEmpty()) {
+            return;
+        }
+        try (java.sql.Connection conn = DatabaseConfig.getDataSource().getConnection();
+                java.sql.PreparedStatement stmt = conn.prepareStatement("DELETE FROM users WHERE username = ?")) {
+            for (String username : testUsers) {
+                stmt.setString(1, username);
+                stmt.executeUpdate();
+            }
+        } catch (java.sql.SQLException e) {
+            e.printStackTrace();
+        }
     }
 
     @Test
@@ -123,6 +142,8 @@ public class ClientHandlerTest {
     @Test
     public void testRegisterSuccess() throws Exception {
         String newUser = "newbidder" + System.currentTimeMillis();
+        testUsers.add(newUser); // Track for automatic cleanup in tearDown()
+
         Map<String, String> data = new HashMap<>();
         data.put("username", newUser);
         data.put("password", "Password@123");
