@@ -288,7 +288,9 @@ public class BidderHomeController extends BaseHomeController {
 
     private void showAuctionDetails(Auction auction) {
         this.selectedAuction = auction;
-        AuctionDetailViewBuilder.populateBasicDetails(auctionDetailPane, auction, () -> {});
+        AuctionDetailViewBuilder.populateBasicDetails(auctionDetailPane, auction, () -> {
+            this.selectedAuction = null;
+        });
 
         HBox actionBox = new HBox(10);
         Button chartButton = new Button("View Chart");
