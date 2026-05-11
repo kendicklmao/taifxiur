@@ -1,6 +1,5 @@
 package client;
 
-import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
@@ -26,24 +25,19 @@ import javafx.stage.Stage;
 import shared.models.Auction;
 import shared.network.Request;
 import shared.network.Response;
-import shared.utils.GsonUtils;
 
 import java.io.IOException;
 import java.math.BigDecimal;
-import java.time.Instant;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import shared.enums.BankList;
 
-public class BidderHomeController {
+public class BidderHomeController extends BaseHomeController {
     @FXML
     private TilePane auctionGrid;
-    @FXML
-    private Label welcomeLabel;
     @FXML
     private Label walletBalanceLabel;
     @FXML
@@ -53,12 +47,8 @@ public class BidderHomeController {
     @FXML
     private VBox auctionDetailPane;
 
-    private final AppContext ctx = AppContext.getInstance();
-    private final Gson gson = GsonUtils.createGson();
-    private final IAlertService alertService = new AlertServiceImpl();
     private final Map<String, VBox> auctionCardMap = new HashMap<>();
 
-    private Consumer<String> messageListener;
     private final ObservableList<Auction> allAuctions = FXCollections.observableArrayList();
     private Auction selectedAuction;
     private AuctionChartController activeChartController;
@@ -67,7 +57,7 @@ public class BidderHomeController {
     @FXML
     public void initialize() {
 
-        welcomeLabel.setText("Welcome " + ctx.getCurrentUser().getUsername());
+        setupHome();
 
         // Setup filter
         sortComboBox.getItems().addAll("Name (A-Z)", "Price (Low to High)");
@@ -105,37 +95,6 @@ public class BidderHomeController {
             loadWallet();
             loadAuction();
         });
-
-        messageListener = line -> {
-
-            try {
-                Response res = gson.fromJson(line, Response.class);
-                if ("UPDATE_PRICE".equals(res.getStatus())) {
-                    Type type = new TypeToken<Map<String, String>>(){}.getType();
-                    Map<String, String> payload = gson.fromJson(res.getMessage(), type);
-                    String auctionId = payload.get("auctionId");
-                    String newPrice = payload.get("newPrice");
-                    Platform.runLater(() -> {
-                        VBox card = auctionCardMap.get(auctionId);
-                        if (card != null) {
-                            Label priceLabel = (Label) card.getProperties().get("priceLabel");
-                            if (priceLabel != null) {
-                                priceLabel.setText("Current Bid: $" + newPrice);
-                            }
-                        }
-                        if (selectedAuction != null && selectedAuction.getId().equals(auctionId)) {
-                            selectedAuction.setCurrentPriceForDBRestore(new java.math.BigDecimal(newPrice));
-                            showAuctionDetails(selectedAuction);
-                        }
-                    });
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-
-        };
-
-        ctx.addMessageListener(messageListener);
 
         // Tự động làm mới giao diện và ví mỗi 2 giây
         javafx.animation.Timeline autoRefresh = new javafx.animation.Timeline(
@@ -258,10 +217,10 @@ public class BidderHomeController {
                     statusLabel.setText(auction.getStatus().toString());
                 }
                 if (startsLabel != null) {
-                    startsLabel.setText("Starts: " + formatEndTime(auction.getStartTime()));
+                    startsLabel.setText("Starts: " + formatTime(auction.getStartTime()));
                 }
                 if (endsLabel != null) {
-                    endsLabel.setText("Ends: " + formatEndTime(auction.getEndTime()));
+                    endsLabel.setText("Ends: " + formatTime(auction.getEndTime()));
                 }
             
                 existingCards.remove(id);
@@ -310,8 +269,8 @@ public class BidderHomeController {
         nameLabel.setText(auction.getItem().getName());
         priceLabel.setText("Current Bid: $" + auction.getCurrentPrice());
         statusLabel.setText(auction.getStatus().toString());
-        startsAtLabel.setText("Starts: " + formatEndTime(auction.getStartTime()));
-        endsInLabel.setText("Ends: " + formatEndTime(auction.getEndTime()));
+        startsAtLabel.setText("Starts: " + formatTime(auction.getStartTime()));
+        endsInLabel.setText("Ends: " + formatTime(auction.getEndTime()));
         card.setOnMouseClicked(event -> {
 
             if (event.getClickCount() == 2) {
@@ -691,7 +650,30 @@ public class BidderHomeController {
         alertService.showAlert(title, message, welcomeLabel.getScene().getWindow());
     }
 
-    private String formatEndTime(Instant endTime) {
-        return shared.utils.FormatUtils.formatTime(endTime);
+    @Override
+    protected void onSocketMessage(Response res) {
+        try {
+            if ("UPDATE_PRICE".equals(res.getStatus())) {
+                java.lang.reflect.Type type = new com.google.gson.reflect.TypeToken<Map<String, String>>(){}.getType();
+                Map<String, String> payload = gson.fromJson(res.getMessage(), type);
+                String auctionId = payload.get("auctionId");
+                String newPrice = payload.get("newPrice");
+                Platform.runLater(() -> {
+                    VBox card = auctionCardMap.get(auctionId);
+                    if (card != null) {
+                        Label priceLabel = (Label) card.getProperties().get("priceLabel");
+                        if (priceLabel != null) {
+                            priceLabel.setText("Current Bid: $" + newPrice);
+                        }
+                    }
+                    if (selectedAuction != null && selectedAuction.getId().equals(auctionId)) {
+                        selectedAuction.setCurrentPriceForDBRestore(new java.math.BigDecimal(newPrice));
+                        showAuctionDetails(selectedAuction);
+                    }
+                });
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }

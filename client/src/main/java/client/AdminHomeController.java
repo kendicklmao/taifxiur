@@ -1,6 +1,5 @@
 package client;
 
-import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
 import javafx.application.Platform;
@@ -14,7 +13,6 @@ import shared.models.Auction;
 import shared.models.User;
 import shared.network.Request;
 import shared.network.Response;
-import shared.utils.GsonUtils;
 
 import java.lang.reflect.Type;
 import java.util.ArrayList;
@@ -22,10 +20,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-public class AdminHomeController {
+public class AdminHomeController extends BaseHomeController {
     @FXML
     private ListView<Auction> allAuctionsList;
     @FXML
@@ -42,18 +39,11 @@ public class AdminHomeController {
     private ComboBox<String> usernameField;
     @FXML
     private TextArea userStatusArea;
-    @FXML
-    private Label welcomeLabel;
-
-    private final AppContext ctx = AppContext.getInstance();
-    private final Gson gson = GsonUtils.createGson();
-    private final IAlertService alertService = new AlertServiceImpl();
     private List<String> allUsernames = new ArrayList<>();
-    private Consumer<String> messageListener;
 
     @FXML
     public void initialize() {
-        welcomeLabel.setText("Welcome " + ctx.getCurrentUser().getUsername());
+        setupHome();
 
         setupAuctionListCell();
         setupUserListCell();
@@ -79,22 +69,6 @@ public class AdminHomeController {
             }
         });
 
-        // Đăng ký lắng nghe sự kiện từ Server
-        messageListener = line -> {
-            try {
-                Response res = gson.fromJson(line, Response.class);
-                if ("AUCTION_CREATED".equals(res.getStatus()) ||
-                        "AUCTION_UPDATED".equals(res.getStatus()) ||
-                        "UPDATE_PRICE".equals(res.getStatus())) {
-                    System.out.println("[ADMIN] Received auction update from server, refreshing auction list...");
-                    this.refreshAuctions();
-                }
-            } catch (Exception e) {
-                // Bỏ qua các tin nhắn không hợp lệ
-            }
-        };
-        ctx.addMessageListener(messageListener);
-
         // Tự động làm mới toàn bộ danh sách Admin mỗi 2 giây (ngoại trừ danh sách
         // nạp/rút tiền để tránh bấm hụt)
         javafx.animation.Timeline autoRefresh = new javafx.animation.Timeline(
@@ -105,6 +79,16 @@ public class AdminHomeController {
                 }));
         autoRefresh.setCycleCount(javafx.animation.Timeline.INDEFINITE);
         autoRefresh.play();
+    }
+
+    @Override
+    protected void onSocketMessage(Response res) {
+        if ("AUCTION_CREATED".equals(res.getStatus()) ||
+                "AUCTION_UPDATED".equals(res.getStatus()) ||
+                "UPDATE_PRICE".equals(res.getStatus())) {
+            System.out.println("[ADMIN] Received auction update from server, refreshing auction list...");
+            this.refreshAuctions();
+        }
     }
 
     private void showAuctionDetails(Auction auction) {
@@ -537,9 +521,5 @@ public class AdminHomeController {
         Thread thread = new Thread(task);
         thread.setDaemon(true);
         thread.start();
-    }
-
-    private String formatTime(java.time.Instant instant) {
-        return shared.utils.FormatUtils.formatTime(instant);
     }
 }

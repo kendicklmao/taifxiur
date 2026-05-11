@@ -29,21 +29,18 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 
 import javafx.application.Platform;
 
-import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import shared.enums.Category;
 import shared.enums.ItemStatus;
-import shared.utils.GsonUtils;
 import shared.enums.BankList;
 
-public class SellerHomeController {
+public class SellerHomeController extends BaseHomeController {
 
     @FXML
     private TextField itemNameField;
@@ -78,8 +75,6 @@ public class SellerHomeController {
     @FXML
     private TextArea descField;
     @FXML
-    private Label welcomeLabel;
-    @FXML
     private ImageView itemImageView;
     @FXML
     private Label walletBalanceLabel;
@@ -87,17 +82,12 @@ public class SellerHomeController {
     private VBox auctionDetailPane;
     private File selectedImageFile;
     private byte[] croppedImageBytes;
-    private final Gson gson = GsonUtils.createGson();
-
-    private final AppContext ctx = AppContext.getInstance();
-    private final IAlertService alertService = new AlertServiceImpl();
-    private Consumer<String> messageListener;
     private Auction selectedAuction;
 
     @FXML
     public void initialize() {
 
-        welcomeLabel.setText("Welcome " + ctx.getCurrentUser().getUsername());
+        setupHome();
 
         categoryBox.getItems().addAll(Category.values());
         categoryBox.setOnAction(e -> updateForm());
@@ -131,20 +121,6 @@ public class SellerHomeController {
             fetchAllAuctions();
         });
 
-        messageListener = line -> {
-            try {
-                Response res = gson.fromJson(line, Response.class);
-                if ("UPDATE_PRICE".equals(res.getStatus()) || "AUCTION_UPDATED".equals(res.getStatus())
-                        || "AUCTION_FINISHED".equals(res.getStatus()) || "AUCTION_CREATED".equals(res.getStatus())) {
-                    fetchAllAuctions();
-                }
-            } catch (Exception e) {
-                // Bỏ qua broadcast nếu lỗi
-            }
-        };
-
-        ctx.addMessageListener(messageListener);
-
         // Tự động làm mới danh sách đấu giá và ví người bán mỗi 2 giây
         javafx.animation.Timeline autoRefresh = new javafx.animation.Timeline(
             new javafx.animation.KeyFrame(javafx.util.Duration.seconds(2), e -> {
@@ -153,6 +129,14 @@ public class SellerHomeController {
         );
         autoRefresh.setCycleCount(javafx.animation.Timeline.INDEFINITE);
         autoRefresh.play();
+    }
+
+    @Override
+    protected void onSocketMessage(Response res) {
+        if ("UPDATE_PRICE".equals(res.getStatus()) || "AUCTION_UPDATED".equals(res.getStatus())
+            || "AUCTION_FINISHED".equals(res.getStatus()) || "AUCTION_CREATED".equals(res.getStatus())) {
+            fetchAllAuctions();
+        }
     }
 
     @FXML
@@ -592,10 +576,6 @@ public class SellerHomeController {
         ctx.removeMessageListener(messageListener);
         ctx.setCurrentUser(null);
         Navigator.switchSceneStatic("login.fxml");
-    }
-
-    private String formatTime(java.time.Instant instant) {
-        return shared.utils.FormatUtils.formatTime(instant);
     }
 
     private void fetchAllAuctions() {

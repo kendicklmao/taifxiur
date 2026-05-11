@@ -435,6 +435,7 @@ public class AuctionService {
             pstmt.setString(1, targetAuctionId);
             try (ResultSet rs = pstmt.executeQuery()) {
                 if (rs.next()) {
+                    
                     int itemId = rs.getInt("id");
                     int sellerId = rs.getInt("seller_id");
                     BigDecimal startPrice = rs.getBigDecimal("base_price");
@@ -648,16 +649,6 @@ public class AuctionService {
             pstmt.setString(3, item.getDescription());
 
             String category = item.getClass().getSimpleName().toUpperCase(); // Get category from item class type
-            if (category.equals("COLLECTIBLE"))
-                category = "COLLECTIBLES";
-            else if (category.equals("ELECTRONIC"))
-                category = "ELECTRONICS";
-            else if (category.equals("ART"))
-                category = "ARTS";
-            else if (category.equals("VEHICLE"))
-                category = "VEHICLES";
-            else if (category.equals("FASHION"))
-                category = "FASHIONS";
 
             pstmt.setString(4, category);
             pstmt.setString(5, "AVAILABLE"); // Default status
