@@ -82,9 +82,6 @@ public class Navigator implements INavigator {
                     System.out.println("Stylesheet applied");
                 }
 
-                // GLOBAL CLICK SOUND
-                applyGlobalClickSound(scene);
-
                 stage.setScene(scene);
 
             } else {
@@ -295,17 +292,5 @@ public class Navigator implements INavigator {
 
             e.printStackTrace();
         }
-    }
-
-    // =========================================
-    // GLOBAL CLICK SOUND
-    // =========================================
-
-    private static void applyGlobalClickSound(Scene scene){
-
-        scene.addEventFilter(MouseEvent.MOUSE_CLICKED, e -> {
-
-            SoundManager.playClick();
-        });
     }
 }

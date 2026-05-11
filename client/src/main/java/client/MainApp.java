@@ -1,11 +1,29 @@
 package client;
 
 import javafx.application.Application;
+import javafx.scene.media.Media;
+import javafx.scene.media.MediaPlayer;
 import javafx.stage.Stage;
 
 public class MainApp extends Application {
+
+    private static MediaPlayer mediaPlayer;
+
     @Override
     public void start(Stage stage) {
+
+        // ===== NHẠC NỀN =====
+        Media media = new Media(
+                getClass().getResource("/sounds/theme.mp3").toExternalForm()
+        );
+
+        mediaPlayer = new MediaPlayer(media);
+
+        mediaPlayer.setCycleCount(MediaPlayer.INDEFINITE); // replay vô hạn
+        mediaPlayer.setVolume(0.5); // âm lượng 50%
+        mediaPlayer.play();
+
+        // ===== APP =====
         stage.setTitle("Auction House");
         stage.setMinWidth(900);
         stage.setMinHeight(700);
@@ -16,7 +34,7 @@ public class MainApp extends Application {
         stage.show();
     }
 
-    public static void main(String[] args) { 
-        launch(args); 
+    public static void main(String[] args) {
+        launch(args);
     }
 }
