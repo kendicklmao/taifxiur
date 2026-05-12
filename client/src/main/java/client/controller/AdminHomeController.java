@@ -176,6 +176,12 @@ public class AdminHomeController extends BaseHomeController {
                 }
             }
         });
+
+        allUsersList.getSelectionModel().selectedItemProperty().addListener((obs, oldSelection, newSelection) -> {
+            if (newSelection != null) {
+                usernameField.setValue(newSelection.getUsername());
+            }
+        });
     }
 
     private void setupDepositRequestListCell() {

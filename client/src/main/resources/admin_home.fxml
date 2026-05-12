@@ -52,101 +52,91 @@
                 </ScrollPane>
             </Tab>
 
-            <!-- TAB 2: ALL USERS -->
-            <Tab text="All Users" closable="false">
+            <!-- TAB 2: USERS -->
+            <Tab text="Users" closable="false">
                 <ScrollPane fitToWidth="true" hbarPolicy="NEVER">
-                    <VBox styleClass="app-content" spacing="20">
-                        <VBox styleClass="dash-card" spacing="16">
-                            <VBox spacing="4">
-                                <Label text="All Users in System" styleClass="dashboard-section-title"/>
-                                <Label text="View all registered users and their activity"
-                                       styleClass="dashboard-section-subtitle"/>
+                    <HBox>
+                        <VBox styleClass="app-content" spacing="20" HBox.hgrow="ALWAYS">
+                            <VBox styleClass="dash-card" spacing="16">
+                                <VBox spacing="4">
+                                    <Label text="User Management" styleClass="dashboard-section-title"/>
+                                    <Label text="View all registered users and control their access" styleClass="dashboard-section-subtitle"/>
+                                </VBox>
+                                <ListView fx:id="allUsersList" prefHeight="500"/>
+                                <HBox spacing="10">
+                                    <Pane HBox.hgrow="ALWAYS"/>
+                                    <Button text="REFRESH" onAction="#refreshUsers"
+                                            styleClass="dashboard-btn-primary" prefWidth="140"/>
+                                </HBox>
                             </VBox>
-                            <ListView fx:id="allUsersList" prefHeight="500"/>
-                            <HBox spacing="10">
-                                <Pane HBox.hgrow="ALWAYS"/>
-                                <Button text="REFRESH" onAction="#refreshUsers"
-                                        styleClass="dashboard-btn-primary" prefWidth="140"/>
-                            </HBox>
                         </VBox>
-                    </VBox>
-                </ScrollPane>
-            </Tab>
 
-            <!-- TAB 3: MANAGE USERS -->
-            <Tab text="Manage Users" closable="false">
-                <ScrollPane fitToWidth="true" hbarPolicy="NEVER">
-                    <VBox styleClass="app-content" spacing="20">
-
-                        <VBox styleClass="dash-card" spacing="16">
+                        <VBox styleClass="dash-card" spacing="16" minWidth="320" maxWidth="400">
                             <VBox spacing="4">
-                                <Label text="User Management" styleClass="dashboard-section-title"/>
-                                <Label text="Control user access and manage bans"
-                                       styleClass="dashboard-section-subtitle"/>
+                                <Label text="Actions" styleClass="dashboard-section-title"/>
+                                <Label text="Ban or unban a user" styleClass="dashboard-section-subtitle"/>
                             </VBox>
-                            <HBox spacing="12" alignment="CENTER_LEFT">
+                            <VBox spacing="12">
                                 <ComboBox fx:id="usernameField" editable="true"
                                           promptText="Search or select username"
                                           styleClass="dashboard-choicebox"
-                                          HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
-                                <Button text="BAN USER" onAction="#handleBanUser"
-                                        styleClass="dashboard-btn-danger" prefWidth="130"/>
-                                <Button text="UNBAN USER" onAction="#handleUnbanUser"
-                                        styleClass="dashboard-btn-success" prefWidth="140"/>
-                            </HBox>
-                        </VBox>
-
-                        <VBox styleClass="dash-card" spacing="16">
+                                          maxWidth="Infinity"/>
+                                <HBox spacing="12">
+                                    <Button text="BAN USER" onAction="#handleBanUser"
+                                            styleClass="dashboard-btn-danger" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
+                                    <Button text="UNBAN USER" onAction="#handleUnbanUser"
+                                            styleClass="dashboard-btn-success" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
+                                </HBox>
+                            </VBox>
                             <TextArea fx:id="userStatusArea" editable="false" wrapText="true"
-                                      prefRowCount="20" styleClass="dashboard-input"/>
+                                      prefRowCount="10" styleClass="dashboard-input" VBox.vgrow="ALWAYS"/>
                         </VBox>
-
-                    </VBox>
+                    </HBox>
                 </ScrollPane>
             </Tab>
 
-            <!-- TAB 4: WALLET REQUESTS -->
+            <!-- TAB 3: WALLET REQUESTS -->
             <Tab text="Wallet Requests" closable="false">
                 <ScrollPane fitToWidth="true" hbarPolicy="NEVER">
-                    <VBox styleClass="app-content" spacing="20">
+                    <HBox styleClass="app-content" spacing="20">
 
-                        <VBox styleClass="dash-card" spacing="16">
+                        <VBox styleClass="dash-card" spacing="16" HBox.hgrow="ALWAYS">
                             <VBox spacing="4">
                                 <Label text="Pending Deposit Requests" styleClass="dashboard-section-title"/>
                                 <Label text="Approve bidder deposits to increase their wallet balance"
                                        styleClass="dashboard-section-subtitle"/>
                             </VBox>
-                            <ListView fx:id="depositRequestsList" prefHeight="260"/>
+                            <ListView fx:id="depositRequestsList" prefHeight="350"/>
                             <HBox spacing="12">
                                 <Button text="APPROVE" onAction="#handleApproveDepositRequest"
-                                        styleClass="dashboard-btn-success" prefWidth="130"/>
+                                        styleClass="dashboard-btn-success" prefWidth="110"/>
                                 <Button text="REJECT" onAction="#handleRejectDepositRequest"
-                                        styleClass="dashboard-btn-danger" prefWidth="130"/>
+                                        styleClass="dashboard-btn-danger" prefWidth="110"/>
                                 <Pane HBox.hgrow="ALWAYS"/>
                                 <Button text="REFRESH" onAction="#refreshDepositRequests"
-                                        styleClass="dashboard-btn-primary" prefWidth="140"/>
+                                        styleClass="dashboard-btn-primary" prefWidth="120"/>
                             </HBox>
                         </VBox>
 
-                        <VBox styleClass="dash-card" spacing="16">
+                        <VBox styleClass="dash-card" spacing="16" HBox.hgrow="ALWAYS">
                             <VBox spacing="4">
                                 <Label text="Pending Withdraw Requests" styleClass="dashboard-section-title"/>
                                 <Label text="Approve seller withdrawals to deduct money from wallet balance"
                                        styleClass="dashboard-section-subtitle"/>
                             </VBox>
-                            <ListView fx:id="withdrawRequestsList" prefHeight="260"/>
+                            <ListView fx:id="withdrawRequestsList" prefHeight="350"/>
                             <HBox spacing="12">
                                 <Button text="APPROVE" onAction="#handleApproveWithdrawRequest"
-                                        styleClass="dashboard-btn-success" prefWidth="130"/>
+                                        styleClass="dashboard-btn-success" prefWidth="110"/>
                                 <Button text="REJECT" onAction="#handleRejectWithdrawRequest"
-                                        styleClass="dashboard-btn-danger" prefWidth="130"/>
+                                        styleClass="dashboard-btn-danger" prefWidth="110"/>
                                 <Pane HBox.hgrow="ALWAYS"/>
                                 <Button text="REFRESH" onAction="#refreshWithdrawRequests"
-                                        styleClass="dashboard-btn-primary" prefWidth="140"/>
+                                        styleClass="dashboard-btn-primary" prefWidth="120"/>
                             </HBox>
                         </VBox>
 
-                    </VBox>
+                    </HBox>
                 </ScrollPane>
             </Tab>
 
