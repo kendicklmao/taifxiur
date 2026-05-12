@@ -4,12 +4,14 @@ import com.google.gson.reflect.TypeToken;
 
 import client.support.AuctionDetailViewBuilder;
 import client.support.ChangePasswordSupport;
+import javafx.animation.PauseTransition;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.concurrent.Task;
 import javafx.scene.control.*;
 import javafx.scene.layout.VBox;
 
+import javafx.util.Duration;
 import shared.models.AdminActionLog;
 import shared.models.Auction;
 import shared.models.User;
@@ -70,17 +72,6 @@ public class AdminHomeController extends BaseHomeController {
                 usernameField.show();
             }
         });
-
-        // Tự động làm mới toàn bộ danh sách Admin mỗi 2 giây (ngoại trừ danh sách
-        // nạp/rút tiền để tránh bấm hụt)
-        javafx.animation.Timeline autoRefresh = new javafx.animation.Timeline(
-                new javafx.animation.KeyFrame(javafx.util.Duration.seconds(2), e -> {
-                    refreshAuctions();
-                    refreshUsers();
-                    refreshAdminActionLogs();
-                }));
-        autoRefresh.setCycleCount(javafx.animation.Timeline.INDEFINITE);
-        autoRefresh.play();
     }
 
     @Override
@@ -248,7 +239,7 @@ public class AdminHomeController extends BaseHomeController {
 
     @FXML
     public void refreshUsers() {
-
+        System.out.println("Refreshing users...");
         Task<User[]> task = new Task<>() {
             @Override
             protected User[] call() throws Exception {

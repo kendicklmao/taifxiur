@@ -1,5 +1,6 @@
 package client.controller;
 
+import javafx.animation.PauseTransition;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
@@ -8,6 +9,7 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.TilePane;
 import javafx.stage.FileChooser;
+import javafx.util.Duration;
 import org.imgscalr.Scalr;
 import shared.models.Auction;
 import shared.network.Request;
@@ -119,10 +121,12 @@ public class SellerHomeController extends BaseHomeController {
 
         walletBalanceLabel.setText("Loading...");
 
-        Platform.runLater(() -> {
+        PauseTransition delay = new PauseTransition(Duration.millis(300));
+        delay.setOnFinished(e -> {
             refreshWalletBalance();
             fetchAllAuctions();
         });
+        delay.play();
 
         // Tự động làm mới danh sách đấu giá và ví người bán mỗi 2 giây
         javafx.animation.Timeline autoRefresh = new javafx.animation.Timeline(
@@ -216,7 +220,7 @@ public class SellerHomeController extends BaseHomeController {
         card.getProperties().put("endsLabel", endsAtLabel);
 
         if (auction.getItem().getImageUrl() != null && !auction.getItem().getImageUrl().isEmpty()) {
-            imageView.setImage(new Image(auction.getItem().getImageUrl(), 150, 150, true, true));
+            imageView.setImage(new Image(auction.getItem().getImageUrl(), 150, 150, true, true, true));
         }
 
         nameLabel.setText(auction.getItem().getName());

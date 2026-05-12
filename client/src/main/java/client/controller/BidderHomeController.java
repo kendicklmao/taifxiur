@@ -266,7 +266,7 @@ public class BidderHomeController extends BaseHomeController {
         card.getChildren().addAll(imageView, itemDetails);
 
         if (auction.getItem().getImageUrl() != null && !auction.getItem().getImageUrl().isEmpty()) {
-            imageView.setImage(new Image(auction.getItem().getImageUrl(), 150, 150, true, true));
+            imageView.setImage(new Image(auction.getItem().getImageUrl(), 150, 150, true, true, true));
         }
 
         nameLabel.setText(auction.getItem().getName());
@@ -657,15 +657,28 @@ public class BidderHomeController extends BaseHomeController {
                 String newPrice = payload.get("newPrice");
                 Platform.runLater(() -> {
                     VBox card = auctionCardMap.get(auctionId);
+
                     if (card != null) {
                         Label priceLabel = (Label) card.getProperties().get("priceLabel");
+
                         if (priceLabel != null) {
                             priceLabel.setText("Current Bid: $" + newPrice);
                         }
                     }
-                    if (selectedAuction != null && selectedAuction.getId().equals(auctionId)) {
-                        selectedAuction.setCurrentPriceForDBRestore(new java.math.BigDecimal(newPrice));
-                        showAuctionDetails(selectedAuction);
+
+                    if (selectedAuction != null &&
+                            selectedAuction.getId().equals(auctionId)) {
+
+                        selectedAuction.setCurrentPriceForDBRestore(
+                                new java.math.BigDecimal(newPrice)
+                        );
+
+                        Label detailPriceLabel =
+                                (Label) auctionDetailPane.lookup("#detailPriceLabel");
+
+                        if (detailPriceLabel != null) {
+                            detailPriceLabel.setText("Current Bid: $" + newPrice);
+                        }
                     }
                 });
             }
