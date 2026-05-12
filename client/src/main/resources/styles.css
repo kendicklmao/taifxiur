@@ -121,6 +121,21 @@
     -fx-text-fill: #ffffff;
 }
 
+/* ChoiceBox dropdown items */
+.choice-box .menu-item {
+    -fx-background-color: #0d0d17;
+    -fx-padding: 8 12 8 12;
+}
+.choice-box .menu-item > .label {
+    -fx-text-fill: #ffffff;
+}
+.choice-box .menu-item:focused {
+    -fx-background-color: #2a2350;
+}
+.choice-box .menu-item:focused > .label {
+    -fx-text-fill: #ffffff;
+}
+
 /* Force ComboBox dropdown disabled items to white */
 .combo-box-popup .list-cell:disabled {
     -fx-text-fill: #ffffff;
