@@ -7,6 +7,8 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 import javafx.util.Duration;
 import shared.models.Admin;
 import shared.models.Bidder;
@@ -46,6 +48,19 @@ public class LoginController extends UserController {
         this.ctx = ctx;
         this.navigator = navigator;
         this.alertService = alertService;
+    }
+
+    @FXML
+    public void initialize() {
+        // Add Enter key handler to username and password fields
+        usernameField.setOnKeyPressed(this::handleKeyPressed);
+        passwordField.setOnKeyPressed(this::handleKeyPressed);
+    }
+
+    private void handleKeyPressed(KeyEvent event) {
+        if (event.getCode() == KeyCode.ENTER) {
+            handleLogin();
+        }
     }
 
     @FXML
