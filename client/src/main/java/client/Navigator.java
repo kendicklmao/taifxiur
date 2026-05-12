@@ -88,6 +88,9 @@ public class Navigator implements INavigator {
                 // CHANGE ROOT ONLY
                 Parent oldRoot = scene.getRoot();
 
+                oldRoot.setCache(true);
+                oldRoot.setCacheHint(javafx.scene.CacheHint.SPEED);
+
 //
 // OUTRO CHAOS
 //
@@ -140,6 +143,9 @@ public class Navigator implements INavigator {
 
                     root.setTranslateX(1400);
                     root.setTranslateY(-300);
+
+                    root.setCache(true);
+                    root.setCacheHint(javafx.scene.CacheHint.SPEED);
 
                     finalScene.setRoot(root);
 
@@ -265,6 +271,8 @@ public class Navigator implements INavigator {
                                     shake,
                                     bounce
                             );
+
+                    fullTransition.setOnFinished(e -> root.setCache(false));
 
                     fullTransition.play();
                 });
