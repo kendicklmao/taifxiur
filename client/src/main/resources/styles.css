@@ -963,3 +963,40 @@
     -fx-text-fill: #ffffff;
 }
 
+/* Force ChoiceBox text to white everywhere */
+.choice-box .text {
+    -fx-fill: #ffffff;
+}
+.choice-box-base .text {
+    -fx-fill: #ffffff;
+}
+.choice-box .context-menu {
+    -fx-background-color: #1c1c2e;
+}
+.choice-box .context-menu .menu-item {
+    -fx-text-fill: #ffffff;
+}
+.choice-box .context-menu .menu-item:focused {
+    -fx-background-color: #2a2350;
+    -fx-text-fill: #ffffff;
+}
+.choice-box .context-menu .menu-item:pressed {
+    -fx-background-color: #2a2350;
+    -fx-text-fill: #ffffff;
+}
+
+/* Dashboard choice box specific styling */
+.dashboard-choicebox .text {
+    -fx-fill: #ffffff;
+}
+.dashboard-choicebox .context-menu {
+    -fx-background-color: #1c1c2e;
+}
+.dashboard-choicebox .context-menu .menu-item {
+    -fx-text-fill: #ffffff;
+}
+.dashboard-choicebox .context-menu .menu-item:focused {
+    -fx-background-color: #2a2350;
+    -fx-text-fill: #ffffff;
+}
+
