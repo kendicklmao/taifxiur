@@ -57,6 +57,7 @@ public class ForgotPasswordController extends UserController {
         resetPasswordButton.setManaged(false);
         switchAccountButton.setVisible(false);
         switchAccountButton.setManaged(false);
+        loadQuestionsButton.setDefaultButton(true);
     }
 
     @FXML
@@ -113,6 +114,8 @@ public class ForgotPasswordController extends UserController {
             usernameField.setDisable(true);
             emailField.setDisable(true);
             loadQuestionsButton.setDisable(true);
+            loadQuestionsButton.setDefaultButton(false);
+            resetPasswordButton.setDefaultButton(true);
         } catch (Exception e) {
             showAlert("Connection error", "Cannot connect to server.");
             e.printStackTrace();
@@ -210,8 +213,10 @@ public class ForgotPasswordController extends UserController {
         verificationBox.setManaged(false);
         resetPasswordButton.setVisible(false);
         resetPasswordButton.setManaged(false);
+        resetPasswordButton.setDefaultButton(false);
         switchAccountButton.setVisible(false);
         switchAccountButton.setManaged(false);
+        loadQuestionsButton.setDefaultButton(true);
         clearValidation();
     }
 

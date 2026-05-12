@@ -141,7 +141,7 @@
                         <VBox spacing="12">
                             <Button text="CREATE ACCOUNT" onAction="#handleRegister"
                                     styleClass="register-btn-primary"
-                                    maxWidth="Infinity"/>
+                                    maxWidth="Infinity" defaultButton="true"/>
                             <Button text="Back to sign in" onAction="#goBack"
                                     styleClass="register-btn-secondary"
                                     maxWidth="Infinity"/>
