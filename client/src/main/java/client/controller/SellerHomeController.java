@@ -568,6 +568,9 @@ public class SellerHomeController extends BaseHomeController {
     }
 
     private void fetchAllAuctions() {
+        if (ctx.getCurrentUser() == null) {
+            return;
+        }
         Task<List<Auction>> task = new Task<>() {
             @Override
             protected List<Auction> call() throws Exception {
@@ -593,6 +596,7 @@ public class SellerHomeController extends BaseHomeController {
         });
 
         task.setOnFailed(e -> {
+            task.getException().printStackTrace();
             alertService.showAlert("Error", "Cannot load auctions", auctionGrid);
         });
 
