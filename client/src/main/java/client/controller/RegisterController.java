@@ -3,8 +3,6 @@ package client.controller;
 import client.Navigator;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
-import javafx.scene.input.KeyCode;
-import javafx.scene.input.KeyEvent;
 import shared.enums.Role;
 import shared.utils.Validator;
 
@@ -225,22 +223,6 @@ public class RegisterController extends UserController {
                 }
             }
         });
-
-        // Add Enter key handler to fields for form submission
-        usernameField.setOnKeyPressed(this::handleKeyPressed);
-        passwordField.setOnKeyPressed(this::handleKeyPressed);
-        confirmPasswordField.setOnKeyPressed(this::handleKeyPressed);
-        emailField.setOnKeyPressed(this::handleKeyPressed);
-        q1Field.setOnKeyPressed(this::handleKeyPressed);
-        a1Field.setOnKeyPressed(this::handleKeyPressed);
-        q2Field.setOnKeyPressed(this::handleKeyPressed);
-        a2Field.setOnKeyPressed(this::handleKeyPressed);
-    }
-
-    private void handleKeyPressed(KeyEvent event) {
-        if (event.getCode() == KeyCode.ENTER) {
-            handleRegister();
-        }
     }
 
     @FXML
