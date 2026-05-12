@@ -149,7 +149,7 @@
 
                         <Button text="CREATE AUCTION" onAction="#handleCreateAuction"
                                 styleClass="dashboard-btn-primary"
-                                maxWidth="Infinity" prefHeight="48"/>
+                                maxWidth="Infinity" prefHeight="48" defaultButton="true"/>
                     </VBox>
 
                     <!-- YOUR AUCTIONS -->

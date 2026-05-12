@@ -27,6 +27,7 @@ public class MainApp extends Application {
         stage.setTitle("Auction House");
         stage.setMinWidth(900);
         stage.setMinHeight(700);
+        stage.setMaximized(true); // Start maximized
 
         Navigator.setStage(stage);
         Navigator.switchSceneStatic("login.fxml");

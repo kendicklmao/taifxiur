@@ -121,6 +121,33 @@
     -fx-text-fill: #ffffff;
 }
 
+/* ChoiceBox dropdown items */
+.choice-box .menu-item {
+    -fx-background-color: #0d0d17;
+    -fx-padding: 8 12 8 12;
+}
+.choice-box .menu-item > .label {
+    -fx-text-fill: #ffffff;
+}
+.choice-box .menu-item:focused {
+    -fx-background-color: #2a2350;
+}
+.choice-box .menu-item:focused > .label {
+    -fx-text-fill: #ffffff;
+}
+
+/* Force chosen options on the button itself to be white */
+.choice-box > .label,
+.combo-box > .list-cell {
+    -fx-text-fill: #ffffff;
+}
+
+/* Force ComboBox dropdown disabled items to white */
+.combo-box-popup .list-cell:disabled {
+    -fx-text-fill: #ffffff;
+    -fx-opacity: 0.5; /* visually distinct as disabled */
+}
+
 /* DatePicker */
 .date-picker .arrow-button {
     -fx-background-color: transparent;
@@ -941,3 +968,19 @@
     -fx-font-weight: bold;
     -fx-text-fill: #ffffff;
 }
+
+/* Force ComboBox text to white everywhere */
+.combo-box .text {
+    -fx-fill: #ffffff;
+}
+.combo-box-base .text {
+    -fx-fill: #ffffff;
+}
+.combo-box-popup .list-cell {
+    -fx-text-fill: #ffffff;
+}
+.combo-box-popup .list-cell:filled:selected,
+.combo-box-popup .list-cell:filled:hover {
+    -fx-text-fill: #ffffff;
+}
+
