@@ -136,6 +136,12 @@
     -fx-text-fill: #ffffff;
 }
 
+/* Force chosen options on the button itself to be white */
+.choice-box > .label,
+.combo-box > .list-cell {
+    -fx-text-fill: #ffffff;
+}
+
 /* Force ComboBox dropdown disabled items to white */
 .combo-box-popup .list-cell:disabled {
     -fx-text-fill: #ffffff;
