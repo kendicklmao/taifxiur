@@ -81,6 +81,12 @@ public class AdminHomeController extends BaseHomeController {
                 "UPDATE_PRICE".equals(res.getStatus())) {
             System.out.println("[ADMIN] Received auction update from server, refreshing auction list...");
             this.refreshAuctions();
+        } else if ("USER_BANNED".equals(res.getStatus()) || "USER_UNBANNED".equals(res.getStatus())) {
+            System.out.println("[ADMIN] Received user status update from server, refreshing lists...");
+            Platform.runLater(() -> {
+                this.refreshUsers();
+                this.refreshAdminActionLogs();
+            });
         }
     }
 
@@ -391,6 +397,7 @@ public class AdminHomeController extends BaseHomeController {
                 usernameField.setValue(null);
                 usernameField.getEditor().clear();
                 refreshUsers();
+                refreshAdminActionLogs();
             } else {
                 String errorMsg = response != null ? response.getMessage() : "Unknown error";
                 alertService.showAlert("Error", errorMsg, welcomeLabel);
@@ -432,6 +439,7 @@ public class AdminHomeController extends BaseHomeController {
                 usernameField.setValue(null);
                 usernameField.getEditor().clear();
                 refreshUsers();
+                refreshAdminActionLogs();
             } else {
                 String errorMsg = response != null ? response.getMessage() : "Unknown error";
                 alertService.showAlert("Error", errorMsg, welcomeLabel);
