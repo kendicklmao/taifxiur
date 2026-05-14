@@ -162,7 +162,7 @@ public class WalletServiceTest {
         assertNotNull(requestId, "Request ID should not be null");
 
         String result = walletService.rejectWithdraw(requestId, testAdmin);
-        assertNull(result, "Rejection should succeed");
+        assertNull(result, "Rejection should succeed.");
 
         BigDecimal balance = walletService.getWalletBalance(testSeller);
         assertNotNull(balance, "Seller balance should not be null");
