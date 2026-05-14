@@ -1,5 +1,6 @@
 package server.controller;
 
+import com.google.gson.Gson;
 import server.service.UserService;
 import shared.network.Request;
 import shared.network.Response;
@@ -16,6 +17,8 @@ public class BanUserHandler implements RequestHandler {
         String banUsername = request.getData().get("username");
         String banError = userService.banUser(banUsername, clientHandler.getLoggedInUsername());
         if (banError == null) {
+            Response broadcastRes = new Response("USER_BANNED", "User " + banUsername + " has been banned");
+            ClientHandler.broadcast(new Gson().toJson(broadcastRes));
             return new Response("SUCCESS", "User banned successfully");
         } else {
             return new Response("FAIL", banError);
