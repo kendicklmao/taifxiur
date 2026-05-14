@@ -24,27 +24,33 @@ public class WalletServiceTest {
         DatabaseInitializer.initializeDatabase();
         userService = new UserService();
         walletService = new WalletService();
-        }
+    }
 
     @BeforeEach
     public void setUp() {
         // Dọn dẹp DB trước khi chạy để đảm bảo môi trường sạch
         cleanupDatabase();
-        String suffix = java.util.UUID.randomUUID().toString().substring(0, 8); // Khởi tạo người dùng riêng cho mỗi test để không ảnh hưởng DB thật
+        String suffix = java.util.UUID.randomUUID().toString().substring(0, 8); // Khởi tạo người dùng riêng cho mỗi
+                                                                                // test để không ảnh hưởng DB thật
         testAdmin = "admin_" + suffix;
         testBidder = "bidder_" + suffix;
         testSeller = "seller_" + suffix;
 
-        userService.register(testAdmin, "Password@123", "admin" + suffix + "@test.com", "q1", "a1", "q2", "a2", shared.enums.Role.ADMIN);
-        userService.register(testBidder, "Password@123", "bidder" + suffix + "@test.com", "q1", "a1", "q2", "a2", shared.enums.Role.BIDDER);
-        userService.register(testSeller, "Password@123", "seller" + suffix + "@test.com", "q1", "a1", "q2", "a2", shared.enums.Role.SELLER);
+        userService.register(testAdmin, "Password@123", "admin" + suffix + "@test.com", "q1", "a1", "q2", "a2",
+                shared.enums.Role.ADMIN);
+        userService.register(testBidder, "Password@123", "bidder" + suffix + "@test.com", "q1", "a1", "q2", "a2",
+                shared.enums.Role.BIDDER);
+        userService.register(testSeller, "Password@123", "seller" + suffix + "@test.com", "q1", "a1", "q2", "a2",
+                shared.enums.Role.SELLER);
     }
 
     @AfterEach // Chạy sau mỗi test
     public void tearDown() {
-        // Dọn dẹp DB bằng cách xóa các user vừa tạo (Cascade sẽ xóa các request, wallet liên quan)
+        // Dọn dẹp DB bằng cách xóa các user vừa tạo (Cascade sẽ xóa các request, wallet
+        // liên quan)
         try (java.sql.Connection conn = DatabaseConfig.getDataSource().getConnection();
-             java.sql.PreparedStatement stmt = conn.prepareStatement("DELETE FROM users WHERE username IN (?, ?, ?)")) {
+                java.sql.PreparedStatement stmt = conn
+                        .prepareStatement("DELETE FROM users WHERE username IN (?, ?, ?)")) {
             stmt.setString(1, testAdmin);
             stmt.setString(2, testBidder);
             stmt.setString(3, testSeller);
@@ -67,7 +73,8 @@ public class WalletServiceTest {
     @Test
     public void testCreateDepositRequest() {
         String bankAccount = java.util.UUID.randomUUID().toString().substring(0, 10);
-        String result = walletService.createDepositRequest(testBidder, new BigDecimal("100.00"), "Test Bank", bankAccount);
+        String result = walletService.createDepositRequest(testBidder, new BigDecimal("100.00"), "Test Bank",
+                bankAccount);
         assertNull(result);
 
         List<Map<String, String>> requests = walletService.getPendingDepositRequests();
@@ -80,8 +87,9 @@ public class WalletServiceTest {
         String bankAccount = java.util.UUID.randomUUID().toString().substring(0, 10);
         walletService.createDepositRequest(testBidder, new BigDecimal("100.00"), "Test Bank", bankAccount);
         List<Map<String, String>> requests = walletService.getPendingDepositRequests();
-        
-        String requestId = requests.stream().filter(r -> bankAccount.equals(r.get("accountNumber"))).findFirst().map(r -> r.get("id")).orElse(null);
+
+        String requestId = requests.stream().filter(r -> bankAccount.equals(r.get("accountNumber"))).findFirst()
+                .map(r -> r.get("id")).orElse(null);
         assertNotNull(requestId, "Request ID should not be null");
 
         String result = walletService.approveDeposit(requestId, testAdmin);
@@ -98,7 +106,8 @@ public class WalletServiceTest {
         walletService.createDepositRequest(testBidder, new BigDecimal("100.00"), "Test Bank", bankAccount);
         List<Map<String, String>> requests = walletService.getPendingDepositRequests();
 
-        String requestId = requests.stream().filter(r -> bankAccount.equals(r.get("accountNumber"))).findFirst().map(r -> r.get("id")).orElse(null);
+        String requestId = requests.stream().filter(r -> bankAccount.equals(r.get("accountNumber"))).findFirst()
+                .map(r -> r.get("id")).orElse(null);
         assertNotNull(requestId, "Request ID should not be null");
 
         String result = walletService.rejectDeposit(requestId, testAdmin);
@@ -113,7 +122,8 @@ public class WalletServiceTest {
     public void testCreateWithdrawRequest() {
         String depAccount = java.util.UUID.randomUUID().toString().substring(0, 10); // First deposit to have balance
         walletService.createDepositRequest(testSeller, new BigDecimal("200.00"), "Test Bank", depAccount);
-        String depRequestId = walletService.getPendingDepositRequests().stream().filter(r -> depAccount.equals(r.get("accountNumber"))).findFirst().map(r -> r.get("id")).orElse(null);
+        String depRequestId = walletService.getPendingDepositRequests().stream()
+                .filter(r -> depAccount.equals(r.get("accountNumber"))).findFirst().map(r -> r.get("id")).orElse(null);
         walletService.approveDeposit(depRequestId, testAdmin);
 
         String withAccount = java.util.UUID.randomUUID().toString().substring(0, 10);
@@ -129,14 +139,16 @@ public class WalletServiceTest {
     public void testApproveWithdrawRequest() {
         String depAccount = java.util.UUID.randomUUID().toString().substring(0, 10);
         walletService.createDepositRequest(testSeller, new BigDecimal("200.00"), "Test Bank", depAccount);
-        String depRequestId = walletService.getPendingDepositRequests().stream().filter(r -> depAccount.equals(r.get("accountNumber"))).findFirst().map(r -> r.get("id")).orElse(null);
+        String depRequestId = walletService.getPendingDepositRequests().stream()
+                .filter(r -> depAccount.equals(r.get("accountNumber"))).findFirst().map(r -> r.get("id")).orElse(null);
         walletService.approveDeposit(depRequestId, testAdmin);
 
         String withAccount = java.util.UUID.randomUUID().toString().substring(0, 10);
         walletService.createWithdrawRequest(testSeller, new BigDecimal("50.00"), "Bank", withAccount);
         List<Map<String, String>> withdraws = walletService.getPendingWithdrawRequests();
 
-        String requestId = withdraws.stream().filter(r -> withAccount.equals(r.get("accountNumber"))).findFirst().map(r -> r.get("id")).orElse(null);
+        String requestId = withdraws.stream().filter(r -> withAccount.equals(r.get("accountNumber"))).findFirst()
+                .map(r -> r.get("id")).orElse(null);
         assertNotNull(requestId, "Request ID should not be null");
 
         String result = walletService.approveWithdraw(requestId, testAdmin);
@@ -151,15 +163,17 @@ public class WalletServiceTest {
     public void testRejectWithdrawRequest() {
         String depAccount = java.util.UUID.randomUUID().toString().substring(0, 10);
         walletService.createDepositRequest(testSeller, new BigDecimal("200.00"), "Test Bank", depAccount);
-        String depRequestId = walletService.getPendingDepositRequests().stream().filter(r -> depAccount.equals(r.get("accountNumber"))).findFirst().map(r -> r.get("id")).orElse(null);
+        String depRequestId = walletService.getPendingDepositRequests().stream()
+                .filter(r -> depAccount.equals(r.get("accountNumber"))).findFirst().map(r -> r.get("id")).orElse(null);
         walletService.approveDeposit(depRequestId, testAdmin);
 
         String withAccount = java.util.UUID.randomUUID().toString().substring(0, 10);
         walletService.createWithdrawRequest(testSeller, new BigDecimal("50.00"), "Bank", withAccount);
         List<Map<String, String>> withdraws = walletService.getPendingWithdrawRequests();
 
-        String requestId = withdraws.stream().filter(r -> withAccount.equals(r.get("accountNumber"))).findFirst().map(r -> r.get("id")).orElse(null);
-        assertNotNull(requestId, "Request ID should not be null.");
+        String requestId = withdraws.stream().filter(r -> withAccount.equals(r.get("accountNumber"))).findFirst()
+                .map(r -> r.get("id")).orElse(null);
+        assertNotNull(requestId, "Request ID should not be null");
 
         String result = walletService.rejectWithdraw(requestId, testAdmin);
         assertNull(result, "Rejection should succeed.");
