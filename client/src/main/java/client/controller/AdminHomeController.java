@@ -69,7 +69,9 @@ public class AdminHomeController extends BaseHomeController {
                 List<String> filteredList = allUsernames.stream()
                         .filter(s -> s.toLowerCase().contains(newText.toLowerCase())).collect(Collectors.toList());
                 usernameField.setItems(javafx.collections.FXCollections.observableArrayList(filteredList));
-                usernameField.show();
+                if (usernameField.getEditor().isFocused()) {
+                    usernameField.show();
+                }
             }
         });
     }
@@ -177,6 +179,13 @@ public class AdminHomeController extends BaseHomeController {
         allUsersList.getSelectionModel().selectedItemProperty().addListener((obs, oldSelection, newSelection) -> {
             if (newSelection != null) {
                 usernameField.setValue(newSelection.getUsername());
+            }
+        });
+
+        allUsersList.setOnMouseClicked(event -> {
+            User selected = allUsersList.getSelectionModel().getSelectedItem();
+            if (selected != null) {
+                usernameField.setValue(selected.getUsername());
             }
         });
     }
