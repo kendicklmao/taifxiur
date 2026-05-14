@@ -166,6 +166,6 @@ public class WalletServiceTest {
 
         BigDecimal balance = walletService.getWalletBalance(testSeller);
         assertNotNull(balance, "Seller balance should not be null");
-        assertEquals(0, balance.compareTo(new BigDecimal("200.00")), "Balance should be 200.00");
+        assertEquals(0, balance.compareTo(new BigDecimal("200.00")), "Balance should be 200.00!");
     }
 }
