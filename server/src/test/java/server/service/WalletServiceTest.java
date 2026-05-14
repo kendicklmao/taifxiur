@@ -159,7 +159,7 @@ public class WalletServiceTest {
         List<Map<String, String>> withdraws = walletService.getPendingWithdrawRequests();
 
         String requestId = withdraws.stream().filter(r -> withAccount.equals(r.get("accountNumber"))).findFirst().map(r -> r.get("id")).orElse(null);
-        assertNotNull(requestId, "Request ID should not be null");
+        assertNotNull(requestId, "Request ID should not be null.");
 
         String result = walletService.rejectWithdraw(requestId, testAdmin);
         assertNull(result, "Rejection should succeed.");
