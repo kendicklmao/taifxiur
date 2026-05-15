@@ -45,7 +45,7 @@ public class AuctionService {
                 Statement stmt = conn.createStatement();
                 ResultSet rs = stmt.executeQuery("SELECT id, seller_id, base_price, current_price, auction_status, " +
                         "start_time, end_time, auction_id " +
-                        "FROM items WHERE auction_id IS NOT NULL")) {
+                        "FROM items WHERE auction_id IS NOT NULL AND auction_status IN ('OPEN', 'RUNNING')")) {
 
             while (rs.next()) {
                 String auctionId = "Unknown";
@@ -235,6 +235,12 @@ public class AuctionService {
             ResultSet rs = pstmt.executeQuery();
 
             while (rs.next()) {
+                // Chỉ nạp autobid nếu phiên đấu giá vẫn đang mở hoặc đang diễn ra
+                if (auction.getStatus() != shared.enums.AuctionStatus.OPEN &&
+                        auction.getStatus() != shared.enums.AuctionStatus.RUNNING) {
+                    continue;
+                }
+
                 int bidderId = rs.getInt("bidder_id");
                 BigDecimal maxBid = rs.getBigDecimal("max_bid_amount");
                 String bidderUsername = getUsernameFromId(conn, bidderId);
@@ -431,7 +437,7 @@ public class AuctionService {
         try (Connection conn = DatabaseConfig.getDataSource().getConnection();
                 Statement stmt = conn.createStatement();
                 ResultSet rs = stmt.executeQuery(
-                        "SELECT id, current_price, auction_status, auction_id FROM items WHERE auction_id IS NOT NULL")) {
+                        "SELECT id, current_price, auction_status, auction_id FROM items WHERE auction_id IS NOT NULL AND auction_status IN ('OPEN', 'RUNNING')")) {
 
             java.util.Set<String> dbAuctionIds = new java.util.HashSet<>();
             while (rs.next()) {
@@ -469,7 +475,7 @@ public class AuctionService {
 
     private void loadSingleAuctionFromDB(Connection conn, String targetAuctionId) {
         String sql = "SELECT id, seller_id, base_price, current_price, auction_status, " +
-                "start_time, end_time, auction_id " + "FROM items WHERE auction_id = ?";
+                "start_time, end_time, auction_id " + "FROM items WHERE auction_id = ? AND auction_status IN ('OPEN', 'RUNNING')";
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, targetAuctionId);
             try (ResultSet rs = pstmt.executeQuery()) {
