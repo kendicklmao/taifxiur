@@ -101,9 +101,9 @@ public class BidderHomeController extends BaseHomeController {
 
         // Tự động làm mới giao diện và ví mỗi 2 giây
         javafx.animation.Timeline autoRefresh = new javafx.animation.Timeline(
-            new javafx.animation.KeyFrame(javafx.util.Duration.seconds(2), e -> {
-                handleRefresh();
-            })
+                new javafx.animation.KeyFrame(javafx.util.Duration.seconds(2), e -> {
+                    handleRefresh();
+                })
         );
         autoRefresh.setCycleCount(javafx.animation.Timeline.INDEFINITE);
         autoRefresh.play();
@@ -202,14 +202,14 @@ public class BidderHomeController extends BaseHomeController {
         for (Auction auction: auctions) {
             String id = auction.getId();
             if (existingCards.containsKey(id)) {
-                
+
                 VBox card = existingCards.get(id);
                 Label nameLabel = (Label) card.getProperties().get("nameLabel");
                 Label priceLabel = (Label) card.getProperties().get("priceLabel");
                 Label statusLabel = (Label) card.getProperties().get("statusLabel");
                 Label startsLabel = (Label) card.getProperties().get("startsLabel");
                 Label endsLabel = (Label) card.getProperties().get("endsLabel");
-                
+
                 if (nameLabel != null) {
                     nameLabel.setText(auction.getItem().getName());
                 }
@@ -225,15 +225,15 @@ public class BidderHomeController extends BaseHomeController {
                 if (endsLabel != null) {
                     endsLabel.setText("Ends: " + formatTime(auction.getEndTime()));
                 }
-            
+
                 existingCards.remove(id);
-            
+
             } else {
 
                 VBox card = createAuctionCard(auction);
                 card.setUserData(id);
                 auctionGrid.getChildren().add(card);
-            
+
             }
         }
 
@@ -266,7 +266,7 @@ public class BidderHomeController extends BaseHomeController {
         card.getChildren().addAll(imageView, itemDetails);
 
         if (auction.getItem().getImageUrl() != null && !auction.getItem().getImageUrl().isEmpty()) {
-            imageView.setImage(new Image(auction.getItem().getImageUrl(), 150, 150, true, true, true));
+            imageView.setImage(new Image(auction.getItem().getImageUrl(), 150, 150, true, true));
         }
 
         nameLabel.setText(auction.getItem().getName());
@@ -548,19 +548,12 @@ public class BidderHomeController extends BaseHomeController {
         amountField.setPromptText("Enter amount");
         amountField.getStyleClass().add("dashboard-input");
 
-        // Lần đầu tiên bid: chỉ cần >= startPrice; đã có người bid: >= currentPrice + minIncrement
-        boolean noBidYet = auction.getHighestBidder() == null;
-        BigDecimal minBid = noBidYet
-                ? auction.getStartPrice()
-                : auction.getCurrentPrice().add(auction.getItem().getMinIncrement());
-        String minBidHint = noBidYet
-                ? "Minimum bid: " + minBid + " (starting price)"
-                : "Minimum bid: " + minBid + " (current + " + auction.getItem().getMinIncrement() + ")";
+        BigDecimal minBid = auction.getCurrentPrice().add(auction.getItem().getMinIncrement());
 
         VBox content = new VBox(10);
         content.setStyle("-fx-padding: 20px;");
         content.getChildren().add(new Label("Current price: " + auction.getCurrentPrice()));
-        content.getChildren().add(new Label(minBidHint));
+        content.getChildren().add(new Label("Minimum bid: " + minBid + " (current + " + auction.getItem().getMinIncrement() + ")"));
         content.getChildren().add(new Label("Enter amount:"));
         content.getChildren().add(amountField);
 
@@ -579,8 +572,7 @@ public class BidderHomeController extends BaseHomeController {
                 try {
                     BigDecimal bidAmount = new BigDecimal(amount);
                     if (bidAmount.compareTo(minBid) < 0) {
-                        showAlert("Error", "Bid amount must be at least " + minBid +
-                                (noBidYet ? " (starting price)" : " (current price + minimum increment)"));
+                        showAlert("Error", "Bid amount must be at least " + minBid + " (current price + minimum increment)");
                         return;
                     }
 
@@ -657,28 +649,15 @@ public class BidderHomeController extends BaseHomeController {
                 String newPrice = payload.get("newPrice");
                 Platform.runLater(() -> {
                     VBox card = auctionCardMap.get(auctionId);
-
                     if (card != null) {
                         Label priceLabel = (Label) card.getProperties().get("priceLabel");
-
                         if (priceLabel != null) {
                             priceLabel.setText("Current Bid: $" + newPrice);
                         }
                     }
-
-                    if (selectedAuction != null &&
-                            selectedAuction.getId().equals(auctionId)) {
-
-                        selectedAuction.setCurrentPriceForDBRestore(
-                                new java.math.BigDecimal(newPrice)
-                        );
-
-                        Label detailPriceLabel =
-                                (Label) auctionDetailPane.lookup("#detailPriceLabel");
-
-                        if (detailPriceLabel != null) {
-                            detailPriceLabel.setText("Current Bid: $" + newPrice);
-                        }
+                    if (selectedAuction != null && selectedAuction.getId().equals(auctionId)) {
+                        selectedAuction.setCurrentPriceForDBRestore(new java.math.BigDecimal(newPrice));
+                        showAuctionDetails(selectedAuction);
                     }
                 });
             }
