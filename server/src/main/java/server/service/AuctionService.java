@@ -28,7 +28,8 @@ public class AuctionService {
     private final WalletService walletService;
     private final UserService userService;
     private static final ExecutorService asyncExecutor = Executors.newFixedThreadPool(2);
-    private static final Map<String, Integer> userIdCache = new ConcurrentHashMap<>(); // Cache để tránh lặp lại query DB
+    private static final Map<String, Integer> userIdCache = new ConcurrentHashMap<>(); // Cache để tránh lặp lại query
+                                                                                       // DB
 
     public AuctionService(UserService userService, WalletService walletService) {
         this.userService = userService;
@@ -41,10 +42,10 @@ public class AuctionService {
     private void initializeAuctionsFromDatabase() {
         System.out.println("Loading auctions from database...");
         try (Connection conn = DatabaseConfig.getDataSource().getConnection();
-             Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery("SELECT id, seller_id, base_price, current_price, auction_status, " +
-                             "start_time, end_time, auction_id " +
-                             "FROM items WHERE auction_id IS NOT NULL")) {
+                Statement stmt = conn.createStatement();
+                ResultSet rs = stmt.executeQuery("SELECT id, seller_id, base_price, current_price, auction_status, " +
+                        "start_time, end_time, auction_id " +
+                        "FROM items WHERE auction_id IS NOT NULL")) {
 
             while (rs.next()) {
                 String auctionId = "Unknown";
@@ -86,7 +87,7 @@ public class AuctionService {
 
                     // Load and restore bid history
                     loadBidHistoryForAuction(conn, auction, userService);
-                    
+
                     // Load and restore auto-bids
                     loadAutoBidsForAuction(conn, auction, userService);
 
@@ -113,8 +114,9 @@ public class AuctionService {
     private Item loadItemFromDatabase(Connection conn, int itemId) {
         try (PreparedStatement pstmt = conn.prepareStatement(
                 "SELECT name, description, category, image_url, base_price, " +
-                "brand, item_status, model_year, km_travel, artist, year_created, is_original, seller_id, min_increment " +
-                "FROM items WHERE id = ?")) {
+                        "brand, item_status, model_year, km_travel, artist, year_created, is_original, seller_id, min_increment "
+                        +
+                        "FROM items WHERE id = ?")) {
 
             pstmt.setInt(1, itemId);
             ResultSet rs = pstmt.executeQuery();
@@ -129,14 +131,16 @@ public class AuctionService {
                 BigDecimal basePrice = rs.getBigDecimal("base_price");
 
                 User sellerUser = userService.getUser(getUsernameFromId(conn, sellerId));
-                if (!(sellerUser instanceof Seller)) return null;
+                if (!(sellerUser instanceof Seller))
+                    return null;
                 Seller seller = (Seller) sellerUser;
 
                 Item item = null;
                 if ("ELECTRONICS".equals(category)) {
                     String brand = rs.getString("brand");
                     String statusStr = rs.getString("item_status");
-                    shared.enums.ItemStatus itemStatus = shared.enums.ItemStatus.valueOf(statusStr != null ? statusStr : "NEW");
+                    shared.enums.ItemStatus itemStatus = shared.enums.ItemStatus
+                            .valueOf(statusStr != null ? statusStr : "NEW");
                     item = new shared.models.Electronic(name, description, seller, basePrice, brand, itemStatus);
                 } else if ("VEHICLES".equals(category)) {
                     String brand = rs.getString("brand");
@@ -151,7 +155,8 @@ public class AuctionService {
                 } else if ("FASHIONS".equals(category)) {
                     String brand = rs.getString("brand");
                     String statusStr = rs.getString("item_status");
-                    shared.enums.ItemStatus itemStatus = shared.enums.ItemStatus.valueOf(statusStr != null ? statusStr : "NEW");
+                    shared.enums.ItemStatus itemStatus = shared.enums.ItemStatus
+                            .valueOf(statusStr != null ? statusStr : "NEW");
                     item = new shared.models.Fashion(name, description, seller, basePrice, brand, itemStatus);
                 } else if ("COLLECTIBLES".equals(category)) {
                     int year = rs.getInt("year_created");
@@ -200,7 +205,7 @@ public class AuctionService {
     private void loadBidHistoryForAuction(Connection conn, Auction auction, UserService userService) {
         try (PreparedStatement pstmt = conn.prepareStatement(
                 "SELECT b.bidder_id, b.bid_amount, b.bid_time FROM bids b " +
-                "WHERE b.auction_id = ? ORDER BY b.bid_time ASC")) {
+                        "WHERE b.auction_id = ? ORDER BY b.bid_time ASC")) {
 
             pstmt.setString(1, auction.getId());
             ResultSet rs = pstmt.executeQuery();
@@ -272,14 +277,17 @@ public class AuctionService {
 
         String id = UUID.randomUUID().toString();
         Auction auction = new Auction(id, item, startPrice, seller, startTime, endTime);
-        // Đăng ký finish callback để service có thể tự động thanh toán khi phiên đấu giá kết thúc
+        // Đăng ký finish callback để service có thể tự động thanh toán khi phiên đấu
+        // giá kết thúc
         auction.setFinishCallback(a -> finalizeAuction(a));
         auction.setBanChecker(username -> userService.isUserBanned(username));
         auction.startScheduler();
         auctions.put(id, auction);
         System.out.println(" [MEMORY] Added new auction to map. Current total in memory: " + auctions.size());
 
-        int dbId = saveItemAndAuctionToDatabase(item, seller, startPrice, startTime, endTime, id); // Lưu item và auction vào database
+        int dbId = saveItemAndAuctionToDatabase(item, seller, startPrice, startTime, endTime, id); // Lưu item và
+                                                                                                   // auction vào
+                                                                                                   // database
         if (dbId == -1) {
             auctions.remove(id); // remove from in-memory map if DB save failed
             throw new RuntimeException("Failed to save auction to database.");
@@ -299,8 +307,8 @@ public class AuctionService {
 
         // Restrict bidder to 1 active auction at a time
         for (Auction a : auctions.values()) {
-            if (!a.getId().equals(auctionId) && 
-                (a.getStatus() == AuctionStatus.RUNNING || a.getStatus() == AuctionStatus.OPEN)) {
+            if (!a.getId().equals(auctionId) &&
+                    (a.getStatus() == AuctionStatus.RUNNING || a.getStatus() == AuctionStatus.OPEN)) {
                 if (a.hasBidder(bidder.getUsername())) {
                     throw new IllegalStateException("You can only participate in 1 auction at a time!");
                 }
@@ -359,12 +367,18 @@ public class AuctionService {
 
         // Restrict bidder to 1 active auction at a time
         for (Auction a : auctions.values()) {
-            if (!a.getId().equals(auctionId) && 
-                (a.getStatus() == AuctionStatus.RUNNING || a.getStatus() == AuctionStatus.OPEN)) {
+            if (!a.getId().equals(auctionId) &&
+                    (a.getStatus() == AuctionStatus.RUNNING || a.getStatus() == AuctionStatus.OPEN)) {
                 if (a.hasBidder(bidder.getUsername())) {
                     throw new IllegalStateException("You can only participate in 1 auction at a time!");
                 }
             }
+        }
+
+        // Đảm bảo bidder có đủ số dư cho auto bid
+        BigDecimal balance = walletService.getWalletBalance(bidder.getUsername());
+        if (balance == null || balance.compareTo(maxBid) < 0) {
+            throw new IllegalStateException("broke ahh nigger!");
         }
 
         auction.registerAutoBid(bidder, maxBid);
@@ -402,7 +416,8 @@ public class AuctionService {
     // Lấy tất cả phiên đấu giá và cập nhật trạng thái nếu cần
     public List<Auction> getAllAuctions() {
         syncWithDatabase(); // Luôn đồng bộ với DB trước khi trả về cho Client
-        // System.out.println(" [QUERY] Sync completed. Client requested all auctions. Total: " + auctions.size());
+        // System.out.println(" [QUERY] Sync completed. Client requested all auctions.
+        // Total: " + auctions.size());
         for (Auction auction : auctions.values()) {
             auction.updateStatus();
         }
@@ -411,12 +426,12 @@ public class AuctionService {
     }
 
     // Đồng bộ hóa dữ liệu từ Database vào RAM.
-// Giúp nhiều Server chạy song song vẫn nhìn thấy dữ liệu của nhau.
+    // Giúp nhiều Server chạy song song vẫn nhìn thấy dữ liệu của nhau.
     private void syncWithDatabase() {
         try (Connection conn = DatabaseConfig.getDataSource().getConnection();
-             Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery(
-                     "SELECT id, current_price, auction_status, auction_id FROM items WHERE auction_id IS NOT NULL")) {
+                Statement stmt = conn.createStatement();
+                ResultSet rs = stmt.executeQuery(
+                        "SELECT id, current_price, auction_status, auction_id FROM items WHERE auction_id IS NOT NULL")) {
 
             java.util.Set<String> dbAuctionIds = new java.util.HashSet<>();
             while (rs.next()) {
@@ -442,10 +457,11 @@ public class AuctionService {
                 }
             }
 
-            // Xóa các auction khỏi RAM nếu nó đã bị xóa ở Database (bởi 1 máy khác) Chỉ xóa nếu item đó đã từng được lưu vào DB (getDbId() > 0)
-            auctions.entrySet().removeIf(entry -> 
-                !dbAuctionIds.contains(entry.getKey()) && entry.getValue().getItem().getDbId() > 0);
-            
+            // Xóa các auction khỏi RAM nếu nó đã bị xóa ở Database (bởi 1 máy khác) Chỉ xóa
+            // nếu item đó đã từng được lưu vào DB (getDbId() > 0)
+            auctions.entrySet().removeIf(
+                    entry -> !dbAuctionIds.contains(entry.getKey()) && entry.getValue().getItem().getDbId() > 0);
+
         } catch (SQLException e) {
             System.err.println("Error during DB sync: " + e.getMessage());
         }
@@ -453,12 +469,12 @@ public class AuctionService {
 
     private void loadSingleAuctionFromDB(Connection conn, String targetAuctionId) {
         String sql = "SELECT id, seller_id, base_price, current_price, auction_status, " +
-                     "start_time, end_time, auction_id " + "FROM items WHERE auction_id = ?";
+                "start_time, end_time, auction_id " + "FROM items WHERE auction_id = ?";
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, targetAuctionId);
             try (ResultSet rs = pstmt.executeQuery()) {
                 if (rs.next()) {
-                    
+
                     int itemId = rs.getInt("id");
                     int sellerId = rs.getInt("seller_id");
                     BigDecimal startPrice = rs.getBigDecimal("base_price");
@@ -471,16 +487,17 @@ public class AuctionService {
                     User seller = userService.getUser(getUsernameFromId(conn, sellerId));
 
                     if (item != null && seller instanceof Seller) {
-                        Auction auction = new Auction(targetAuctionId, item, startPrice, (Seller) seller, startTime, endTime);
+                        Auction auction = new Auction(targetAuctionId, item, startPrice, (Seller) seller, startTime,
+                                endTime);
                         auction.setFinishCallback(a -> finalizeAuction(a));
                         auction.setBanChecker(username -> userService.isUserBanned(username));
-                        
+
                         if (currentPrice != null && currentPrice.compareTo(startPrice) > 0) {
                             auction.setCurrentPriceForDBRestore(currentPrice);
                         }
 
                         auction.setStatusForDBRestore(AuctionStatus.valueOf(statusStr));
-                        
+
                         // Load bid history & auto-bids
                         loadBidHistoryForAuction(conn, auction, userService);
                         loadAutoBidsForAuction(conn, auction, userService);
@@ -498,7 +515,8 @@ public class AuctionService {
         }
     }
 
-    // Thanh toán tiền đấu giá khi phiên đấu giá kết thúc. Được gọi bởi Auction.finishCallback.
+    // Thanh toán tiền đấu giá khi phiên đấu giá kết thúc. Được gọi bởi
+    // Auction.finishCallback.
     // Hoạt động cho cả bid thủ công và bid tự động vì cả hai đều đặt highestBidder.
     // Chạy ASYNCHRONOUSLY trong background thread pool để tránh bị block!
     private void finalizeAuction(Auction auction) {
@@ -536,11 +554,13 @@ public class AuctionService {
                         }
 
                     } else {
-                        System.err.println("Không thể thanh toán tiền cho phiên đấu giá " + auction.getId() + ": " + finalizeError);
+                        System.err.println("Không thể thanh toán tiền cho phiên đấu giá " + auction.getId() + ": "
+                                + finalizeError);
                     }
 
                 } else {
-                    // Không có người thắng: chỉ cập nhật trạng thái phiên đấu giá thành FINISHED trong DB
+                    // Không có người thắng: chỉ cập nhật trạng thái phiên đấu giá thành FINISHED
+                    // trong DB
                     try (Connection conn = DatabaseConfig.getDataSource().getConnection();
                             PreparedStatement pstmt = conn
                                     .prepareStatement("UPDATE items SET auction_status = ? WHERE auction_id = ?")) {
@@ -616,7 +636,7 @@ public class AuctionService {
         walletService.releaseAllHoldsForAuction(auctionId);
 
         try (Connection conn = DatabaseConfig.getDataSource().getConnection()) {
-            conn.setAutoCommit(false); 
+            conn.setAutoCommit(false);
             try {
                 // 1. Xóa lịch sử đặt thầu
                 try (PreparedStatement pstmt = conn.prepareStatement("DELETE FROM bids WHERE auction_id = ?")) {
@@ -637,13 +657,15 @@ public class AuctionService {
                 }
 
                 conn.commit();
-                System.out.println(" [PERMANENT DELETE] Auction " + auctionId + " and all related data (bids, auto-bids, holds) have been removed.");
-                
+                System.out.println(" [PERMANENT DELETE] Auction " + auctionId
+                        + " and all related data (bids, auto-bids, holds) have been removed.");
+
                 try {
                     com.google.gson.Gson gson = shared.utils.GsonUtils.createGson();
                     shared.network.Response resp = new shared.network.Response("AUCTION_UPDATED", auctionId);
                     server.controller.ClientHandler.broadcast(gson.toJson(resp));
-                } catch (Exception ignored) {}
+                } catch (Exception ignored) {
+                }
             } catch (SQLException e) {
                 conn.rollback();
                 throw e;
@@ -658,12 +680,14 @@ public class AuctionService {
     }
 
     // Phương thức trợ giúp để lưu mặt hàng vào cơ sở dữ liệu với thông tin giá cả
-    private int saveItemAndAuctionToDatabase(Item item, Seller seller, BigDecimal startPrice, Instant startTime, Instant endTime, String auctionId) {
+    private int saveItemAndAuctionToDatabase(Item item, Seller seller, BigDecimal startPrice, Instant startTime,
+            Instant endTime, String auctionId) {
         try (Connection conn = DatabaseConfig.getDataSource().getConnection();
                 PreparedStatement pstmt = conn.prepareStatement(
                         "INSERT INTO items (seller_id, name, description, category, status, " +
                                 "base_price, current_price, seller_name, " +
-                                "brand, item_status, model_year, km_travel, artist, year_created, is_original, image_url, min_increment, " +
+                                "brand, item_status, model_year, km_travel, artist, year_created, is_original, image_url, min_increment, "
+                                +
                                 "auction_id, auction_status, start_time, end_time) " +
                                 "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                         Statement.RETURN_GENERATED_KEYS)) {
