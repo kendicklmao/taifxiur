@@ -6,20 +6,19 @@ import java.net.Socket;
 
 import shared.models.Auction;
 import shared.models.User;
-
-
-import java.util.function.Consumer;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.List;
-
-import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
 import shared.network.Request;
 import shared.network.Response;
 import shared.utils.GsonUtils;
+
 import com.google.gson.Gson;
+
+import java.util.UUID;
+import java.util.function.Consumer;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 
 public class AppContext {
     private Socket socket;
@@ -57,10 +56,10 @@ public class AppContext {
     }
 
     public void connect() throws Exception {
-        System.out.println("DEBUG CLIENT: Connecting to server...");
         // Luôn disconnect trước khi connect để đảm bảo state sạch
         disconnect();
 
+        System.out.println("DEBUG CLIENT: Connecting to server...");
         socket = new Socket("localhost", 54321);
         socket.setTcpNoDelay(true); // Tắt thuật toán Nagle's algorithm để tăng tốc độ gói nhỏ
         out = new PrintWriter(new java.io.OutputStreamWriter(socket.getOutputStream(), java.nio.charset.StandardCharsets.UTF_8), true);
@@ -72,7 +71,6 @@ public class AppContext {
 
     private void startListenerThread() {
         if (listenerThread != null && listenerThread.isAlive()) {
-            System.out.println("DEBUG CLIENT: Listener thread already running.");
             return;
         }
 
@@ -83,29 +81,21 @@ public class AppContext {
                 String line;
                 while (currentIn != null && (line = currentIn.readLine()) != null) {
                     final String message = line;
-                    // System.out.println("DEBUG CLIENT: Received from server: " + message);
                     try {
                         Response res = gson.fromJson(message, Response.class);
                         if (res.getRequestId() != null) {
                             CompletableFuture<Response> future = pendingRequests.get(res.getRequestId());
                             if (future != null) {
-                                // System.out.println("DEBUG CLIENT: Completing future for request " + res.getRequestId());
                                 future.complete(res);
                                 pendingRequests.remove(res.getRequestId());
-                            } else {
-                                // System.out.println("DEBUG CLIENT: No pending request found for ID " + res.getRequestId());
                             }
                         }
-
                     } catch (Exception e) {
-                        // System.out.println("DEBUG CLIENT: Message is not a standard Response or has no ID: " + e.getMessage());
                     }
-
-                    for (Consumer<String> listener : messageListeners) {
+                    for (Consumer<String> listener: messageListeners) {
                         listener.accept(message);
                     }
                 }
-
                 System.out.println("DEBUG CLIENT: Listener thread reached end of stream.");
             } catch (Throwable e) {
                 System.err.println("DEBUG CLIENT: Connection lost or error in listener: " + e.getMessage());
@@ -115,7 +105,6 @@ public class AppContext {
                 in = null;
                 listenerThread = null;
             }
-
         });
         listenerThread.setDaemon(true);
         listenerThread.start();

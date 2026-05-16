@@ -3,12 +3,7 @@ package client.service;
 import javafx.scene.media.AudioClip;
 
 public class SoundManager {
-    private static final AudioClip popupSound =
-            new AudioClip(
-                    SoundManager.class
-                            .getResource("/sounds/popup.mp3")
-                            .toExternalForm()
-            );
+    private static final AudioClip popupSound = new AudioClip(SoundManager.class.getResource("/sounds/popup.mp3").toExternalForm());
 
     public static void playPopup() {
         popupSound.setVolume(0.5);

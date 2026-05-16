@@ -4,14 +4,12 @@ import com.google.gson.reflect.TypeToken;
 
 import client.support.AuctionDetailViewBuilder;
 import client.support.ChangePasswordSupport;
-import javafx.animation.PauseTransition;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.concurrent.Task;
 import javafx.scene.control.*;
 import javafx.scene.layout.VBox;
 
-import javafx.util.Duration;
 import shared.models.AdminActionLog;
 import shared.models.Auction;
 import shared.models.User;
@@ -78,11 +76,27 @@ public class AdminHomeController extends BaseHomeController {
 
     @Override
     protected void onSocketMessage(Response res) {
-        if ("AUCTION_CREATED".equals(res.getStatus()) ||
-                "AUCTION_UPDATED".equals(res.getStatus()) ||
-                "UPDATE_PRICE".equals(res.getStatus())) {
+        if ("AUCTION_CREATED".equals(res.getStatus()) || "AUCTION_UPDATED".equals(res.getStatus()) || "UPDATE_PRICE".equals(res.getStatus())) {
             System.out.println("[ADMIN] Received auction update from server, refreshing auction list...");
             this.refreshAuctions();
+            
+            // Tự động làm mới Pane chi tiết nếu đang xem đúng phiên đấu giá đó
+            if (selectedAuction != null) {
+                if ("UPDATE_PRICE".equals(res.getStatus())) {
+                    // Xử lý nhanh cho UPDATE_PRICE (thường gửi JSON payload)
+                    try {
+                        java.lang.reflect.Type type = new com.google.gson.reflect.TypeToken<Map<String, String>>(){}.getType();
+                        Map<String, String> payload = gson.fromJson(res.getMessage(), type);
+                        if (selectedAuction.getId().equals(payload.get("auctionId"))) {
+                            selectedAuction.setCurrentPriceForDBRestore(new java.math.BigDecimal(payload.get("newPrice")));
+                            Platform.runLater(() -> showAuctionDetails(selectedAuction));
+                        }
+                    } catch (Exception e) {}
+                } else {
+                    // Cho CREATED/UPDATED, ta sẽ tìm trong list mới (refreshAuctions chạy async nên có thể hơi chậm)
+                    // Hoặc đơn giản là yêu cầu refresh list rồi show lại sau.
+                }
+            }
         } else if ("USER_BANNED".equals(res.getStatus()) || "USER_UNBANNED".equals(res.getStatus())) {
             System.out.println("[ADMIN] Received user status update from server, refreshing lists...");
             Platform.runLater(() -> {
@@ -93,14 +107,15 @@ public class AdminHomeController extends BaseHomeController {
     }
 
     private void showAuctionDetails(Auction auction) {
-        AuctionDetailViewBuilder.populateBasicDetails(auctionDetailPane, auction, () -> {
-        });
-
+        this.selectedAuction = auction;
+        
         Button terminateButton = new Button("Terminate Auction");
         terminateButton.getStyleClass().add("dashboard-btn-logout");
         terminateButton.setOnAction(e -> handleTerminateAuction(auction));
 
-        auctionDetailPane.getChildren().add(terminateButton);
+        AuctionDetailViewBuilder.populateFullDetails(auctionDetailPane, auction, () -> {
+            this.selectedAuction = null;
+        }, terminateButton);
     }
 
     private void handleTerminateAuction(Auction auction) {

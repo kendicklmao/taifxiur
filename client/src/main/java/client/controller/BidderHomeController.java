@@ -20,7 +20,6 @@ import javafx.collections.transformation.SortedList;
 import javafx.scene.image.Image;
 import java.lang.reflect.Type;
 import javafx.scene.image.ImageView;
-import javafx.scene.layout.HBox;
 import javafx.scene.layout.TilePane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Modality;
@@ -53,7 +52,6 @@ public class BidderHomeController extends BaseHomeController {
     private final Map<String, VBox> auctionCardMap = new HashMap<>();
 
     private final ObservableList<Auction> allAuctions = FXCollections.observableArrayList();
-    private Auction selectedAuction;
     private AuctionChartController activeChartController;
     private Auction activeChartAuction;
 
@@ -291,15 +289,10 @@ public class BidderHomeController extends BaseHomeController {
 
     private void showAuctionDetails(Auction auction) {
         this.selectedAuction = auction;
-        AuctionDetailViewBuilder.populateBasicDetails(auctionDetailPane, auction, () -> {
-            this.selectedAuction = null;
-        });
 
-        HBox actionBox = new HBox(10);
         Button chartButton = new Button("View Chart");
         chartButton.getStyleClass().add("dashboard-btn-ghost");
         chartButton.setOnAction(e -> showPriceChart(auction));
-        actionBox.getChildren().add(chartButton);
 
         if ("RUNNING".equals(auction.getStatus().toString())) {
             Button bidButton = new Button("Place Bid");
@@ -309,10 +302,15 @@ public class BidderHomeController extends BaseHomeController {
             Button autoBidButton = new Button("Auto Bid");
             autoBidButton.getStyleClass().add("dashboard-btn-ghost");
             autoBidButton.setOnAction(e -> showBidAmountDialog(auction, true));
-            actionBox.getChildren().addAll(bidButton, autoBidButton);
+            
+            AuctionDetailViewBuilder.populateFullDetails(auctionDetailPane, auction, () -> {
+                this.selectedAuction = null;
+            }, chartButton, bidButton, autoBidButton);
+        } else {
+            AuctionDetailViewBuilder.populateFullDetails(auctionDetailPane, auction, () -> {
+                this.selectedAuction = null;
+            }, chartButton);
         }
-
-        auctionDetailPane.getChildren().add(actionBox);
     }
 
     @FXML

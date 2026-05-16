@@ -1,6 +1,7 @@
 package server.controller;
 
 import com.google.gson.Gson;
+
 import shared.utils.GsonUtils;
 import server.service.UserService;
 import shared.network.Request;
@@ -40,26 +41,18 @@ public class ClientHandler implements Runnable {
 
             String clientMessage;
             while ((clientMessage = in.readLine()) != null) {
-                // System.out.println("Server received: " + clientMessage);
-
                 Request request = gson.fromJson(clientMessage, Request.class);
-                // System.out.println("DEBUG: Handling request " + request.getAction() + " (" + request.getRequestId() + ")");
                 Response response = handleRequest(request);
-                // System.out.println("DEBUG: Request " + request.getAction() + " handled. Status: " + (response != null ? response.getStatus() : "null"));
-
                 if (response != null) {
                     if (request.getRequestId() != null) {
                         response.setRequestId(request.getRequestId());
                     }
-
                     String responseJson = gson.toJson(response);
-                    // System.out.println("DEBUG: Sending response: " + responseJson);
                     sendMessage(responseJson);
                 }
             }
-
         } catch (Throwable e) {
-            System.err.println("CRITICAL ERROR in ClientHandler (" + socket.getInetAddress() + "): " + e.getMessage());
+            System.err.println("ERROR in ClientHandler (" + socket.getInetAddress() + "): " + e.getMessage());
             e.printStackTrace();
         } finally {
             activeClients.remove(this);

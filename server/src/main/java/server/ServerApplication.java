@@ -51,9 +51,9 @@ public class ServerApplication {
             }
 
             System.out.println("Database initialization completed");
-            
             System.out.println("Loading auctions into memory...");
             System.out.println("All services initialized.");
+            
         } catch (Exception e) {
             System.err.println("Failed to initialize database: " + e.getMessage());
             e.printStackTrace();

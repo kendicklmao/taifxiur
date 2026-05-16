@@ -12,10 +12,7 @@ public class MainApp extends Application {
     @Override
     public void start(Stage stage) {
 
-        // ===== NHẠC NỀN =====
-        Media media = new Media(
-                getClass().getResource("/sounds/theme.mp3").toExternalForm()
-        );
+        Media media = new Media(getClass().getResource("/sounds/theme.mp3").toExternalForm());
 
         mediaPlayer = new MediaPlayer(media);
 
@@ -23,11 +20,10 @@ public class MainApp extends Application {
         mediaPlayer.setVolume(0.5); // âm lượng 50%
         mediaPlayer.play();
 
-        // ===== APP =====
         stage.setTitle("Auction House");
         stage.setMinWidth(900);
         stage.setMinHeight(700);
-        stage.setMaximized(true); // Start maximized
+        stage.setMaximized(true);
 
         Navigator.setStage(stage);
         Navigator.switchSceneStatic("login.fxml");

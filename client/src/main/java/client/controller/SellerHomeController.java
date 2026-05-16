@@ -35,8 +35,6 @@ import java.util.stream.Collectors;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 
-import javafx.application.Platform;
-
 import com.google.gson.reflect.TypeToken;
 
 import client.support.AuctionDetailViewBuilder;
@@ -87,7 +85,6 @@ public class SellerHomeController extends BaseHomeController {
     private VBox auctionDetailPane;
     private File selectedImageFile;
     private byte[] croppedImageBytes;
-    private Auction selectedAuction;
 
     @FXML
     public void initialize() {
@@ -240,16 +237,18 @@ public class SellerHomeController extends BaseHomeController {
 
     private void showAuctionDetails(Auction auction) {
         this.selectedAuction = auction;
-        AuctionDetailViewBuilder.populateBasicDetails(auctionDetailPane, auction, () -> {
-            this.selectedAuction = null;
-        });
+        
         Button terminateButton = new Button("Terminate Auction");
         terminateButton.getStyleClass().add("dashboard-btn-logout");
         terminateButton.setOnAction(e -> handleTerminateAuction(auction));
+        
         boolean canTerminate = auction.getSeller().getUsername().equals(ctx.getCurrentUser().getUsername());
         terminateButton.setVisible(canTerminate);
         terminateButton.setManaged(canTerminate);
-        auctionDetailPane.getChildren().add(terminateButton);
+
+        AuctionDetailViewBuilder.populateFullDetails(auctionDetailPane, auction, () -> {
+            this.selectedAuction = null;
+        }, terminateButton);
     }
 
     private void handleTerminateAuction(Auction auction) {

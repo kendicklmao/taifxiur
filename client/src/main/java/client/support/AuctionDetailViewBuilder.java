@@ -2,6 +2,7 @@ package client.support;
 
 import java.util.Map;
 
+import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.image.Image;
@@ -80,6 +81,10 @@ public class AuctionDetailViewBuilder {
 
     // Tạo giao diện chi tiết cơ bản
     public static void populateBasicDetails(VBox container, Auction auction, Runnable onClose) {
+        populateFullDetails(container, auction, onClose);
+    }
+
+    public static void populateFullDetails(VBox container, Auction auction, Runnable onClose, Node... actionNodes) {
         container.getChildren().clear();
         container.setVisible(true);
         container.setManaged(true);
@@ -94,5 +99,12 @@ public class AuctionDetailViewBuilder {
         GridPane detailsGrid = createDetailsGrid(auction);
 
         container.getChildren().addAll(titleBox, imageView, detailsGrid);
+
+        if (actionNodes != null && actionNodes.length > 0) {
+            HBox actionBox = new HBox(10);
+            actionBox.setStyle("-fx-padding: 15 0 0 0;");
+            actionBox.getChildren().addAll(actionNodes);
+            container.getChildren().add(actionBox);
+        }
     }
 }

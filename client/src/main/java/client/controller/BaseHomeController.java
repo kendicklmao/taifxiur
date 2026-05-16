@@ -12,11 +12,14 @@ import java.util.function.Consumer;
 
 import client.Navigator;
 import client.support.ChangePasswordSupport;
+import shared.models.Auction;
 
 public abstract class BaseHomeController extends UserController {
     
     @FXML
     protected Label welcomeLabel;
+    
+    protected Auction selectedAuction;
     
     protected Consumer<String> messageListener;
 
