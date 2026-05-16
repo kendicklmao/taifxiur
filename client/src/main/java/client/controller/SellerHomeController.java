@@ -30,7 +30,6 @@ import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -44,6 +43,11 @@ import shared.enums.ItemStatus;
 import shared.enums.BankList;
 
 public class SellerHomeController extends BaseHomeController {
+
+    @Override
+    protected void refreshData() {
+        fetchAllAuctions();
+    }
 
     @FXML
     private TextField itemNameField;
@@ -81,8 +85,6 @@ public class SellerHomeController extends BaseHomeController {
     private ImageView itemImageView;
     @FXML
     private Label walletBalanceLabel;
-    @FXML
-    private VBox auctionDetailPane;
     private File selectedImageFile;
     private byte[] croppedImageBytes;
 
@@ -175,43 +177,6 @@ public class SellerHomeController extends BaseHomeController {
         }, terminateButton);
     }
 
-    private void handleTerminateAuction(Auction auction) {
-        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-        alert.initOwner(welcomeLabel.getScene().getWindow());
-        alert.initStyle(javafx.stage.StageStyle.UTILITY);
-        alert.setTitle("Confirm Termination");
-        alert.setHeaderText("Are you sure you want to terminate this auction?");
-        alert.setContentText("This action cannot be undone.");
-
-        shared.utils.DialogHelper.applyCustomStyle(alert);
-
-        java.util.Optional<ButtonType> result = alert.showAndWait();
-        if (result.isPresent() && result.get() == ButtonType.OK) {
-            terminateAuctionOnServer(auction);
-        }
-    }
-
-    private void terminateAuctionOnServer(Auction auction) {
-        try {
-            Map<String, String> data = new HashMap<>();
-            data.put("auctionId", auction.getId());
-            data.put("username", ctx.getCurrentUser().getUsername());
-            Request req = new Request("TERMINATE_AUCTION", data);
-            Response response = ctx.sendRequestAndWait(req, 30);
-
-            if ("SUCCESS".equals(response.getStatus())) {
-                alertService.showAlert("Success", "Auction terminated successfully.", welcomeLabel);
-                fetchAllAuctions();
-                auctionDetailPane.setVisible(false);
-                auctionDetailPane.setManaged(false);
-            } else {
-                alertService.showAlert("Error", "Failed to terminate auction: " + response.getMessage(), welcomeLabel);
-            }
-
-        } catch (Exception e) {
-            alertService.showAlert("Error", "An error occurred while terminating the auction.", welcomeLabel);
-        }
-    }
 
     @FXML
     private void handleUploadImage() {

@@ -36,6 +36,12 @@ import java.util.stream.Collectors;
 import shared.enums.BankList;
 
 public class BidderHomeController extends BaseHomeController {
+
+    @Override
+    protected void refreshData() {
+        loadAuction();
+    }
+
     @FXML
     private TilePane auctionGrid;
     @FXML
@@ -44,10 +50,6 @@ public class BidderHomeController extends BaseHomeController {
     private TextField searchField;
     @FXML
     private ComboBox<String> sortComboBox;
-    @FXML
-    private VBox auctionDetailPane;
-
-    private final Map<String, VBox> auctionCardMap = new HashMap<>();
 
     private final ObservableList<Auction> allAuctions = FXCollections.observableArrayList();
     private AuctionChartController activeChartController;
