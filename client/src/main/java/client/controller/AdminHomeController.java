@@ -114,6 +114,7 @@ public class AdminHomeController extends BaseHomeController {
 
         AuctionDetailViewBuilder.populateFullDetails(auctionDetailPane, auction, () -> {
             this.selectedAuction = null;
+            allAuctionsList.getSelectionModel().clearSelection();
         }, terminateButton);
     }
 
