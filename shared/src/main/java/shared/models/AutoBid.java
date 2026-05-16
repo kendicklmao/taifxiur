@@ -9,9 +9,13 @@ public class AutoBid implements Comparable<AutoBid> {
     private final Instant timeStamp; // Thời gian
 
     public AutoBid(Bidder bidder, BigDecimal maxBid) {
+        this(bidder, maxBid, Instant.now());
+    }
+
+    public AutoBid(Bidder bidder, BigDecimal maxBid, Instant timeStamp) {
         this.bidder = bidder;
         this.maxBid = maxBid;
-        this.timeStamp = Instant.now();
+        this.timeStamp = timeStamp;
     }
 
     public Bidder getBidder() {

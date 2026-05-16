@@ -64,14 +64,13 @@ public class BidderHomeController extends BaseHomeController {
         sortComboBox.getItems().addAll("Name (A-Z)", "Price (Low to High)");
         FilteredList<Auction> filteredData = new FilteredList<>(allAuctions, p -> true);
         searchField.textProperty().addListener((observable, oldValue, newValue) -> {
-                    filteredData.setPredicate(auction -> {
-                        if (newValue == null || newValue.isEmpty()) {
-                            return true;
-                        }
-                        return auction.getItem().getName().toLowerCase().contains(newValue.toLowerCase());
-                    });
+            filteredData.setPredicate(auction -> {
+                if (newValue == null || newValue.isEmpty()) {
+                    return true;
                 }
-        );
+                return auction.getItem().getName().toLowerCase().contains(newValue.toLowerCase());
+            });
+        });
 
         SortedList<Auction> sortedData = new SortedList<>(filteredData);
 
@@ -101,8 +100,7 @@ public class BidderHomeController extends BaseHomeController {
         javafx.animation.Timeline autoRefresh = new javafx.animation.Timeline(
                 new javafx.animation.KeyFrame(javafx.util.Duration.seconds(2), e -> {
                     handleRefresh();
-                })
-        );
+                }));
         autoRefresh.setCycleCount(javafx.animation.Timeline.INDEFINITE);
         autoRefresh.play();
     }
@@ -113,7 +111,8 @@ public class BidderHomeController extends BaseHomeController {
             protected List<Auction> call() throws Exception {
                 Map<String, String> data = new HashMap<>();
                 Response response = ctx.sendRequestAndWait(new Request("GET_AUCTIONS", data), 20);
-                Type type = new TypeToken<List<Auction>>(){}.getType();
+                Type type = new TypeToken<List<Auction>>() {
+                }.getType();
                 return gson.fromJson(response.getMessage(), type);
             }
 
@@ -124,13 +123,15 @@ public class BidderHomeController extends BaseHomeController {
             if (list != null) {
                 allAuctions.setAll(list);
                 if (selectedAuction != null) {
-                    Auction updated = list.stream().filter(a -> a.getId().equals(selectedAuction.getId())).findFirst().orElse(null);
+                    Auction updated = list.stream().filter(a -> a.getId().equals(selectedAuction.getId())).findFirst()
+                            .orElse(null);
                     if (updated != null) {
                         showAuctionDetails(updated);
                     }
                 }
                 if (activeChartController != null && activeChartAuction != null) {
-                    Auction updatedChartAuction = list.stream().filter(a -> a.getId().equals(activeChartAuction.getId())).findFirst().orElse(null);
+                    Auction updatedChartAuction = list.stream()
+                            .filter(a -> a.getId().equals(activeChartAuction.getId())).findFirst().orElse(null);
                     if (updatedChartAuction != null) {
                         activeChartAuction = updatedChartAuction;
                         activeChartController.populateChart(updatedChartAuction);
@@ -188,7 +189,7 @@ public class BidderHomeController extends BaseHomeController {
     private void updateAuctionGrid(List<Auction> auctions) {
         Map<String, VBox> existingCards = new HashMap<>();
 
-        for (var node: auctionGrid.getChildren()) {
+        for (var node : auctionGrid.getChildren()) {
             if (node instanceof VBox card) {
                 Object userData = card.getUserData();
                 if (userData != null) {
@@ -197,7 +198,7 @@ public class BidderHomeController extends BaseHomeController {
             }
         }
 
-        for (Auction auction: auctions) {
+        for (Auction auction : auctions) {
             String id = auction.getId();
             if (existingCards.containsKey(id)) {
 
@@ -275,7 +276,8 @@ public class BidderHomeController extends BaseHomeController {
         card.setOnMouseClicked(event -> {
 
             if (event.getClickCount() == 2) {
-                Auction latestAuction = allAuctions.stream().filter(a -> a.getId().equals(auction.getId())).findFirst().orElse(auction);
+                Auction latestAuction = allAuctions.stream().filter(a -> a.getId().equals(auction.getId())).findFirst()
+                        .orElse(auction);
                 showAuctionDetails(latestAuction);
             }
 
@@ -302,7 +304,7 @@ public class BidderHomeController extends BaseHomeController {
             Button autoBidButton = new Button("Auto Bid");
             autoBidButton.getStyleClass().add("dashboard-btn-ghost");
             autoBidButton.setOnAction(e -> showBidAmountDialog(auction, true));
-            
+
             AuctionDetailViewBuilder.populateFullDetails(auctionDetailPane, auction, () -> {
                 this.selectedAuction = null;
             }, chartButton, bidButton, autoBidButton);
@@ -340,7 +342,9 @@ public class BidderHomeController extends BaseHomeController {
             if (newText == null || newText.isEmpty()) {
                 bankNameComboBox.setItems(bankOptions);
             } else {
-                List<BankList> filteredList = Arrays.stream(BankList.values()).filter(s -> s.name().toLowerCase().contains(newText.toLowerCase())).collect(Collectors.toList());
+                List<BankList> filteredList = Arrays.stream(BankList.values())
+                        .filter(s -> s.name().toLowerCase().contains(newText.toLowerCase()))
+                        .collect(Collectors.toList());
                 bankNameComboBox.setItems(FXCollections.observableArrayList(filteredList));
                 bankNameComboBox.show();
             }
@@ -377,10 +381,12 @@ public class BidderHomeController extends BaseHomeController {
         });
 
         dialog.showAndWait().ifPresent(result -> {
-            if (result == null || result.isEmpty()) return;
+            if (result == null || result.isEmpty())
+                return;
 
             String[] parts = result.split(",", 3);
-            if (parts.length < 3 || parts[0].isEmpty() || parts[1] == null || parts[1].trim().isEmpty() || parts[2].isEmpty()) {
+            if (parts.length < 3 || parts[0].isEmpty() || parts[1] == null || parts[1].trim().isEmpty()
+                    || parts[2].isEmpty()) {
                 alertService.showAlert("Error", "Please fill in all fields.", welcomeLabel);
                 return;
             }
@@ -439,7 +445,9 @@ public class BidderHomeController extends BaseHomeController {
             if (newText == null || newText.isEmpty()) {
                 bankNameComboBox.setItems(bankOptions);
             } else {
-                List<BankList> filteredList = Arrays.stream(BankList.values()).filter(s -> s.name().toLowerCase().contains(newText.toLowerCase())).collect(Collectors.toList());
+                List<BankList> filteredList = Arrays.stream(BankList.values())
+                        .filter(s -> s.name().toLowerCase().contains(newText.toLowerCase()))
+                        .collect(Collectors.toList());
                 bankNameComboBox.setItems(FXCollections.observableArrayList(filteredList));
             }
         });
@@ -546,12 +554,20 @@ public class BidderHomeController extends BaseHomeController {
         amountField.setPromptText("Enter amount");
         amountField.getStyleClass().add("dashboard-input");
 
-        BigDecimal minBid = auction.getCurrentPrice().add(auction.getItem().getMinIncrement());
+        BigDecimal minBid = (auction.getHighestBidder() == null) 
+                            ? auction.getStartPrice() 
+                            : auction.getCurrentPrice().add(auction.getItem().getMinIncrement());
 
         VBox content = new VBox(10);
         content.setStyle("-fx-padding: 20px;");
-        content.getChildren().add(new Label("Current price: " + auction.getCurrentPrice()));
-        content.getChildren().add(new Label("Minimum bid: " + minBid + " (current + " + auction.getItem().getMinIncrement() + ")"));
+        content.getChildren().add(new Label("Current price: $" + auction.getCurrentPrice()));
+        
+        if (auction.getHighestBidder() == null) {
+            content.getChildren().add(new Label("Minimum bid: $" + minBid + " (Starting Price)"));
+        } else {
+            content.getChildren().add(new Label("Minimum bid: $" + minBid + " (Current + $" + auction.getItem().getMinIncrement() + ")"));
+        }
+        
         content.getChildren().add(new Label("Enter amount:"));
         content.getChildren().add(amountField);
 
@@ -570,7 +586,7 @@ public class BidderHomeController extends BaseHomeController {
                 try {
                     BigDecimal bidAmount = new BigDecimal(amount);
                     if (bidAmount.compareTo(minBid) < 0) {
-                        showAlert("Error", "Bid amount must be at least " + minBid + " (current price + minimum increment)");
+                        showAlert("Error", "Bid amount must be at least $" + minBid);
                         return;
                     }
 
@@ -602,8 +618,7 @@ public class BidderHomeController extends BaseHomeController {
             if ("SUCCESS".equals(response.getStatus())) {
                 loadAuction();
                 showAlert("Success", "Bid placed successfully!");
-            }
-            else {
+            } else {
                 showAlert("Error", response.getMessage());
             }
         } catch (Exception e) {
@@ -641,7 +656,8 @@ public class BidderHomeController extends BaseHomeController {
     protected void onSocketMessage(Response res) {
         try {
             if ("UPDATE_PRICE".equals(res.getStatus())) {
-                java.lang.reflect.Type type = new com.google.gson.reflect.TypeToken<Map<String, String>>(){}.getType();
+                java.lang.reflect.Type type = new com.google.gson.reflect.TypeToken<Map<String, String>>() {
+                }.getType();
                 Map<String, String> payload = gson.fromJson(res.getMessage(), type);
                 String auctionId = payload.get("auctionId");
                 String newPrice = payload.get("newPrice");

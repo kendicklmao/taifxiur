@@ -126,14 +126,14 @@ public class Auction {
                 }
 
             } else {
-                // Người khác đang thắng. Người có bid cao nhất cần outbid họ
-                BigDecimal minToOutbid = currentPrice.add(increment);
+                // Người khác đang thắng hoặc chưa có ai thắng
+                BigDecimal minToOutbid = (highestBidder == null) ? currentPrice : currentPrice.add(increment);
+                
                 if (second != null) {
                     newPrice = second.getMaxBid().add(increment);
                     if (newPrice.compareTo(minToOutbid) < 0) {
                         newPrice = minToOutbid;
                     }
-
                 } else {
                     newPrice = minToOutbid;
                 }
@@ -144,7 +144,11 @@ public class Auction {
 
                 newPrice = newPrice.setScale(2, RoundingMode.UP);
 
-                if (newPrice.compareTo(currentPrice.add(increment)) >= 0) {
+                // Sửa điều kiện so sánh: Nếu chưa có ai bid (highestBidder == null), 
+                // thì chỉ cần newPrice >= currentPrice (giá khởi điểm) là đủ.
+                BigDecimal minRequiredForPlace = (highestBidder == null) ? currentPrice : currentPrice.add(increment);
+
+                if (newPrice.compareTo(minRequiredForPlace) >= 0) {
                     currentPrice = newPrice;
                     highestBidder = highest.getBidder();
                     bidHistory.add(new BidTransaction(highest.getBidder(), newPrice, Instant.now()));
@@ -157,6 +161,10 @@ public class Auction {
 
     // Đăng kí đấu giá tự động
     public void registerAutoBid(Bidder bidder, BigDecimal maxBid) {
+        registerAutoBid(bidder, maxBid, Instant.now());
+    }
+
+    public void registerAutoBid(Bidder bidder, BigDecimal maxBid, Instant timeStamp) {
         synchronized (bidLock) {
             if (bidder == null || maxBid == null) {
                 throw new IllegalArgumentException();
@@ -164,9 +172,10 @@ public class Auction {
 
             maxBid = maxBid.setScale(2, RoundingMode.UP);
 
-            BigDecimal minRequired = (highestBidder == null)
-                    ? startPrice
-                    : currentPrice.add(item.getMinIncrement());
+            BigDecimal minRequired = (highestBidder != null && highestBidder.equals(bidder)) 
+                    ? currentPrice 
+                    : (highestBidder == null ? startPrice : currentPrice.add(item.getMinIncrement()));
+                    
             if (maxBid.compareTo(minRequired) < 0) {
                 throw new IllegalArgumentException("Bid amount must be at least " + minRequired);
             }
@@ -175,11 +184,14 @@ public class Auction {
                 throw new IllegalArgumentException();
             }
 
-            if (status != AuctionStatus.RUNNING && status != AuctionStatus.OPEN) {
-                throw new IllegalArgumentException("Auction is not in a biddable state");
+            if (status != AuctionStatus.RUNNING) {
+                throw new IllegalArgumentException("Auction is not in a biddable state (must be RUNNING)");
             }
 
-            autoBids.add(new AutoBid(bidder, maxBid));
+            // Xóa auto-bid cũ của người này nếu có để tránh trùng lặp
+            autoBids.removeIf(ab -> ab.getBidder().getUsername().equals(bidder.getUsername()));
+
+            autoBids.add(new AutoBid(bidder, maxBid, timeStamp));
             AutoBidService();
         }
     }
@@ -195,6 +207,7 @@ public class Auction {
             synchronized (bidLock) {
                 if (status == AuctionStatus.OPEN) {
                     status = AuctionStatus.RUNNING;
+                    AutoBidService(); // Kích hoạt autobid ngay khi phiên bắt đầu
                 }
             }
         }, delay, TimeUnit.SECONDS);
@@ -371,6 +384,7 @@ public class Auction {
             Instant now = Instant.now();
             if (status == AuctionStatus.OPEN && !now.isBefore(startTime)) {
                 status = AuctionStatus.RUNNING;
+                AutoBidService(); // Kích hoạt autobid ngay khi phiên bắt đầu
             } else if (status == AuctionStatus.RUNNING && !now.isBefore(endTime)) {
                 status = AuctionStatus.FINISHED;
             }

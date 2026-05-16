@@ -228,7 +228,7 @@ public class AuctionService {
     // Tải auto-bids cho một phiên đấu giá
     private void loadAutoBidsForAuction(Connection conn, Auction auction, UserService userService) {
         try (PreparedStatement pstmt = conn.prepareStatement(
-                "SELECT ab.bidder_id, ab.max_bid_amount FROM auto_bids ab " + "WHERE ab.auction_id = ?")) {
+                "SELECT ab.bidder_id, ab.max_bid_amount, ab.created_at FROM auto_bids ab " + "WHERE ab.auction_id = ?")) {
 
             pstmt.setString(1, auction.getId());
             ResultSet rs = pstmt.executeQuery();
@@ -240,16 +240,22 @@ public class AuctionService {
                     continue;
                 }
 
-                int bidderId = rs.getInt("bidder_id");
+                int bidderIdVal = rs.getInt("bidder_id");
                 BigDecimal maxBid = rs.getBigDecimal("max_bid_amount");
-                String bidderUsername = getUsernameFromId(conn, bidderId);
+                Timestamp createdAt = rs.getTimestamp("created_at");
+                Instant timeStamp = (createdAt != null) ? createdAt.toInstant() : Instant.now();
+                
+                String bidderUsername = getUsernameFromId(conn, bidderIdVal);
                 User bidderUser = userService.getUser(bidderUsername);
 
                 if (bidderUser instanceof Bidder) {
-                    auction.registerAutoBid((Bidder) bidderUser, maxBid);
+                    try {
+                        auction.registerAutoBid((Bidder) bidderUser, maxBid, timeStamp);
+                    } catch (Exception e) {
+                        System.err.println(" [RESTORE] Skipped 1 autobid for auction " + auction.getId() + ": " + e.getMessage());
+                    }
                 }
             }
-
         } catch (SQLException e) {
             System.err.println("Error loading auto-bids: " + e.getMessage());
         }
@@ -388,19 +394,35 @@ public class AuctionService {
 
         auction.registerAutoBid(bidder, maxBid);
 
-        // Lưu vào database
-        try (Connection conn = DatabaseConfig.getDataSource().getConnection();
-                PreparedStatement pstmt = conn.prepareStatement(
+        // Lưu vào database (Xóa cái cũ trước để tránh bị trùng lặp khi restart server)
+        try (Connection conn = DatabaseConfig.getDataSource().getConnection()) {
+            conn.setAutoCommit(false);
+            try {
+                // 1. Xóa cấu hình autobid cũ của user này cho auction này
+                try (PreparedStatement deletePstmt = conn.prepareStatement(
+                        "DELETE FROM auto_bids WHERE auction_id = ? AND bidder_id = ?")) {
+                    deletePstmt.setString(1, auctionId);
+                    deletePstmt.setInt(2, getUserIdFromDatabase(bidder.getUsername()));
+                    deletePstmt.executeUpdate();
+                }
+
+                // 2. Thêm cấu hình mới
+                try (PreparedStatement insertPstmt = conn.prepareStatement(
                         "INSERT INTO auto_bids (auction_id, bidder_id, max_bid_amount, created_at) VALUES (?, ?, ?, CURRENT_TIMESTAMP)")) {
+                    insertPstmt.setString(1, auctionId);
+                    insertPstmt.setInt(2, getUserIdFromDatabase(bidder.getUsername()));
+                    insertPstmt.setBigDecimal(3, maxBid);
+                    insertPstmt.executeUpdate();
+                }
 
-            pstmt.setString(1, auctionId);
-            pstmt.setInt(2, getUserIdFromDatabase(bidder.getUsername()));
-            pstmt.setBigDecimal(3, maxBid);
-
-            int result = pstmt.executeUpdate();
-            System.out.println("Auto-bid inserted: " + result + " rows affected");
+                conn.commit();
+                System.out.println("Auto-bid updated in database for user: " + bidder.getUsername());
+            } catch (SQLException e) {
+                conn.rollback();
+                throw e;
+            }
         } catch (SQLException e) {
-            System.err.println("Error registering autobid: " + e.getMessage());
+            System.err.println("Error updating autobid in database: " + e.getMessage());
             e.printStackTrace();
         }
     }
