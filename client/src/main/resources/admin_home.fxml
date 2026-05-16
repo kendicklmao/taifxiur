@@ -28,16 +28,16 @@
 
             <!-- TAB 1: ALL AUCTIONS -->
             <Tab text="All Auctions" closable="false">
-                <ScrollPane fitToWidth="true" hbarPolicy="NEVER">
-                    <HBox>
+                <ScrollPane fitToWidth="true" fitToHeight="true" hbarPolicy="NEVER">
+                    <HBox spacing="0">
                         <VBox styleClass="app-content" spacing="20" HBox.hgrow="ALWAYS">
-                            <VBox styleClass="dash-card" spacing="16">
+                            <VBox styleClass="dash-card" spacing="16" VBox.vgrow="ALWAYS">
                                 <VBox spacing="4">
                                     <Label text="All Auctions in System" styleClass="dashboard-section-title"/>
                                     <Label text="Browse all active and completed auctions"
                                            styleClass="dashboard-section-subtitle"/>
                                 </VBox>
-                                <ListView fx:id="allAuctionsList" prefHeight="500"/>
+                                <ListView fx:id="allAuctionsList" VBox.vgrow="ALWAYS"/>
                                 <HBox spacing="10">
                                     <Pane HBox.hgrow="ALWAYS"/>
                                     <Button text="REFRESH" onAction="#refreshAuctions"
@@ -45,24 +45,26 @@
                                 </HBox>
                             </VBox>
                         </VBox>
-                        <VBox fx:id="auctionDetailPane" styleClass="dash-card" spacing="16" minWidth="320" managed="false" visible="false">
-                            <!-- Auction details will be populated here -->
+                        <VBox styleClass="app-content" spacing="20">
+                            <VBox fx:id="auctionDetailPane" styleClass="dash-card" spacing="16" minWidth="320" maxWidth="400" VBox.vgrow="ALWAYS" managed="false" visible="false">
+                                <!-- Auction details will be populated here -->
+                            </VBox>
                         </VBox>
                     </HBox>
                 </ScrollPane>
             </Tab>
 
-            <!-- TAB 2: USERS -->
-            <Tab text="Users" closable="false">
-                <ScrollPane fitToWidth="true" hbarPolicy="NEVER">
-                    <HBox>
+            <!-- TAB 2: USER MANAGEMENT -->
+            <Tab text="User Management" closable="false">
+                <ScrollPane fitToWidth="true" fitToHeight="true" hbarPolicy="NEVER">
+                    <HBox spacing="0">
                         <VBox styleClass="app-content" spacing="20" HBox.hgrow="ALWAYS">
-                            <VBox styleClass="dash-card" spacing="16">
+                            <VBox styleClass="dash-card" spacing="16" VBox.vgrow="ALWAYS">
                                 <VBox spacing="4">
                                     <Label text="User Management" styleClass="dashboard-section-title"/>
                                     <Label text="View all registered users and control their access" styleClass="dashboard-section-subtitle"/>
                                 </VBox>
-                                <ListView fx:id="allUsersList" prefHeight="500"/>
+                                <ListView fx:id="allUsersList" VBox.vgrow="ALWAYS"/>
                                 <HBox spacing="10">
                                     <Pane HBox.hgrow="ALWAYS"/>
                                     <Button text="REFRESH" onAction="#refreshUsers"
@@ -71,25 +73,27 @@
                             </VBox>
                         </VBox>
 
-                        <VBox styleClass="dash-card" spacing="16" minWidth="320" maxWidth="400">
-                            <VBox spacing="4">
-                                <Label text="Actions" styleClass="dashboard-section-title"/>
-                                <Label text="Ban or unban a user" styleClass="dashboard-section-subtitle"/>
+                        <VBox styleClass="app-content" spacing="20">
+                            <VBox styleClass="dash-card" spacing="16" minWidth="320" maxWidth="400" VBox.vgrow="ALWAYS">
+                                <VBox spacing="4">
+                                    <Label text="Actions" styleClass="dashboard-section-title"/>
+                                    <Label text="Ban or unban a user" styleClass="dashboard-section-subtitle"/>
+                                </VBox>
+                                <VBox spacing="12">
+                                    <ComboBox fx:id="usernameField" editable="true"
+                                              promptText="Search or select username"
+                                              styleClass="dashboard-choicebox"
+                                              maxWidth="Infinity"/>
+                                    <HBox spacing="12">
+                                        <Button text="BAN USER" onAction="#handleBanUser"
+                                                styleClass="dashboard-btn-danger" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
+                                        <Button text="UNBAN USER" onAction="#handleUnbanUser"
+                                                styleClass="dashboard-btn-success" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
+                                    </HBox>
+                                </VBox>
+                                <TextArea fx:id="userStatusArea" editable="false" wrapText="true"
+                                          prefRowCount="10" styleClass="dashboard-input" VBox.vgrow="ALWAYS"/>
                             </VBox>
-                            <VBox spacing="12">
-                                <ComboBox fx:id="usernameField" editable="true"
-                                          promptText="Search or select username"
-                                          styleClass="dashboard-choicebox"
-                                          maxWidth="Infinity"/>
-                                <HBox spacing="12">
-                                    <Button text="BAN USER" onAction="#handleBanUser"
-                                            styleClass="dashboard-btn-danger" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
-                                    <Button text="UNBAN USER" onAction="#handleUnbanUser"
-                                            styleClass="dashboard-btn-success" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
-                                </HBox>
-                            </VBox>
-                            <TextArea fx:id="userStatusArea" editable="false" wrapText="true"
-                                      prefRowCount="10" styleClass="dashboard-input" VBox.vgrow="ALWAYS"/>
                         </VBox>
                     </HBox>
                 </ScrollPane>
