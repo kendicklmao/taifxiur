@@ -78,7 +78,7 @@ public class LoginController extends UserController {
 
                 ctx.setCurrentUser(currentUser);
 
-                alertService.showAlert("Success", "Login successful with role: " + role, usernameField);
+                alertService.showAlert("Success", "Logged in successfully with role: " + role, usernameField);
                 if (role.equals("BIDDER")) {
                     navigator.switchScene("bidder_home.fxml");
                 } else if (role.equals("SELLER")) {

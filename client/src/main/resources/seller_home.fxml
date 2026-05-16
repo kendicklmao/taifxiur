@@ -12,7 +12,7 @@
         <VBox styleClass="app-bar" spacing="0">
             <HBox alignment="CENTER_LEFT" spacing="18">
                 <HBox spacing="6" alignment="CENTER_LEFT">
-                    <Label text="AUCTION" styleClass="app-brand, app-brand-accent"/>
+                    <Label text="AUCTION HOUSE" styleClass="app-brand, app-brand-accent"/>
                 </HBox>
                 <Label text="SELLER" styleClass="app-role-pill"/>
                 <Pane HBox.hgrow="ALWAYS"/>
@@ -45,11 +45,11 @@
                 </HBox>
 
                 <!-- Two-column responsive area: Create Auction + Your Auctions -->
-                <HBox spacing="22">
+                <HBox spacing="22" VBox.vgrow="ALWAYS">
 
                     <!-- CREATE AUCTION -->
                     <VBox styleClass="dash-card" spacing="16" HBox.hgrow="ALWAYS"
-                          minWidth="520" prefWidth="700">
+                          minWidth="0" prefWidth="1000">
                         <VBox spacing="4">
                             <Label text="Create New Auction" styleClass="dashboard-section-title"/>
                             <Label text="List a new item for live auction"
@@ -154,13 +154,13 @@
 
                     <!-- YOUR AUCTIONS -->
                     <VBox styleClass="dash-card" spacing="16" HBox.hgrow="ALWAYS"
-                          minWidth="320">
+                          minWidth="0" prefWidth="1000">
                         <VBox spacing="4">
                             <Label text="Active Auctions" styleClass="dashboard-section-title"/>
                             <Label text="Manage your ongoing listings"
                                    styleClass="dashboard-section-subtitle"/>
                         </VBox>
-                        <ScrollPane fitToWidth="true" hbarPolicy="NEVER"
+                        <ScrollPane fitToWidth="true" hbarPolicy="NEVER" VBox.vgrow="ALWAYS"
                                     style="-fx-background-color: transparent;">
                             <TilePane fx:id="auctionGrid" hgap="16" vgap="16"
                                       style="-fx-padding: 4;"/>
@@ -168,8 +168,8 @@
                     </VBox>
 
                     <!-- Right-side Auction Detail Pane -->
-                    <VBox fx:id="auctionDetailPane" styleClass="dash-card" spacing="16" HBox.hgrow="NEVER"
-                          minWidth="320" managed="false" visible="false">
+                    <VBox fx:id="auctionDetailPane" styleClass="dash-card" spacing="16" HBox.hgrow="ALWAYS"
+                          minWidth="0" prefWidth="1000" managed="false" visible="false">
                         <!-- Content will be populated dynamically -->
                     </VBox>
                 </HBox>

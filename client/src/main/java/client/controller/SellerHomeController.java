@@ -149,90 +149,14 @@ public class SellerHomeController extends BaseHomeController {
         refreshWalletBalance();
     }
 
-    private void updateAuctionGrid(List<Auction> auctions) {
-        Map<String, VBox> existingAuctionCards = new java.util.HashMap<>();
-        for (var node: auctionGrid.getChildren()) {
-            if (node instanceof VBox) {
-                Object ud = node.getUserData();
-                if (ud != null) {
-                    existingAuctionCards.put(ud.toString(), (VBox) node);
-                }
-            }
-        }
-
-        // Cập nhật hoặc tạo mới các card
-        for (Auction auction: auctions) {
-            String id = auction.getId();
-            if (existingAuctionCards.containsKey(id)) {
-                // Update card cũ
-                VBox card = existingAuctionCards.get(id);
-                Object priceObj = card.getProperties().get("priceLabel");
-                if (priceObj instanceof Label) {
-                    ((Label) priceObj).setText("Current Price: $" + auction.getCurrentPrice());
-                }
-                Object statusObj = card.getProperties().get("statusLabel");
-                if (statusObj instanceof Label) {
-                    ((Label) statusObj).setText("Status: " + auction.getStatus());
-                }
-                Object endsObj = card.getProperties().get("endsLabel");
-                if (endsObj instanceof Label) {
-                    ((Label) endsObj).setText("Ends: " + formatTime(auction.getEndTime()));
-                }
-                existingAuctionCards.remove(id);
-            } else {
-                // Thêm card mới
-                VBox card = createAuctionCard(auction);
-                card.setUserData(id);
-                auctionGrid.getChildren().add(card);
-            }
-        }
-
-        // Xoá các card không còn tồn tại
-        auctionGrid.getChildren().removeAll(existingAuctionCards.values());
+    @Override
+    protected TilePane getAuctionGrid() {
+        return auctionGrid;
     }
 
-    private VBox createAuctionCard(Auction auction) {
-        ImageView imageView = new ImageView();
-        Label nameLabel = new Label();
-        Label priceLabel = new Label();
-        Label statusLabel = new Label();
-        Label startsAtLabel = new Label();
-        Label endsAtLabel = new Label();
-        VBox card = new VBox(10);
-
-        imageView.setFitHeight(150);
-        imageView.setFitWidth(150);
-        card.getStyleClass().add("auction-card");
-        nameLabel.getStyleClass().add("item-name");
-        priceLabel.getStyleClass().add("item-price");
-        statusLabel.getStyleClass().add("item-status");
-        startsAtLabel.getStyleClass().add("item-ends-in");
-        endsAtLabel.getStyleClass().add("item-ends-in");
-        VBox itemDetails = new VBox(5, nameLabel, priceLabel, statusLabel, startsAtLabel, endsAtLabel);
-        card.getChildren().addAll(imageView, itemDetails);
-
-        // Lưu label vào properties để dễ cập nhật
-        card.getProperties().put("priceLabel", priceLabel);
-        card.getProperties().put("statusLabel", statusLabel);
-        card.getProperties().put("endsLabel", endsAtLabel);
-
-        if (auction.getItem().getImageUrl() != null && !auction.getItem().getImageUrl().isEmpty()) {
-            imageView.setImage(new Image(auction.getItem().getImageUrl(), 150, 150, true, true, true));
-        }
-
-        nameLabel.setText(auction.getItem().getName());
-        priceLabel.setText("Current Price: $" + auction.getCurrentPrice());
-        statusLabel.setText("Status: " + auction.getStatus());
-        startsAtLabel.setText("Starts: " + formatTime(auction.getStartTime()));
-        endsAtLabel.setText("Ends: " + formatTime(auction.getEndTime()));
-
-        card.setOnMouseClicked(event -> {
-            if (event.getClickCount() == 2) {
-                showAuctionDetails(auction);
-            }
-        });
-
-        return card;
+    @Override
+    protected void onAuctionCardDoubleClicked(Auction auction) {
+        showAuctionDetails(auction);
     }
 
     private void showAuctionDetails(Auction auction) {
@@ -253,13 +177,15 @@ public class SellerHomeController extends BaseHomeController {
 
     private void handleTerminateAuction(Auction auction) {
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+        alert.initOwner(welcomeLabel.getScene().getWindow());
+        alert.initStyle(javafx.stage.StageStyle.UTILITY);
         alert.setTitle("Confirm Termination");
         alert.setHeaderText("Are you sure you want to terminate this auction?");
         alert.setContentText("This action cannot be undone.");
 
         shared.utils.DialogHelper.applyCustomStyle(alert);
 
-        Optional<ButtonType> result = alert.showAndWait();
+        java.util.Optional<ButtonType> result = alert.showAndWait();
         if (result.isPresent() && result.get() == ButtonType.OK) {
             terminateAuctionOnServer(auction);
         }

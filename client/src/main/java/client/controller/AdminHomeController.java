@@ -118,13 +118,15 @@ public class AdminHomeController extends BaseHomeController {
 
     private void handleTerminateAuction(Auction auction) {
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+        alert.initOwner(welcomeLabel.getScene().getWindow());
+        alert.initStyle(javafx.stage.StageStyle.UTILITY);
         alert.setTitle("Confirm Termination");
         alert.setHeaderText("Are you sure you want to terminate this auction?");
         alert.setContentText("This action cannot be undone.");
 
         shared.utils.DialogHelper.applyCustomStyle(alert);
 
-        Optional<ButtonType> result = alert.showAndWait();
+        java.util.Optional<ButtonType> result = alert.showAndWait();
         if (result.isPresent() && result.get() == ButtonType.OK) {
             terminateAuctionOnServer(auction);
         }

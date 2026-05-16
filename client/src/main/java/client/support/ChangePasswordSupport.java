@@ -33,7 +33,7 @@ public final class ChangePasswordSupport {
             dialog.initOwner(ownerNode.getScene().getWindow());
         }
 
-        dialog.initStyle(StageStyle.TRANSPARENT);
+        dialog.initStyle(StageStyle.UTILITY);
 
         dialog.setTitle("Change Password");
         dialog.setHeaderText("Update your account password");
@@ -83,10 +83,13 @@ public final class ChangePasswordSupport {
         buttonContainer.setStyle("-fx-padding: 16 0 0 0;");
         content.getChildren().add(buttonContainer);
 
-        dialog.getDialogPane().getButtonTypes().add(ButtonType.CLOSE);
-        Node closeButton = dialog.getDialogPane().lookupButton(ButtonType.CLOSE);
-        closeButton.setVisible(false);
-        closeButton.setManaged(false);
+        // Giữ lại nút Close để hiển thị được thanh tiêu đề và nút X
+        dialog.getDialogPane().getButtonTypes().add(javafx.scene.control.ButtonType.CLOSE);
+        Node internalCloseButton = dialog.getDialogPane().lookupButton(javafx.scene.control.ButtonType.CLOSE);
+        if (internalCloseButton != null) {
+            internalCloseButton.setVisible(false);
+            internalCloseButton.setManaged(false);
+        }
 
         dialog.getDialogPane().setContent(content);
 
@@ -94,7 +97,7 @@ public final class ChangePasswordSupport {
 
         changeButton.setOnAction(event -> {
             String validationError = validate(currentPasswordField.getText(), newPasswordField.getText(),
-                                            confirmPasswordField.getText());
+                                             confirmPasswordField.getText());
 
             if (validationError != null) {
                 errorLabel.setText(validationError);
@@ -142,14 +145,6 @@ public final class ChangePasswordSupport {
             new Thread(task).start();
         });
 
-        dialog.setOnShown(e -> {
-            Window owner = dialog.getOwner();
-            if (owner != null) {
-                dialog.setX(owner.getX() + (owner.getWidth() - dialog.getWidth()) / 2);
-                dialog.setY(owner.getY() + (owner.getHeight() - dialog.getHeight()) / 2);
-            }
-        });
-
         dialog.showAndWait();
     }
 
@@ -183,7 +178,7 @@ public final class ChangePasswordSupport {
             dialog.initOwner(ownerNode.getScene().getWindow());
         }
 
-        dialog.initStyle(StageStyle.TRANSPARENT);
+        dialog.initStyle(StageStyle.UTILITY);
 
         dialog.setTitle(title);
         dialog.setHeaderText(title.toUpperCase());
@@ -205,18 +200,12 @@ public final class ChangePasswordSupport {
 
         dialog.getDialogPane().setContent(box);
 
-        dialog.getDialogPane().getButtonTypes().add(ButtonType.CLOSE);
-        Node closeButton = dialog.getDialogPane().lookupButton(ButtonType.CLOSE);
-        closeButton.setVisible(false);
-        closeButton.setManaged(false);
-
-        dialog.setOnShown(e -> {
-            Window owner = dialog.getOwner();
-            if (owner != null) {
-                dialog.setX(owner.getX() + (owner.getWidth() - dialog.getWidth()) / 2);
-                dialog.setY(owner.getY() + (owner.getHeight() - dialog.getHeight()) / 2);
-            }
-        });
+        dialog.getDialogPane().getButtonTypes().add(javafx.scene.control.ButtonType.CLOSE);
+        Node internalCloseButton = dialog.getDialogPane().lookupButton(javafx.scene.control.ButtonType.CLOSE);
+        if (internalCloseButton != null) {
+            internalCloseButton.setVisible(false);
+            internalCloseButton.setManaged(false);
+        }
 
         dialog.showAndWait();
     }

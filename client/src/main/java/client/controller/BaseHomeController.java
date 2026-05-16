@@ -14,6 +14,11 @@ import client.Navigator;
 import client.support.ChangePasswordSupport;
 import shared.models.Auction;
 
+import javafx.scene.layout.TilePane;
+import javafx.scene.layout.VBox;
+import client.support.AuctionCardBuilder;
+import java.util.List;
+
 public abstract class BaseHomeController extends UserController {
     
     @FXML
@@ -22,6 +27,18 @@ public abstract class BaseHomeController extends UserController {
     protected Auction selectedAuction;
     
     protected Consumer<String> messageListener;
+
+    // Các thuộc tính chung cho Grid
+    protected final Map<String, VBox> auctionCardMap = new HashMap<>();
+
+    // Mặc định trả về null, các lớp con dùng Grid sẽ override lại
+    protected TilePane getAuctionGrid() {
+        return null;
+    }
+
+    // Mặc định không làm gì, các lớp con dùng Grid sẽ override lại
+    protected void onAuctionCardDoubleClicked(Auction auction) {
+    }
 
     protected void setupHome() {
         if (welcomeLabel != null && ctx.getCurrentUser() != null) {
@@ -36,6 +53,35 @@ public abstract class BaseHomeController extends UserController {
             }
         };
         ctx.addMessageListener(messageListener);
+    }
+
+    protected void updateAuctionGrid(List<Auction> auctions) {
+        TilePane grid = getAuctionGrid();
+        if (grid == null) return;
+
+        Map<String, VBox> existingCards = new HashMap<>();
+        for (var node : grid.getChildren()) {
+            if (node instanceof VBox card && card.getUserData() != null) {
+                existingCards.put(card.getUserData().toString(), card);
+            }
+        }
+
+        for (Auction auction : auctions) {
+            String id = auction.getId();
+            if (existingCards.containsKey(id)) {
+                VBox card = existingCards.get(id);
+                AuctionCardBuilder.updateCardData(card, auction);
+                existingCards.remove(id);
+            } else {
+                VBox card = AuctionCardBuilder.createAuctionCard(auction, this::onAuctionCardDoubleClicked);
+                grid.getChildren().add(card);
+                auctionCardMap.put(id, card);
+            }
+        }
+
+        // Xóa các card không còn tồn tại
+        grid.getChildren().removeAll(existingCards.values());
+        existingCards.keySet().forEach(auctionCardMap::remove);
     }
 
     @FXML

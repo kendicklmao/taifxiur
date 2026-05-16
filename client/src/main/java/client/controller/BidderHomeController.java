@@ -17,9 +17,7 @@ import java.util.Comparator;
 import javafx.concurrent.Task;
 import javafx.collections.transformation.FilteredList;
 import javafx.collections.transformation.SortedList;
-import javafx.scene.image.Image;
 import java.lang.reflect.Type;
-import javafx.scene.image.ImageView;
 import javafx.scene.layout.TilePane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Modality;
@@ -98,9 +96,10 @@ public class BidderHomeController extends BaseHomeController {
 
         // Tự động làm mới giao diện và ví mỗi 2 giây
         javafx.animation.Timeline autoRefresh = new javafx.animation.Timeline(
-                new javafx.animation.KeyFrame(javafx.util.Duration.seconds(2), e -> {
-                    handleRefresh();
-                }));
+            new javafx.animation.KeyFrame(javafx.util.Duration.seconds(2), e -> {
+                handleRefresh();
+            })
+        );
         autoRefresh.setCycleCount(javafx.animation.Timeline.INDEFINITE);
         autoRefresh.play();
     }
@@ -123,8 +122,7 @@ public class BidderHomeController extends BaseHomeController {
             if (list != null) {
                 allAuctions.setAll(list);
                 if (selectedAuction != null) {
-                    Auction updated = list.stream().filter(a -> a.getId().equals(selectedAuction.getId())).findFirst()
-                            .orElse(null);
+                    Auction updated = list.stream().filter(a -> a.getId().equals(selectedAuction.getId())).findFirst().orElse(null);
                     if (updated != null) {
                         showAuctionDetails(updated);
                     }
@@ -150,7 +148,6 @@ public class BidderHomeController extends BaseHomeController {
 
     private void loadWallet() {
         Task<String> task = new Task<>() {
-
             @Override
             protected String call() throws Exception {
                 Map<String, String> data = new HashMap<>();
@@ -161,7 +158,6 @@ public class BidderHomeController extends BaseHomeController {
                 }
                 return null;
             }
-
         };
 
         task.setOnSucceeded(e -> {
@@ -186,107 +182,19 @@ public class BidderHomeController extends BaseHomeController {
         loadWallet();
     }
 
-    private void updateAuctionGrid(List<Auction> auctions) {
-        Map<String, VBox> existingCards = new HashMap<>();
-
-        for (var node : auctionGrid.getChildren()) {
-            if (node instanceof VBox card) {
-                Object userData = card.getUserData();
-                if (userData != null) {
-                    existingCards.put(userData.toString(), card);
-                }
-            }
-        }
-
-        for (Auction auction : auctions) {
-            String id = auction.getId();
-            if (existingCards.containsKey(id)) {
-
-                VBox card = existingCards.get(id);
-                Label nameLabel = (Label) card.getProperties().get("nameLabel");
-                Label priceLabel = (Label) card.getProperties().get("priceLabel");
-                Label statusLabel = (Label) card.getProperties().get("statusLabel");
-                Label startsLabel = (Label) card.getProperties().get("startsLabel");
-                Label endsLabel = (Label) card.getProperties().get("endsLabel");
-
-                if (nameLabel != null) {
-                    nameLabel.setText(auction.getItem().getName());
-                }
-                if (priceLabel != null) {
-                    priceLabel.setText("Current Bid: $" + auction.getCurrentPrice());
-                }
-                if (statusLabel != null) {
-                    statusLabel.setText(auction.getStatus().toString());
-                }
-                if (startsLabel != null) {
-                    startsLabel.setText("Starts: " + formatTime(auction.getStartTime()));
-                }
-                if (endsLabel != null) {
-                    endsLabel.setText("Ends: " + formatTime(auction.getEndTime()));
-                }
-
-                existingCards.remove(id);
-
-            } else {
-
-                VBox card = createAuctionCard(auction);
-                card.setUserData(id);
-                auctionGrid.getChildren().add(card);
-
-            }
-        }
-
-        auctionGrid.getChildren().removeAll(existingCards.values());
+    @Override
+    protected TilePane getAuctionGrid() {
+        return auctionGrid;
     }
 
-    private VBox createAuctionCard(Auction auction) {
-        ImageView imageView = new ImageView();
-        Label nameLabel = new Label();
-        Label priceLabel = new Label();
-        Label statusLabel = new Label();
-        Label startsAtLabel = new Label();
-        Label endsInLabel = new Label();
-        VBox card = new VBox(10);
-        card.getProperties().put("priceLabel", priceLabel);
-        card.getProperties().put("nameLabel", nameLabel);
-        card.getProperties().put("statusLabel", statusLabel);
-        card.getProperties().put("startsLabel", startsAtLabel);
-        card.getProperties().put("endsLabel", endsInLabel);
-
-        imageView.setFitHeight(150);
-        imageView.setFitWidth(150);
-        card.getStyleClass().add("auction-card");
-        nameLabel.getStyleClass().add("item-name");
-        priceLabel.getStyleClass().add("item-price");
-        statusLabel.getStyleClass().add("item-status");
-        startsAtLabel.getStyleClass().add("item-ends-in");
-        endsInLabel.getStyleClass().add("item-ends-in");
-        VBox itemDetails = new VBox(5, nameLabel, priceLabel, statusLabel, startsAtLabel, endsInLabel);
-        card.getChildren().addAll(imageView, itemDetails);
-
-        if (auction.getItem().getImageUrl() != null && !auction.getItem().getImageUrl().isEmpty()) {
-            imageView.setImage(new Image(auction.getItem().getImageUrl(), 150, 150, true, true));
-        }
-
-        nameLabel.setText(auction.getItem().getName());
-        priceLabel.setText("Current Bid: $" + auction.getCurrentPrice());
-        statusLabel.setText(auction.getStatus().toString());
-        startsAtLabel.setText("Starts: " + formatTime(auction.getStartTime()));
-        endsInLabel.setText("Ends: " + formatTime(auction.getEndTime()));
-        card.setOnMouseClicked(event -> {
-
-            if (event.getClickCount() == 2) {
-                Auction latestAuction = allAuctions.stream().filter(a -> a.getId().equals(auction.getId())).findFirst()
-                        .orElse(auction);
-                showAuctionDetails(latestAuction);
-            }
-
-        });
-
-        card.setUserData(auction.getId());
-
-        auctionCardMap.put(auction.getId(), card);
-        return card;
+    @Override
+    protected void onAuctionCardDoubleClicked(Auction auction) {
+        // Lấy dữ liệu mới nhất từ danh sách hiện tại
+        Auction latestAuction = allAuctions.stream()
+                .filter(a -> a.getId().equals(auction.getId()))
+                .findFirst()
+                .orElse(auction);
+        showAuctionDetails(latestAuction);
     }
 
     private void showAuctionDetails(Auction auction) {
