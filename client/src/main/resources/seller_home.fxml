@@ -87,7 +87,7 @@
                                 <Label text="CUSTOM INCREMENT AMOUNT ($)"
                                        styleClass="form-label-register"/>
                                 <TextField fx:id="customIncrementField"
-                                           promptText="e.g. 100"
+                                           promptText="Must be at least 5% of starting price"
                                            styleClass="dashboard-input"/>
                             </VBox>
                         </VBox>

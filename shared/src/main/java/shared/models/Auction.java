@@ -44,6 +44,7 @@ public class Auction {
     private AuctionStatus status; // Trạng thái phiên đấu giá
     private ScheduledFuture<?> finishTask; // Kết thúc phiên đấu giá
     private transient Consumer<Auction> finishCallback; // Callback khi kết thúc phiên đấu giá
+    private transient Consumer<Auction> statusChangeListener; // Callback khi trạng thái thay đổi
     private transient Predicate<String> banChecker; // Kiểm tra người bị cấm
 
     public Auction(String id, Item item, BigDecimal startPrice, Seller seller, Instant startTime, Instant endTime) {
@@ -84,6 +85,10 @@ public class Auction {
 
     public void setFinishCallback(Consumer<Auction> cb) {
         this.finishCallback = cb;
+    }
+
+    public void setStatusChangeListener(Consumer<Auction> listener) {
+        this.statusChangeListener = listener;
     }
 
     public void setBanChecker(Predicate<String> checker) {
@@ -208,6 +213,9 @@ public class Auction {
                 if (status == AuctionStatus.OPEN) {
                     status = AuctionStatus.RUNNING;
                     AutoBidService(); // Kích hoạt autobid ngay khi phiên bắt đầu
+                    if (statusChangeListener != null) {
+                        statusChangeListener.accept(this);
+                    }
                 }
             }
         }, delay, TimeUnit.SECONDS);
@@ -385,8 +393,14 @@ public class Auction {
             if (status == AuctionStatus.OPEN && !now.isBefore(startTime)) {
                 status = AuctionStatus.RUNNING;
                 AutoBidService(); // Kích hoạt autobid ngay khi phiên bắt đầu
+                if (statusChangeListener != null) {
+                    statusChangeListener.accept(this);
+                }
             } else if (status == AuctionStatus.RUNNING && !now.isBefore(endTime)) {
                 status = AuctionStatus.FINISHED;
+                if (statusChangeListener != null) {
+                    statusChangeListener.accept(this);
+                }
             }
         }
     }

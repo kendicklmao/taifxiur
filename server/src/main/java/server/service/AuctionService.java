@@ -75,6 +75,7 @@ public class AuctionService {
                     // Tạo auction và khôi phục state
                     Auction auction = new Auction(auctionId, item, startPrice, (Seller) seller, startTime, endTime);
                     auction.setFinishCallback(a -> finalizeAuction(a));
+                    auction.setStatusChangeListener(a -> updateAuctionStatusInDatabase(a));
 
                     // Restore current price if different from start price
                     if (currentPrice != null && currentPrice.compareTo(startPrice) > 0) {
@@ -291,6 +292,7 @@ public class AuctionService {
         // Đăng ký finish callback để service có thể tự động thanh toán khi phiên đấu
         // giá kết thúc
         auction.setFinishCallback(a -> finalizeAuction(a));
+        auction.setStatusChangeListener(a -> updateAuctionStatusInDatabase(a));
         auction.setBanChecker(username -> userService.isUserBanned(username));
         auction.startScheduler();
         auctions.put(id, auction);
@@ -828,6 +830,24 @@ public class AuctionService {
             }
 
         });
+    }
+
+    // Cập nhật trạng thái auction vào database
+    private void updateAuctionStatusInDatabase(Auction auction) {
+        try (Connection conn = DatabaseConfig.getDataSource().getConnection();
+                PreparedStatement pstmt = conn.prepareStatement(
+                        "UPDATE items SET auction_status = ? WHERE auction_id = ?")) {
+
+            pstmt.setString(1, auction.getStatus().toString());
+            pstmt.setString(2, auction.getId());
+
+            int rows = pstmt.executeUpdate();
+            if (rows > 0) {
+                System.out.println(" [DB-SYNC] Updated auction " + auction.getId() + " status to " + auction.getStatus() + " in database.");
+            }
+        } catch (SQLException e) {
+            System.err.println("Error updating auction status in database: " + e.getMessage());
+        }
     }
 
     // Dừng tất cả các phiên đấu giá của một seller cụ thể (thường dùng khi ban user)
