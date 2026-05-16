@@ -138,7 +138,7 @@
                         <Label fx:id="formError" styleClass="form-error" wrapText="true"/>
 
                         <!-- Buttons -->
-                        <VBox spacing="12">
+                        <VBox spacing="10">
                             <Button text="CREATE ACCOUNT" onAction="#handleRegister"
                                     styleClass="register-btn-primary"
                                     maxWidth="Infinity" defaultButton="true"/>

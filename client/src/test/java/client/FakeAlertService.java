@@ -23,6 +23,14 @@ public class FakeAlertService implements IAlertService {
         this.callCount++;
     }
 
+    @Override
+    public boolean showConfirmation(String title, String message, Window ownerWindow) {
+        this.lastTitle = title;
+        this.lastMessage = message;
+        this.callCount++;
+        return true; // Mặc định giả lập người dùng nhấn OK
+    }
+
     public String getLastTitle() {
         return lastTitle;
     }

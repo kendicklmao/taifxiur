@@ -31,8 +31,13 @@ public class AppContext {
     private final ConcurrentHashMap<String, CompletableFuture<Response>> pendingRequests = new ConcurrentHashMap<>();
     private final Gson gson = GsonUtils.createGson();
     private Thread listenerThread;
+    private final client.service.IAlertService alertService = new client.service.AlertServiceImpl();
 
     protected AppContext() {
+    }
+
+    public client.service.IAlertService getAlertService() {
+        return alertService;
     }
 
     public static AppContext getInstance() {

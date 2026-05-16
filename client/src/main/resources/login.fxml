@@ -72,11 +72,11 @@
                         </VBox>
 
                         <!-- Buttons -->
-                        <VBox spacing="12">
+                        <VBox spacing="10">
                             <Button fx:id="loginButton" text="SIGN IN" onAction="#handleLogin"
                                     styleClass="login-btn-primary"
                                     maxWidth="Infinity" defaultButton="true"/>
-                            <Label fx:id="countdownLabel" styleClass="countdown-label" alignment="CENTER" maxWidth="Infinity"/>
+                            <Label fx:id="countdownLabel" styleClass="countdown-label" alignment="CENTER" maxWidth="Infinity" managed="false" visible="false"/>
                             <Button text="Create new account"
                                     onAction="#goToRegister"
                                     styleClass="login-btn-secondary"

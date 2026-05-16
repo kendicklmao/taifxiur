@@ -19,7 +19,7 @@
                 <Label fx:id="welcomeLabel" styleClass="app-username"/>
                 <Button text="REFRESH" onAction="#handleRefresh" styleClass="dashboard-btn-ghost"/>
                 <Button text="CHANGE PASSWORD" onAction="#handleChangePassword" styleClass="dashboard-btn-ghost"/>
-                <Button text="LOGOUT" onAction="#handleLogout" styleClass="dashboard-btn-logout"/>
+                <Button text="LOG OUT" onAction="#handleLogout" styleClass="dashboard-btn-logout"/>
             </HBox>
         </VBox>
     </top>

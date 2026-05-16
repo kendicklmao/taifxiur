@@ -20,15 +20,15 @@ import client.support.AuctionCardBuilder;
 import java.util.List;
 
 public abstract class BaseHomeController extends UserController {
-    
+
     @FXML
     protected Label welcomeLabel;
 
     @FXML
     protected VBox auctionDetailPane;
-    
+
     protected Auction selectedAuction;
-    
+
     protected Consumer<String> messageListener;
 
     // Các thuộc tính chung cho Grid
@@ -47,7 +47,7 @@ public abstract class BaseHomeController extends UserController {
         if (welcomeLabel != null && ctx.getCurrentUser() != null) {
             welcomeLabel.setText("Welcome " + ctx.getCurrentUser().getUsername());
         }
-        
+
         messageListener = line -> {
             try {
                 Response res = gson.fromJson(line, Response.class);
@@ -60,7 +60,8 @@ public abstract class BaseHomeController extends UserController {
 
     protected void updateAuctionGrid(List<Auction> auctions) {
         TilePane grid = getAuctionGrid();
-        if (grid == null) return;
+        if (grid == null)
+            return;
 
         Map<String, VBox> existingCards = new HashMap<>();
         for (var node : grid.getChildren()) {
@@ -119,17 +120,13 @@ public abstract class BaseHomeController extends UserController {
     protected abstract void refreshData();
 
     protected void handleTerminateAuction(Auction auction) {
-        javafx.scene.control.Alert alert = new javafx.scene.control.Alert(javafx.scene.control.Alert.AlertType.CONFIRMATION);
-        alert.initOwner(welcomeLabel.getScene().getWindow());
-        alert.initStyle(javafx.stage.StageStyle.UTILITY);
-        alert.setTitle("Confirm Termination");
-        alert.setHeaderText("Are you sure you want to terminate this auction?");
-        alert.setContentText("This action cannot be undone.");
+        boolean confirmed = alertService.showConfirmation(
+            "Are you sure", 
+            "This action cannot be undone.", 
+            welcomeLabel.getScene().getWindow()
+        );
 
-        shared.utils.DialogHelper.applyCustomStyle(alert);
-
-        java.util.Optional<javafx.scene.control.ButtonType> result = alert.showAndWait();
-        if (result.isPresent() && result.get() == javafx.scene.control.ButtonType.OK) {
+        if (confirmed) {
             terminateAuctionOnServer(auction);
         }
     }

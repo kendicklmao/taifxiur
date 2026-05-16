@@ -79,7 +79,7 @@ public class ForgotPasswordController extends UserController {
         }
 
         if (!valid) {
-            showAlert("Invalid information", "Please enter a valid username and email.");
+            showAlert("Error", "Please enter a valid username and email.");
             return;
         }
 
@@ -92,7 +92,7 @@ public class ForgotPasswordController extends UserController {
 
             Response response = ctx.sendRequestAndWait(new Request("FORGOT_PASSWORD_INIT", data), 10);
             if (!"SUCCESS".equals(response.getStatus())) {
-                showAlert("Lookup failed", response.getMessage());
+                showAlert("Error", response.getMessage());
                 return;
             }
 
@@ -127,7 +127,7 @@ public class ForgotPasswordController extends UserController {
         clearValidation();
 
         if (loadedUsername == null || loadedEmail == null) {
-            showAlert("Missing verification", "Please load your security questions first.");
+            showAlert("Error", "Please load your security questions first.");
             return;
         }
 
@@ -182,7 +182,7 @@ public class ForgotPasswordController extends UserController {
                 showAlert("Success", "Password reset successfully. Please sign in again.");
                 Navigator.switchSceneStatic("login.fxml");
             } else {
-                showAlert("Reset failed", response.getMessage());
+                showAlert("Error", response.getMessage());
             }
 
         } catch (Exception e) {

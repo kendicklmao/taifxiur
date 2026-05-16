@@ -2,7 +2,6 @@ package client.support;
 
 import javafx.application.Platform;
 import javafx.concurrent.Task;
-import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.Dialog;
@@ -34,51 +33,63 @@ public final class ChangePasswordSupport {
         dialog.initStyle(StageStyle.UTILITY);
 
         dialog.setTitle("Change Password");
-        dialog.setHeaderText("Update your account password");
+        Label titleLabel = new Label("CHANGE PASSWORD");
+        titleLabel.getStyleClass().add("login-title-main");
+        titleLabel.setMaxWidth(Double.MAX_VALUE);
+        titleLabel.setAlignment(javafx.geometry.Pos.CENTER);
+        titleLabel.setTextAlignment(javafx.scene.text.TextAlignment.CENTER);
 
-        shared.utils.DialogHelper.applyCustomStyle(dialog);
+        Label currentPasswordLabel = new Label("CURRENT PASSWORD");
+        currentPasswordLabel.getStyleClass().add("form-label-login");
 
         PasswordField currentPasswordField = new PasswordField();
         currentPasswordField.setPromptText("Current password");
-        currentPasswordField.getStyleClass().add("dashboard-input");
+        currentPasswordField.getStyleClass().add("login-input");
+
+        Label newPasswordLabel = new Label("NEW PASSWORD");
+        newPasswordLabel.getStyleClass().add("form-label-login");
 
         PasswordField newPasswordField = new PasswordField();
         newPasswordField.setPromptText("New password");
-        newPasswordField.getStyleClass().add("dashboard-input");
+        newPasswordField.getStyleClass().add("login-input");
+
+        Label confirmPasswordLabel = new Label("CONFIRM NEW PASSWORD");
+        confirmPasswordLabel.getStyleClass().add("form-label-login");
 
         PasswordField confirmPasswordField = new PasswordField();
         confirmPasswordField.setPromptText("Confirm new password");
-        confirmPasswordField.getStyleClass().add("dashboard-input");
-
-        Label currentPasswordLabel = new Label("CURRENT PASSWORD");
-        currentPasswordLabel.getStyleClass().add("form-label-register");
-
-        Label newPasswordLabel = new Label("NEW PASSWORD");
-        newPasswordLabel.getStyleClass().add("form-label-register");
-
-        Label confirmPasswordLabel = new Label("CONFIRM NEW PASSWORD");
-        confirmPasswordLabel.getStyleClass().add("form-label-register");
+        confirmPasswordField.getStyleClass().add("login-input");
 
         Label errorLabel = new Label();
         errorLabel.getStyleClass().add("error-label");
         errorLabel.setWrapText(true);
         errorLabel.setManaged(false);
+        errorLabel.setPrefWidth(400); // Đặt chiều rộng ưu tiên để ép xuống dòng
+        errorLabel.setMinHeight(javafx.scene.layout.Region.USE_PREF_SIZE); // Đảm bảo không bị cắt chiều cao
 
         VBox content = new VBox(10);
         content.setStyle("-fx-padding: 24;");
-        content.getChildren().addAll(currentPasswordLabel, currentPasswordField, newPasswordLabel, newPasswordField,
+        content.getChildren().addAll(titleLabel, new javafx.scene.layout.Region(), // Khoảng trống nhỏ dưới title
+                                    currentPasswordLabel, currentPasswordField, newPasswordLabel, newPasswordField,
                                     confirmPasswordLabel, confirmPasswordField, errorLabel);
 
         Button changeButton = new Button("CHANGE PASSWORD");
         changeButton.getStyleClass().add("login-btn-primary");
         changeButton.setMaxWidth(Double.MAX_VALUE);
+        changeButton.setPrefHeight(45);
 
         Button cancelButton = new Button("CANCEL");
-        cancelButton.getStyleClass().add("login-btn-secondary");
+        cancelButton.getStyleClass().add("btn-ghost-white"); // Áp dụng style ghost trắng
         cancelButton.setMaxWidth(Double.MAX_VALUE);
+        cancelButton.setPrefHeight(45); // Đảm bảo chiều cao tương đương nút Change
+        // Ép padding đồng nhất để tránh bị lệch do CSS
+        changeButton.setStyle("-fx-padding: 12 0 12 0;");
+        cancelButton.setStyle("-fx-padding: 12 0 12 0;");
 
         VBox buttonContainer = new VBox(10, changeButton, cancelButton);
         buttonContainer.setStyle("-fx-padding: 16 0 0 0;");
+        buttonContainer.setAlignment(javafx.geometry.Pos.CENTER);
+        buttonContainer.setFillWidth(true); // Ép các thành phần con lấp đầy chiều rộng
         content.getChildren().add(buttonContainer);
 
         // Giữ lại nút Close để hiển thị được thanh tiêu đề và nút X
@@ -90,6 +101,7 @@ public final class ChangePasswordSupport {
         }
 
         dialog.getDialogPane().setContent(content);
+        dialog.getDialogPane().setPrefWidth(450); // Tăng chiều rộng cửa sổ để chữ có không gian
 
         cancelButton.setOnAction(e -> dialog.close());
 
@@ -126,7 +138,7 @@ public final class ChangePasswordSupport {
 
                 if ("SUCCESS".equals(response.getStatus())) {
                     dialog.close();
-                    Platform.runLater(() -> showAlert("Success", response.getMessage(), ownerNode));
+                    Platform.runLater(() -> ctx.getAlertService().showAlert("Success", response.getMessage(), ownerNode));
                 } else {
                     errorLabel.setText(response.getMessage());
                     errorLabel.setManaged(true);
@@ -169,42 +181,4 @@ public final class ChangePasswordSupport {
         return null;
     }
 
-    private static void showAlert(String title, String message, Node ownerNode) {
-        Dialog<Void> dialog = new Dialog<>();
-
-        if (ownerNode != null && ownerNode.getScene() != null) {
-            dialog.initOwner(ownerNode.getScene().getWindow());
-        }
-
-        dialog.initStyle(StageStyle.UTILITY);
-
-        dialog.setTitle(title);
-        dialog.setHeaderText(title.toUpperCase());
-
-        shared.utils.DialogHelper.applyCustomStyle(dialog);
-
-        Label messageLabel = new Label(message);
-        messageLabel.setWrapText(true);
-        messageLabel.getStyleClass().add("login-subtitle-main");
-
-        Button okButton = new Button("OK");
-        okButton.getStyleClass().add("login-btn-primary");
-        okButton.setMaxWidth(Double.MAX_VALUE);
-        okButton.setOnAction(e -> dialog.close());
-
-        VBox box = new VBox(20, messageLabel, okButton);
-        box.setAlignment(Pos.CENTER);
-        box.setStyle("-fx-padding: 24;");
-
-        dialog.getDialogPane().setContent(box);
-
-        dialog.getDialogPane().getButtonTypes().add(javafx.scene.control.ButtonType.CLOSE);
-        Node internalCloseButton = dialog.getDialogPane().lookupButton(javafx.scene.control.ButtonType.CLOSE);
-        if (internalCloseButton != null) {
-            internalCloseButton.setVisible(false);
-            internalCloseButton.setManaged(false);
-        }
-
-        dialog.showAndWait();
-    }
 }

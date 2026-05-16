@@ -89,7 +89,7 @@ public class LoginController extends UserController {
 
             } else if ("ACCOUNT_DISABLED".equals(res.getStatus())) {
                 int seconds = Integer.parseInt(res.getMessage());
-                alertService.showAlert("Account Disabled", "Account is temporarily locked. Please try again in " + seconds + " seconds.", usernameField);
+                alertService.showAlert("Error", "Account is temporarily locked. Please try again in " + seconds + " seconds.", usernameField);
                 disableLoginFor(seconds);
             } else {
                 alertService.showAlert("Error", res.getMessage(), usernameField);
