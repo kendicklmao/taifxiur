@@ -66,7 +66,7 @@ public class PlaceBidHandler implements RequestHandler {
                     }
 
                     if (balance == null || balance.compareTo(amount) < 0) {
-                        return new Response("FAIL", "Insufficient funds. " + msg.toString());
+                        return new Response("FAIL", "Not enough balance to place bid.");
                     }
 
                     return new Response("FAIL", "Bid too low or auction not running. " + msg.toString());

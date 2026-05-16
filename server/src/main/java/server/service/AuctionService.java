@@ -378,7 +378,7 @@ public class AuctionService {
         // Đảm bảo bidder có đủ số dư cho auto bid
         BigDecimal balance = walletService.getWalletBalance(bidder.getUsername());
         if (balance == null || balance.compareTo(maxBid) < 0) {
-            throw new IllegalStateException("broke ahh nigger!");
+            throw new IllegalStateException("Not enough balance to register auto-bid.");
         }
 
         auction.registerAutoBid(bidder, maxBid);
