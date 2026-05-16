@@ -33,7 +33,7 @@ public class HandlerFactory {
         handlers.put("TERMINATE_AUCTION", new TerminateAuctionHandler(auctionService));
         handlers.put("LOGOUT", new LogOutHandler(userService));
         handlers.put("GET_ALL_USERS", new GetAllUsersHandler(userService));
-        handlers.put("BAN_USER", new BanUserHandler(userService));
+        handlers.put("BAN_USER", new BanUserHandler(userService, auctionService));
         handlers.put("UNBAN_USER", new UnbanUserHandler(userService));
         handlers.put("GET_ADMIN_ACTION_LOGS", new GetAdminActionLogsHandler(userService));
         handlers.put("GET_PENDING_DEPOSIT_REQUESTS", new GetPendingDepositRequestsHandler(userService, walletService));

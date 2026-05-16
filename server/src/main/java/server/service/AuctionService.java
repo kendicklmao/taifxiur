@@ -28,8 +28,7 @@ public class AuctionService {
     private final WalletService walletService;
     private final UserService userService;
     private static final ExecutorService asyncExecutor = Executors.newFixedThreadPool(2);
-    private static final Map<String, Integer> userIdCache = new ConcurrentHashMap<>(); // Cache để tránh lặp lại query
-                                                                                       // DB
+    private static final Map<String, Integer> userIdCache = new ConcurrentHashMap<>(); // Cache để tránh lặp lại query DB
 
     public AuctionService(UserService userService, WalletService walletService) {
         this.userService = userService;
@@ -807,6 +806,22 @@ public class AuctionService {
             }
 
         });
+    }
+
+    // Dừng tất cả các phiên đấu giá của một seller cụ thể (thường dùng khi ban user)
+    public void terminateAllAuctionsBySeller(String sellerUsername, String adminUsername) {
+        System.out.println("[AUCTION SERVICE] Terminating all auctions for seller: " + sellerUsername);
+        List<String> auctionIdsToTerminate = new ArrayList<>();
+        
+        for (Auction auction : auctions.values()) {
+            if (auction.getSeller() != null && auction.getSeller().getUsername().equals(sellerUsername)) {
+                auctionIdsToTerminate.add(auction.getId());
+            }
+        }
+        
+        for (String id : auctionIdsToTerminate) {
+            terminateAuction(id, adminUsername);
+        }
     }
 
     // Thêm phương thức này để lớp test có thể gọi

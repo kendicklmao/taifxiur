@@ -41,6 +41,7 @@ public class AdminHomeController extends BaseHomeController {
     private ComboBox<String> usernameField;
     @FXML
     private TextArea userStatusArea;
+
     private List<String> allUsernames = new ArrayList<>();
 
     @FXML
@@ -77,7 +78,6 @@ public class AdminHomeController extends BaseHomeController {
     @Override
     protected void onSocketMessage(Response res) {
         if ("AUCTION_CREATED".equals(res.getStatus()) || "AUCTION_UPDATED".equals(res.getStatus()) || "UPDATE_PRICE".equals(res.getStatus())) {
-            System.out.println("[ADMIN] Received auction update from server, refreshing auction list...");
             this.refreshAuctions();
             
             // Tự động làm mới Pane chi tiết nếu đang xem đúng phiên đấu giá đó
@@ -92,13 +92,11 @@ public class AdminHomeController extends BaseHomeController {
                             Platform.runLater(() -> showAuctionDetails(selectedAuction));
                         }
                     } catch (Exception e) {}
-                } else {
-                    // Cho CREATED/UPDATED, ta sẽ tìm trong list mới (refreshAuctions chạy async nên có thể hơi chậm)
-                    // Hoặc đơn giản là yêu cầu refresh list rồi show lại sau.
+                } else if ("AUCTION_UPDATED".equals(res.getStatus())) {
+                    Platform.runLater(() -> showAuctionDetails(selectedAuction));
                 }
             }
         } else if ("USER_BANNED".equals(res.getStatus()) || "USER_UNBANNED".equals(res.getStatus())) {
-            System.out.println("[ADMIN] Received user status update from server, refreshing lists...");
             Platform.runLater(() -> {
                 this.refreshUsers();
                 this.refreshAdminActionLogs();
@@ -145,6 +143,7 @@ public class AdminHomeController extends BaseHomeController {
                 refreshAuctions();
                 auctionDetailPane.setVisible(false);
                 auctionDetailPane.setManaged(false);
+                this.selectedAuction = null;
             } else {
                 alertService.showAlert("Error", "Failed to terminate auction: " + response.getMessage(), welcomeLabel);
             }
@@ -342,8 +341,7 @@ public class AdminHomeController extends BaseHomeController {
         Task<List<Map<String, String>>> task = new Task<>() {
             @Override
             protected List<Map<String, String>> call() throws Exception {
-                Response response = ctx.sendRequestAndWait(new Request("GET_PENDING_DEPOSIT_REQUESTS", new HashMap<>()),
-                        15);
+                Response response = ctx.sendRequestAndWait(new Request("GET_PENDING_DEPOSIT_REQUESTS", new HashMap<>()), 15);
                 if ("SUCCESS".equals(response.getStatus())) {
                     Type listType = new TypeToken<List<Map<String, String>>>() {
                     }.getType();
