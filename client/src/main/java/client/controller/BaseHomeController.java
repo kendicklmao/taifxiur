@@ -70,7 +70,7 @@ public abstract class BaseHomeController extends UserController {
             }
         }
 
-        for (Auction auction : auctions) {
+        for (Auction auction: auctions) {
             String id = auction.getId();
             if (existingCards.containsKey(id)) {
                 VBox card = existingCards.get(id);

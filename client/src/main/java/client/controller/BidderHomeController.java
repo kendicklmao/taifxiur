@@ -4,6 +4,7 @@ import com.google.gson.reflect.TypeToken;
 
 import client.support.AuctionDetailViewBuilder;
 import client.support.ChangePasswordSupport;
+import client.support.TransactionDialogSupport;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
@@ -28,12 +29,9 @@ import shared.network.Response;
 
 import java.io.IOException;
 import java.math.BigDecimal;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
-import shared.enums.BankList;
 
 public class BidderHomeController extends BaseHomeController {
 
@@ -232,198 +230,12 @@ public class BidderHomeController extends BaseHomeController {
 
     @FXML
     public void handleDepositRequest() {
-        Dialog<String> dialog = new Dialog<>();
-        dialog.setTitle("Deposit Request");
-        dialog.setHeaderText("Send a deposit request to admin");
-
-        TextField amountField = new TextField();
-        amountField.setPromptText("Enter amount");
-        amountField.getStyleClass().add("dashboard-input");
-
-        ComboBox<BankList> bankNameComboBox = new ComboBox<>();
-        bankNameComboBox.setPromptText("Select bank name");
-        bankNameComboBox.setEditable(true);
-        bankNameComboBox.getStyleClass().add("dashboard-choicebox");
-        ObservableList<BankList> bankOptions = FXCollections.observableArrayList(BankList.values());
-        bankNameComboBox.setItems(bankOptions);
-
-        // Autocomplete filter cho ComboBox
-        bankNameComboBox.getEditor().textProperty().addListener((obs, oldText, newText) -> {
-            if (newText == null || newText.isEmpty()) {
-                bankNameComboBox.setItems(bankOptions);
-            } else {
-                List<BankList> filteredList = Arrays.stream(BankList.values())
-                        .filter(s -> s.name().toLowerCase().contains(newText.toLowerCase()))
-                        .collect(Collectors.toList());
-                bankNameComboBox.setItems(FXCollections.observableArrayList(filteredList));
-                bankNameComboBox.show();
-            }
-
-        });
-
-        TextField accountNumberField = new TextField();
-        accountNumberField.setPromptText("Enter account number");
-        accountNumberField.getStyleClass().add("dashboard-input");
-
-        VBox content = new VBox(15);
-        content.getChildren().addAll(new Label("Amount"), amountField, new Label("Bank Name"), bankNameComboBox,
-                new Label("Account Number"), accountNumberField);
-        content.setStyle("-fx-padding: 20px;");
-
-        dialog.getDialogPane().setContent(content);
-        dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
-
-        shared.utils.DialogHelper.applyCustomStyle(dialog);
-
-        // Convert kết quả thành chuỗi
-        dialog.setResultConverter(buttonType -> {
-            if (buttonType == ButtonType.OK) {
-                Object value = bankNameComboBox.getValue();
-                String selectedBank = "";
-                if (value instanceof BankList) {
-                    selectedBank = ((BankList) value).name();
-                } else if (value != null) {
-                    selectedBank = value.toString();
-                }
-                return amountField.getText() + "," + selectedBank + "," + accountNumberField.getText();
-            }
-            return null;
-        });
-
-        dialog.showAndWait().ifPresent(result -> {
-            if (result == null || result.isEmpty())
-                return;
-
-            String[] parts = result.split(",", 3);
-            if (parts.length < 3 || parts[0].isEmpty() || parts[1] == null || parts[1].trim().isEmpty()
-                    || parts[2].isEmpty()) {
-                alertService.showAlert("Error", "Please fill in all fields.", welcomeLabel);
-                return;
-            }
-
-            try {
-                BigDecimal amount = new BigDecimal(parts[0]);
-                String bankName = parts[1].trim();
-                String accountNumber = parts[2].trim();
-
-                if (amount.compareTo(BigDecimal.ZERO) <= 0) {
-                    alertService.showAlert("Error", "Amount must be greater than 0.", welcomeLabel);
-                    return;
-                }
-
-                Map<String, String> data = new HashMap<>();
-                data.put("username", ctx.getCurrentUser().getUsername());
-                data.put("amount", amount.toPlainString());
-                data.put("bankName", bankName);
-                data.put("accountNumber", accountNumber);
-
-                Response response = ctx.sendRequestAndWait(new Request("CREATE_DEPOSIT_REQUEST", data), 15);
-
-                if ("SUCCESS".equals(response.getStatus())) {
-                    alertService.showAlert("Success", response.getMessage(), welcomeLabel);
-                } else {
-                    alertService.showAlert("Error", response.getMessage(), welcomeLabel);
-                }
-
-            } catch (NumberFormatException e) {
-                alertService.showAlert("Error", "Please enter a valid amount.", welcomeLabel);
-            } catch (Exception e) {
-                alertService.showAlert("Error", "An unexpected error occurred: " + e.getMessage(), welcomeLabel);
-                e.printStackTrace();
-            }
-        });
+        TransactionDialogSupport.showDialog(TransactionDialogSupport.Type.DEPOSIT, ctx, alertService, welcomeLabel);
     }
 
     @FXML
     public void handleWithdrawRequest() {
-        Dialog<String> dialog = new Dialog<>();
-        dialog.setTitle("Withdraw Request");
-        dialog.setHeaderText("Send a withdraw request to admin");
-
-        TextField amountField = new TextField();
-        amountField.setPromptText("Enter amount");
-        amountField.getStyleClass().add("dashboard-input");
-
-        ComboBox<BankList> bankNameComboBox = new ComboBox<>();
-        bankNameComboBox.setPromptText("Select bank name");
-        bankNameComboBox.setEditable(true);
-        bankNameComboBox.getStyleClass().add("dashboard-choicebox");
-        ObservableList<BankList> bankOptions = FXCollections.observableArrayList(BankList.values());
-        bankNameComboBox.setItems(bankOptions);
-
-        bankNameComboBox.getEditor().textProperty().addListener((obs, oldText, newText) -> {
-            if (newText == null || newText.isEmpty()) {
-                bankNameComboBox.setItems(bankOptions);
-            } else {
-                List<BankList> filteredList = Arrays.stream(BankList.values())
-                        .filter(s -> s.name().toLowerCase().contains(newText.toLowerCase()))
-                        .collect(Collectors.toList());
-                bankNameComboBox.setItems(FXCollections.observableArrayList(filteredList));
-            }
-        });
-
-        TextField accountNumberField = new TextField();
-        accountNumberField.setPromptText("Enter account number");
-        accountNumberField.getStyleClass().add("dashboard-input");
-
-        VBox content = new VBox(15);
-        content.getChildren().addAll(new Label("Amount"), amountField, new Label("Bank Name"), bankNameComboBox,
-                new Label("Account Number"), accountNumberField);
-        content.setStyle("-fx-padding: 20px;");
-
-        dialog.getDialogPane().setContent(content);
-        dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
-
-        shared.utils.DialogHelper.applyCustomStyle(dialog);
-
-        dialog.setResultConverter(buttonType -> {
-            if (buttonType == ButtonType.OK) {
-                Object value = bankNameComboBox.getValue();
-                String selectedBank = "";
-                if (value instanceof BankList) {
-                    selectedBank = ((BankList) value).name();
-                } else if (value != null) {
-                    selectedBank = value.toString();
-                }
-                return amountField.getText() + "," + selectedBank + "," + accountNumberField.getText();
-            }
-            return null;
-        });
-
-        dialog.showAndWait().ifPresent(result -> {
-            String[] parts = result.split(",");
-            if (parts.length == 3) {
-                try {
-                    BigDecimal amount = new BigDecimal(parts[0]);
-                    String bankName = parts[1];
-                    String accountNumber = parts[2];
-                    if (amount.compareTo(BigDecimal.ZERO) <= 0) {
-                        showAlert("Error", "Amount must be greater than 0");
-                        return;
-                    }
-
-                    if (bankName.trim().isEmpty() || accountNumber.trim().isEmpty()) {
-                        showAlert("Error", "Bank name and account number cannot be empty");
-                        return;
-                    }
-
-                    Map<String, String> data = new HashMap<>();
-                    data.put("username", ctx.getCurrentUser().getUsername());
-                    data.put("amount", amount.toPlainString());
-                    data.put("bankName", bankName.trim());
-                    data.put("accountNumber", accountNumber.trim());
-                    Response response = ctx.sendRequestAndWait(new Request("CREATE_WITHDRAW_REQUEST", data), 15);
-                    if ("SUCCESS".equals(response.getStatus())) {
-                        showAlert("Success", response.getMessage());
-                    } else {
-                        showAlert("Error", response.getMessage());
-                    }
-
-                } catch (Exception e) {
-                    showAlert("Error", "Please enter valid data");
-                }
-            }
-        });
+        TransactionDialogSupport.showDialog(TransactionDialogSupport.Type.WITHDRAW, ctx, alertService, welcomeLabel);
     }
 
     private void showPriceChart(Auction auction) {

@@ -25,22 +25,17 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.util.Arrays;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.List;
-import java.util.stream.Collectors;
-import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
-
 import com.google.gson.reflect.TypeToken;
 
 import client.support.AuctionDetailViewBuilder;
 import client.support.ChangePasswordSupport;
+import client.support.TransactionDialogSupport;
 import shared.enums.Category;
 import shared.enums.ItemStatus;
-import shared.enums.BankList;
 
 public class SellerHomeController extends BaseHomeController {
 
@@ -529,90 +524,6 @@ public class SellerHomeController extends BaseHomeController {
 
     @FXML
     public void handleWithdrawRequest() {
-        Dialog<String> dialog = new Dialog<>();
-        dialog.setTitle("Withdraw Request");
-        dialog.setHeaderText("Send a withdraw request to admin");
-
-        TextField amountField = new TextField();
-        amountField.setPromptText("Enter amount");
-        amountField.getStyleClass().add("dashboard-input");
-
-        ComboBox<BankList> bankNameComboBox = new ComboBox<>();
-        bankNameComboBox.setPromptText("Select bank name");
-        bankNameComboBox.setEditable(true);
-        bankNameComboBox.getStyleClass().add("dashboard-choicebox");
-        ObservableList<BankList> bankOptions = FXCollections.observableArrayList(BankList.values());
-        bankNameComboBox.setItems(bankOptions);
-
-        bankNameComboBox.getEditor().textProperty().addListener((obs, oldText, newText) -> {
-            if (newText == null || newText.isEmpty()) {
-                bankNameComboBox.setItems(bankOptions);
-            } else {
-                List<BankList> filteredList = Arrays.stream(BankList.values()).filter(s -> s.name().toLowerCase().contains(newText.toLowerCase())).collect(Collectors.toList());
-                bankNameComboBox.setItems(FXCollections.observableArrayList(filteredList));
-            }
-        });
-
-        TextField accountNumberField = new TextField();
-        accountNumberField.setPromptText("Enter account number");
-        accountNumberField.getStyleClass().add("dashboard-input");
-
-        VBox content = new VBox(15);
-        content.getChildren().addAll(new Label("Amount"), amountField, new Label("Bank Name"), bankNameComboBox,
-                new Label("Account Number"), accountNumberField);
-        content.setStyle("-fx-padding: 20px;");
-        dialog.getDialogPane().setContent(content);
-        dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
-
-        shared.utils.DialogHelper.applyCustomStyle(dialog);
-
-        dialog.setResultConverter(buttonType -> {
-            if (buttonType == ButtonType.OK) {
-                Object value = bankNameComboBox.getValue();
-                String bankName = "";
-                if (value instanceof BankList) {
-                    bankName = ((BankList) value).name();
-                } else if (value != null) {
-                    bankName = value.toString();
-                }
-
-                return amountField.getText() + "," + bankName + "," + accountNumberField.getText();
-            }
-            return null;
-        });
-        dialog.showAndWait().ifPresent(result -> {
-            String[] parts = result.split(",");
-            if (parts.length == 3) {
-                try {
-                    BigDecimal amount = new BigDecimal(parts[0]);
-                    String bankName = parts[1];
-                    String accountNumber = parts[2];
-                    if (amount.compareTo(BigDecimal.ZERO) <= 0) {
-                        alertService.showAlert("Error", "Amount must be greater than 0", welcomeLabel);
-                        return;
-                    }
-
-                    if (bankName.trim().isEmpty() || accountNumber.trim().isEmpty()) {
-                        alertService.showAlert("Error", "Bank name and account number cannot be empty", welcomeLabel);
-                        return;
-                    }
-
-                    Map<String, String> data = new HashMap<>();
-                    data.put("username", ctx.getCurrentUser().getUsername());
-                    data.put("amount", amount.toPlainString());
-                    data.put("bankName", bankName.trim());
-                    data.put("accountNumber", accountNumber.trim());
-                    Response response = ctx.sendRequestAndWait(new Request("CREATE_WITHDRAW_REQUEST", data), 20);
-                    if ("SUCCESS".equals(response.getStatus())) {
-                        alertService.showAlert("Success", response.getMessage(), welcomeLabel);
-                    } else {
-                        alertService.showAlert("Error", response.getMessage(), welcomeLabel);
-                    }
-
-                } catch (Exception e) {
-                    alertService.showAlert("Error", "Please enter valid data", welcomeLabel);
-                }
-            }
-        });
+        TransactionDialogSupport.showDialog(TransactionDialogSupport.Type.WITHDRAW, ctx, alertService, welcomeLabel);
     }
 }

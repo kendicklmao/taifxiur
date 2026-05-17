@@ -843,7 +843,7 @@ public class AuctionService {
 
             int rows = pstmt.executeUpdate();
             if (rows > 0) {
-                System.out.println(" [DB-SYNC] Updated auction " + auction.getId() + " status to " + auction.getStatus() + " in database.");
+                System.out.println("[DB-SYNC] Updated auction " + auction.getId() + " status to " + auction.getStatus() + " in database.");
             }
         } catch (SQLException e) {
             System.err.println("Error updating auction status in database: " + e.getMessage());

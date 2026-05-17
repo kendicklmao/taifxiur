@@ -395,20 +395,30 @@
 }
 
 .dialog-pane {
-    -fx-background-color: #0d0d17;
+    -fx-background-color: #161629;
     -fx-border-color: #2a2a3e;
     -fx-background-radius: 0;
     -fx-border-radius: 0;
 }
 
 .dialog-pane .content,
-.dialog-pane .label,
+.dialog-pane .label {
+    -fx-text-fill: #ffffff;
+}
+
 .dialog-pane .header-panel .label {
     -fx-text-fill: #ffffff;
+    -fx-font-size: 24px;
+    -fx-font-weight: bold;
+    -fx-alignment: center;
+    -fx-text-alignment: center;
+    -fx-max-width: infinity;
 }
 
 .dialog-pane:header .header-panel {
     -fx-background-color: #161629;
+    -fx-alignment: center;
+    -fx-padding: 24px 24px 10px 24px;
 }
 
 .dialog-pane .button {
@@ -443,7 +453,7 @@
 }
 
 .alert {
-    -fx-background-color: #1c1c2e;
+    -fx-background-color: #161629;
 }
 
 .alert .header-panel {
@@ -1122,12 +1132,12 @@
 /* ---------- My Dialog Style (Corrected for Dark Theme) ---------- */
 /* This targets the DialogPane to look like the login auth-card */
 .my-dialog.dialog-pane {
-    -fx-background-color: #0d0d17;
+    -fx-background-color: #161629;
     -fx-background-radius: 0;
     -fx-border-color: #2a2a3e;
     -fx-border-radius: 0;
     -fx-border-width: 1;
-    -fx-effect: dropshadow(gaussian, rgba(124, 93, 250, 0.18), 32, 0.0, 0, 12);
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.5), 24, 0.0, 0, 10);
 }
 
 /* Ensure the inner content area is transparent */

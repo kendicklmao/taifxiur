@@ -100,6 +100,7 @@ public final class ChangePasswordSupport {
             internalCloseButton.setManaged(false);
         }
 
+        shared.utils.DialogHelper.applyCustomStyle(dialog);
         dialog.getDialogPane().setContent(content);
         dialog.getDialogPane().setPrefWidth(450); // Tăng chiều rộng cửa sổ để chữ có không gian
 
