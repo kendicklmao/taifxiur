@@ -13,6 +13,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
+import java.util.function.BiConsumer;
 import java.util.function.Predicate;
 
 // Phiên đấu giá
@@ -34,7 +35,6 @@ public class Auction {
         if (cmp != 0) {
             return cmp;
         }
-
         return a.getTimeStamp().compareTo(b.getTimeStamp()); // Đăng ký sớm hơn sẽ thắng
     });
     
@@ -43,9 +43,15 @@ public class Auction {
     private Instant endTime; // Thời gian kết thúc
     private AuctionStatus status; // Trạng thái phiên đấu giá
     private ScheduledFuture<?> finishTask; // Kết thúc phiên đấu giá
+    
     private transient Consumer<Auction> finishCallback; // Callback khi kết thúc phiên đấu giá
     private transient Consumer<Auction> statusChangeListener; // Callback khi trạng thái thay đổi
     private transient Predicate<String> banChecker; // Kiểm tra người bị cấm
+    private transient BiConsumer<Bidder, BigDecimal> bidListener; // Callback khi có bid mới
+    
+    public void setBidListener(BiConsumer<Bidder, BigDecimal> listener) {
+        this.bidListener = listener;
+    }
 
     public Auction(String id, Item item, BigDecimal startPrice, Seller seller, Instant startTime, Instant endTime) {
         if (id == null || id.isBlank()) {
@@ -127,6 +133,9 @@ public class Auction {
                     if (newPrice.compareTo(currentPrice) > 0) {
                         currentPrice = newPrice;
                         bidHistory.add(new BidTransaction(highest.getBidder(), newPrice, Instant.now()));
+                        if (bidListener != null) {
+                            bidListener.accept(highest.getBidder(), newPrice);
+                        }
                     }
                 }
 
@@ -157,6 +166,9 @@ public class Auction {
                     currentPrice = newPrice;
                     highestBidder = highest.getBidder();
                     bidHistory.add(new BidTransaction(highest.getBidder(), newPrice, Instant.now()));
+                    if (bidListener != null) {
+                        bidListener.accept(highest.getBidder(), newPrice);
+                    }
                 }
             }
 
@@ -212,7 +224,6 @@ public class Auction {
             synchronized (bidLock) {
                 if (status == AuctionStatus.OPEN) {
                     status = AuctionStatus.RUNNING;
-                    AutoBidService(); // Kích hoạt autobid ngay khi phiên bắt đầu
                     if (statusChangeListener != null) {
                         statusChangeListener.accept(this);
                     }
@@ -237,9 +248,7 @@ public class Auction {
                         if (finishCallback != null) {
                             finishCallback.accept(this);
                         }
-                    } catch (Exception ignored) {
-
-                    }
+                    } catch (Exception ignored) {}
                 }
             }
         }, delay, TimeUnit.SECONDS);
@@ -301,6 +310,9 @@ public class Auction {
             currentPrice = amount;
             highestBidder = bidder;
             bidHistory.add(new BidTransaction(bidder, amount, Instant.now()));
+            if (bidListener != null) {
+                bidListener.accept(bidder, amount);
+            }
             AutoBidService();
             extendIfNeeded();
             return true;
@@ -392,7 +404,6 @@ public class Auction {
             Instant now = Instant.now();
             if (status == AuctionStatus.OPEN && !now.isBefore(startTime)) {
                 status = AuctionStatus.RUNNING;
-                AutoBidService(); // Kích hoạt autobid ngay khi phiên bắt đầu
                 if (statusChangeListener != null) {
                     statusChangeListener.accept(this);
                 }

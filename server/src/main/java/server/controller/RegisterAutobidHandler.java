@@ -45,8 +45,8 @@ public class RegisterAutobidHandler implements RequestHandler {
                 }
 
                 return new Response("SUCCESS", "Auto-bid registered successfully");
-            } catch (IllegalStateException | IllegalArgumentException ex) {
-                return new Response("FAIL", ex.getMessage());
+            } catch (IllegalStateException | IllegalArgumentException e) {
+                return new Response("FAIL", e.getMessage());
             } catch (Exception e) {
                 return new Response("FAIL", "Error during auto-bid registration: " + e.getMessage());
             }
