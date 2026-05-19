@@ -13,12 +13,8 @@ public class DatabaseConfig {
     private static final String DEFAULT_DB_USER = "postgres.uxmbyzqylbtuqyyatzwj";
     private static final String DEFAULT_DB_PASSWORD = "Hd0Ykh1LCtzbw4X6";
 
-    private DatabaseConfig() {
-        // utility
-    }
+    private DatabaseConfig() {}
 
-    // Lazy-initialize the HikariCP data source.
-    // DNS resolution is handled by the PostgreSQL JDBC driver which supports IPv4 and IPv6.
     public static HikariDataSource getDataSource() {
         if (dataSource == null) {
             synchronized (DatabaseConfig.class) {
@@ -33,35 +29,38 @@ public class DatabaseConfig {
 
     private static void initializeDataSource() {
         String host = System.getenv("DB_HOST");
-        if (host == null || host.isEmpty())
+        if (host == null || host.isEmpty()) {
             host = DEFAULT_DB_HOST;
+        }
 
         String portStr = System.getenv("DB_PORT");
         int port = DEFAULT_DB_PORT;
         if (portStr != null && !portStr.isEmpty()) {
             try {
                 port = Integer.parseInt(portStr);
-            } catch (NumberFormatException ignored) {
-            }
+            } catch (NumberFormatException ignored) {}
         }
 
         String dbName = System.getenv("DB_NAME");
-        if (dbName == null || dbName.isEmpty())
+        if (dbName == null || dbName.isEmpty()) {
             dbName = DEFAULT_DB_NAME;
+        }
 
         String user = System.getenv("DB_USER");
-        if (user == null || user.isEmpty())
+        if (user == null || user.isEmpty()) {
             user = DEFAULT_DB_USER;
+        }
 
         String password = System.getenv("DB_PASSWORD");
-        if (password == null || password.isEmpty())
+        if (password == null || password.isEmpty()) {
             password = DEFAULT_DB_PASSWORD;
+        }
 
         String sslmode = System.getenv("DB_SSLMODE");
-        if (sslmode == null || sslmode.isEmpty())
+        if (sslmode == null || sslmode.isEmpty()) {
             sslmode = "require";
+        }
 
-        // Build JDBC URL - DNS resolution is handled by the PostgreSQL driver which supports IPv4 and IPv6
         String jdbcUrl = String.format(
                 "jdbc:postgresql://%s:%d/%s?sslmode=%s&tcpKeepAlives=true&prepareThreshold=0&preferQueryMode=simple&loggerLevel=OFF",
                 host, port, dbName, sslmode);
@@ -72,13 +71,13 @@ public class DatabaseConfig {
         config.setJdbcUrl(jdbcUrl);
         config.setUsername(user);
         config.setPassword(password);
-        config.setMaximumPoolSize(5); // Reduced to avoid hitting Supabase limits
+        config.setMaximumPoolSize(5);
         config.setMinimumIdle(2);
         config.setConnectionTimeout(30000);
         config.setIdleTimeout(60000);
         config.setMaxLifetime(600000);
         config.setKeepaliveTime(30000);
-        config.setInitializationFailTimeout(0); // Don't fail immediately, try to recover
+        config.setInitializationFailTimeout(0);
         config.setAutoCommit(true);
 
         try {
@@ -90,7 +89,6 @@ public class DatabaseConfig {
         }
     }
 
-    // Close the connection pool
     public static void closeDataSource() {
         if (dataSource != null) {
             dataSource.close();

@@ -33,7 +33,7 @@ public class AuctionChartController {
         series.getData().add(new XYChart.Data<>(startTime.format(formatter), auction.getStartPrice()));
 
         // Thêm các giá bid từ lịch sử
-        for (BidTransaction bid : auction.getBidHistory()) {
+        for (BidTransaction bid: auction.getBidHistory()) {
             LocalDateTime bidTime = LocalDateTime.ofInstant(bid.getTime(), ZoneId.systemDefault());
             series.getData().add(new XYChart.Data<>(bidTime.format(formatter), bid.getAmount()));
         }

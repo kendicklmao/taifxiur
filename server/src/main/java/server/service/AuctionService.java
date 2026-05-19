@@ -362,8 +362,9 @@ public class AuctionService {
 
     // Lấy phiên đấu giá theo ID
     public Auction getAuction(String id) {
-        if (id == null)
+        if (id == null) {
             return null;
+        }
         return auctions.get(id);
     }
 

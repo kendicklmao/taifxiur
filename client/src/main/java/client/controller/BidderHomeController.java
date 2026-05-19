@@ -378,8 +378,7 @@ public class BidderHomeController extends BaseHomeController {
     protected void onSocketMessage(Response res) {
         try {
             if ("UPDATE_PRICE".equals(res.getStatus())) {
-                java.lang.reflect.Type type = new com.google.gson.reflect.TypeToken<Map<String, String>>() {
-                }.getType();
+                java.lang.reflect.Type type = new com.google.gson.reflect.TypeToken<Map<String, String>>(){}.getType();
                 Map<String, String> payload = gson.fromJson(res.getMessage(), type);
                 String auctionId = payload.get("auctionId");
                 String newPrice = payload.get("newPrice");

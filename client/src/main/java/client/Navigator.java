@@ -20,9 +20,7 @@ public class Navigator implements INavigator {
     }
 
     public static void setStage(Stage s) {
-
         stage = s;
-
         try {
             globalStylesheet = Navigator.class.getClassLoader().getResource("styles.css").toExternalForm();
             System.out.println("CSS loaded: " + globalStylesheet);

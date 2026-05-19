@@ -118,8 +118,6 @@ public class AdminHomeController extends BaseHomeController {
         }, terminateButton);
     }
 
-
-
     private void setupAuctionListCell() {
         allAuctionsList.setCellFactory(lv -> new ListCell<>() {
             @Override

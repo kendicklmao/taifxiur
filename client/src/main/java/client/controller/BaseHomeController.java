@@ -40,8 +40,7 @@ public abstract class BaseHomeController extends UserController {
     }
 
     // Mặc định không làm gì, các lớp con dùng Grid sẽ override lại
-    protected void onAuctionCardDoubleClicked(Auction auction) {
-    }
+    protected void onAuctionCardDoubleClicked(Auction auction) {}
 
     protected void setupHome() {
         if (welcomeLabel != null && ctx.getCurrentUser() != null) {
@@ -52,19 +51,19 @@ public abstract class BaseHomeController extends UserController {
             try {
                 Response res = gson.fromJson(line, Response.class);
                 onSocketMessage(res);
-            } catch (Exception e) {
-            }
+            } catch (Exception e) {}
         };
         ctx.addMessageListener(messageListener);
     }
 
     protected void updateAuctionGrid(List<Auction> auctions) {
         TilePane grid = getAuctionGrid();
-        if (grid == null)
+        if (grid == null) {
             return;
+        }
 
         Map<String, VBox> existingCards = new HashMap<>();
-        for (var node : grid.getChildren()) {
+        for (var node: grid.getChildren()) {
             if (node instanceof VBox card && card.getUserData() != null) {
                 existingCards.put(card.getUserData().toString(), card);
             }
@@ -95,8 +94,7 @@ public abstract class BaseHomeController extends UserController {
             data.put("username", ctx.getCurrentUser().getUsername());
             Request req = new Request("LOGOUT", data);
             ctx.sendRequestAndWait(req, 30);
-        } catch (Exception e) {
-        }
+        } catch (Exception e) {}
 
         if (messageListener != null) {
             ctx.removeMessageListener(messageListener);
@@ -114,8 +112,7 @@ public abstract class BaseHomeController extends UserController {
         return FormatUtils.formatTime(instant);
     }
 
-    protected void onSocketMessage(Response response) {
-    }
+    protected abstract void onSocketMessage(Response response);
 
     protected abstract void refreshData();
 
