@@ -67,7 +67,7 @@ public class AuctionCardBuilder {
         if (startsLabel != null) startsLabel.setText("Starts: " + FormatUtils.formatTime(auction.getStartTime()));
         if (endsLabel != null) endsLabel.setText("Ends: " + FormatUtils.formatTime(auction.getEndTime()));
 
-        if (auction.getItem().getImageUrl() != null && !auction.getItem().getImageUrl().isEmpty()) {
+        if (imageView.getImage() == null && auction.getItem().getImageUrl() != null && !auction.getItem().getImageUrl().isEmpty()) {
             // Sử dụng cache và background load để mượt mà hơn
             imageView.setImage(new Image(auction.getItem().getImageUrl(), 150, 150, true, true, true));
         }
