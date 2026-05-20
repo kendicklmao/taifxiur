@@ -8,16 +8,12 @@ import java.sql.Statement;
 public class DatabaseInitializer {
 
     public static void initializeDatabase() throws Exception {
-        try (Connection conn = DatabaseConfig.getDataSource().getConnection();
-             Statement stmt = conn.createStatement()) {
-
+        try (Connection conn = DatabaseConfig.getDataSource().getConnection()) {
             if (isDatabaseInitialized(conn)) {
                 System.out.println("Database already initialized. Skipping schema creation.");
                 return;
             }
-
             System.out.println("Initializing database schema...");
-
         } catch (SQLException e) {
             System.err.println("SQL error initializing database: " + e.getMessage());
             e.printStackTrace();

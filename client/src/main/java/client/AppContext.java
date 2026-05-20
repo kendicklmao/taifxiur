@@ -12,6 +12,9 @@ import shared.utils.GsonUtils;
 
 import com.google.gson.Gson;
 
+import client.service.AlertServiceImpl;
+import client.service.IAlertService;
+
 import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -31,12 +34,11 @@ public class AppContext {
     private final ConcurrentHashMap<String, CompletableFuture<Response>> pendingRequests = new ConcurrentHashMap<>();
     private final Gson gson = GsonUtils.createGson();
     private Thread listenerThread;
-    private final client.service.IAlertService alertService = new client.service.AlertServiceImpl();
+    private final IAlertService alertService = new AlertServiceImpl();
 
-    protected AppContext() {
-    }
+    protected AppContext() {}
 
-    public client.service.IAlertService getAlertService() {
+    public IAlertService getAlertService() {
         return alertService;
     }
 

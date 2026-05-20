@@ -3,11 +3,11 @@ package server.database;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 
-// Database configuration for Supabase PostgreSQL connection using HikariCP
+// Database configuration cho Supabase PostgreSQL connection sử dụng HikariCP
 public class DatabaseConfig {
     private static volatile HikariDataSource dataSource;
 
-    private static final String DEFAULT_DB_HOST = "aws-1-ap-northeast-1.pooler.supabase.com"; // Defaults (can be overridden with environment variables) Using Supabase Session Pooler for IPv4 compatibility
+    private static final String DEFAULT_DB_HOST = "aws-1-ap-northeast-1.pooler.supabase.com";
     private static final int DEFAULT_DB_PORT = 5432;
     private static final String DEFAULT_DB_NAME = "postgres";
     private static final String DEFAULT_DB_USER = "postgres.uxmbyzqylbtuqyyatzwj";

@@ -41,7 +41,7 @@ public class LoginController extends UserController {
         this.navigator = Navigator.getInstance();
     }
     
-    // Constructor cho testing (Dependency Injection)
+    // Constructor cho testing
     public LoginController(AppContext ctx, INavigator navigator, IAlertService alertService) {
         this.ctx = ctx;
         this.navigator = navigator;

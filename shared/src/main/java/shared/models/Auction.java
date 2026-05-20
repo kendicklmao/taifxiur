@@ -37,21 +37,17 @@ public class Auction {
         }
         return a.getTimeStamp().compareTo(b.getTimeStamp()); // Đăng ký sớm hơn sẽ thắng
     });
-    
+
     private BigDecimal currentPrice; // Giá hiện tại
     private Bidder highestBidder; // Người thắng phiên
     private Instant endTime; // Thời gian kết thúc
     private AuctionStatus status; // Trạng thái phiên đấu giá
     private ScheduledFuture<?> finishTask; // Kết thúc phiên đấu giá
-    
+
     private transient Consumer<Auction> finishCallback; // Callback khi kết thúc phiên đấu giá
     private transient Consumer<Auction> statusChangeListener; // Callback khi trạng thái thay đổi
     private transient Predicate<String> banChecker; // Kiểm tra người bị cấm
     private transient BiConsumer<Bidder, BigDecimal> bidListener; // Callback khi có bid mới
-    
-    public void setBidListener(BiConsumer<Bidder, BigDecimal> listener) {
-        this.bidListener = listener;
-    }
 
     public Auction(String id, Item item, BigDecimal startPrice, Seller seller, Instant startTime, Instant endTime) {
         if (id == null || id.isBlank()) {
@@ -89,6 +85,10 @@ public class Auction {
         scheduleFinish();
     }
 
+    public void setBidListener(BiConsumer<Bidder, BigDecimal> listener) {
+        this.bidListener = listener;
+    }
+
     public void setFinishCallback(Consumer<Auction> cb) {
         this.finishCallback = cb;
     }
@@ -104,16 +104,17 @@ public class Auction {
     // Hệ thống đấu giá tự động
     public void AutoBidService() {
         synchronized (bidLock) {
-            
+
             if (autoBids.isEmpty() || status != AuctionStatus.RUNNING) {
                 return;
             }
 
             AutoBid highest = autoBids.poll();
-            
+
             // Kiểm tra xem người có bid cao nhất có bị cấm không
             if (banChecker != null && banChecker.test(highest.getBidder().getUsername())) {
-                System.out.println("DEBUG AUTOBID: User " + highest.getBidder().getUsername() + " is banned. Removing autobid.");
+                System.out.println(
+                        "DEBUG AUTOBID: User " + highest.getBidder().getUsername() + " is banned. Removing autobid.");
                 return; // Bỏ qua chu kỳ autobid này
             }
 
@@ -142,7 +143,7 @@ public class Auction {
             } else {
                 // Người khác đang thắng hoặc chưa có ai thắng
                 BigDecimal minToOutbid = (highestBidder == null) ? currentPrice : currentPrice.add(increment);
-                
+
                 if (second != null) {
                     newPrice = second.getMaxBid().add(increment);
                     if (newPrice.compareTo(minToOutbid) < 0) {
@@ -158,7 +159,7 @@ public class Auction {
 
                 newPrice = newPrice.setScale(2, RoundingMode.UP);
 
-                // Sửa điều kiện so sánh: Nếu chưa có ai bid (highestBidder == null), 
+                // Sửa điều kiện so sánh: Nếu chưa có ai bid (highestBidder == null),
                 // thì chỉ cần newPrice >= currentPrice (giá khởi điểm) là đủ.
                 BigDecimal minRequiredForPlace = (highestBidder == null) ? currentPrice : currentPrice.add(increment);
 
@@ -189,10 +190,10 @@ public class Auction {
 
             maxBid = maxBid.setScale(2, RoundingMode.UP);
 
-            BigDecimal minRequired = (highestBidder != null && highestBidder.equals(bidder)) 
-                    ? currentPrice 
+            BigDecimal minRequired = (highestBidder != null && highestBidder.equals(bidder))
+                    ? currentPrice
                     : (highestBidder == null ? startPrice : currentPrice.add(item.getMinIncrement()));
-                    
+
             if (maxBid.compareTo(minRequired) < 0) {
                 throw new IllegalArgumentException("Bid amount must be at least " + minRequired);
             }
@@ -248,7 +249,8 @@ public class Auction {
                         if (finishCallback != null) {
                             finishCallback.accept(this);
                         }
-                    } catch (Exception ignored) {}
+                    } catch (Exception ignored) {
+                    }
                 }
             }
         }, delay, TimeUnit.SECONDS);
@@ -322,7 +324,7 @@ public class Auction {
     // Đặt lại giá trị bid từ DB
     public void restoreBid(Bidder bidder, BigDecimal amount, Instant timestamp) {
         synchronized (bidLock) {
-            if (currentPrice == null || amount.compareTo(currentPrice) > 0) {
+            if (currentPrice == null || amount.compareTo(currentPrice) >= 0) {
                 currentPrice = amount;
                 highestBidder = bidder;
             }
@@ -418,12 +420,12 @@ public class Auction {
 
     public boolean hasBidder(String username) {
         synchronized (bidLock) {
-            for (BidTransaction tx: bidHistory) {
+            for (BidTransaction tx : bidHistory) {
                 if (tx.getBidder().getUsername().equals(username)) {
                     return true;
                 }
             }
-            for (AutoBid ab: autoBids) {
+            for (AutoBid ab : autoBids) {
                 if (ab.getBidder().getUsername().equals(username)) {
                     return true;
                 }

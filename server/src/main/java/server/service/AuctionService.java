@@ -28,8 +28,7 @@ public class AuctionService {
     private final WalletService walletService;
     private final UserService userService;
     private static final ExecutorService asyncExecutor = Executors.newFixedThreadPool(2);
-    private static final Map<String, Integer> userIdCache = new ConcurrentHashMap<>(); // Cache để tránh lặp lại query
-                                                                                       // DB
+    private static final Map<String, Integer> userIdCache = new ConcurrentHashMap<>(); // Cache để tránh lặp lại query DB
 
     public AuctionService(UserService userService, WalletService walletService) {
         this.userService = userService;
@@ -535,10 +534,9 @@ public class AuctionService {
         }
     }
 
-    // Thanh toán tiền đấu giá khi phiên đấu giá kết thúc. Được gọi bởi
-    // Auction.finishCallback.
-    // Hoạt động cho cả bid thủ công và bid tự động vì cả hai đều đặt highestBidder.
-    // Chạy ASYNCHRONOUSLY trong background thread pool để tránh bị block!
+    // Thanh toán tiền đấu giá khi phiên đấu giá kết thúc. Được gọi bởi Auction.finishCallback
+    // Hoạt động cho cả bid thủ công và bid tự động vì cả hai đều đặt highestBidder
+    // Chạy ASYNCHRONOUSLY trong background thread pool để tránh bị block
     private void finalizeAuction(Auction auction) {
         // Gửi đến async executor - không chặn thread scheduler
         asyncExecutor.execute(() -> {

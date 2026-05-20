@@ -25,7 +25,6 @@ public class Navigator implements INavigator {
             globalStylesheet = Navigator.class.getClassLoader().getResource("styles.css").toExternalForm();
             System.out.println("CSS loaded: " + globalStylesheet);
         } catch (Exception e) {
-            System.err.println("ERROR: Could not find styles.css!");
             e.printStackTrace();
         }
     }
