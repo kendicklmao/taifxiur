@@ -150,7 +150,6 @@ public class UserService {
                 throw new UserLockedException(secondsRemaining);
             } else {
                 lockUntil.remove(username);
-                failedAttempts.remove(username);
             }
         }
 
@@ -204,7 +203,7 @@ public class UserService {
                 failedAttempts.put(username, attempts);
                 long lockSeconds;
                 if (attempts >= MAX_ATTEMPTS) {
-                    if (attempts > 11) {
+                    if (attempts >= 11) {
                         lockSeconds = 3600;
                     } else {
                         lockSeconds = (long) Math.pow(BASE_LOCK_SECONDS, (attempts - 1));
