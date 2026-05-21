@@ -123,7 +123,7 @@ public class WalletService {
             ensureWalletExists(conn, sellerId);
             BigDecimal balance = getWalletBalance(conn, sellerId);
             if (balance.compareTo(amount) < 0) {
-                return "Insufficient wallet balance";
+                return "Not enough wallet balance";
             }
 
             pstmt.setString(1, UUID.randomUUID().toString());
