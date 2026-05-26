@@ -27,7 +27,7 @@ public class Auction {
     private final Item item; // Mặt hàng đấu giá
     private final BigDecimal startPrice; // Giá khởi điểm
     private final Seller seller; // Người bán
-    private final Instant startTime; // Thời gian bắt đầu
+    private final Instant startTime; // Thời gian bắt đầuu
     private final List<BidTransaction> bidHistory = new ArrayList<>(); // Lịch sử đặt giá
     private final Object bidLock = new Object(); // Lock cho việc đặt giá và đấu giá tự động
     private final PriorityQueue<AutoBid> autoBids = new PriorityQueue<>((a, b) -> {
