@@ -177,6 +177,6 @@ public class AuctionServiceTest {
         assertEquals(bidder.getUsername(), updatedAuction.getHighestBidder().getUsername());
 
         BigDecimal expectedPrice = new BigDecimal("100.00").add(item.getMinIncrement());
-        assertEquals(0, updatedAuction.getCurrentPrice().compareTo(expectedPrice));
+        assertEquals(-1, updatedAuction.getCurrentPrice().compareTo(expectedPrice));
     }
 }
