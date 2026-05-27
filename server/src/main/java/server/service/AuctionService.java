@@ -440,7 +440,7 @@ public class AuctionService {
     public List<Auction> getAllAuctions() {
         syncWithDatabase(); // Luôn đồng bộ với DB trước khi trả về cho Client
         System.out.println(" [QUERY] Sync completed. Client requested all auctions. Total: " + auctions.size());
-        for (Auction auction : auctions.values()) {
+        for (Auction auction: auctions.values()) {
             auction.updateStatus();
         }
         return new ArrayList<>(auctions.values());
@@ -491,7 +491,7 @@ public class AuctionService {
     private void loadSingleAuctionFromDB(Connection conn, String targetAuctionId) {
         String sql = "SELECT id, seller_id, base_price, current_price, auction_status, " +
                 "start_time, end_time, auction_id "
-                + "FROM items WHERE auction_id = ? AND auction_status IN ('OPEN', 'RUNNING')";
+                + "FROM items WHERE auction_id = ?";
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, targetAuctionId);
             try (ResultSet rs = pstmt.executeQuery()) {
