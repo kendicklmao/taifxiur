@@ -27,7 +27,7 @@ public class Auction {
     private final Item item; // Mặt hàng đấu giá
     private final BigDecimal startPrice; // Giá khởi điểm
     private final Seller seller; // Người bán
-    private final Instant startTime; // Thời gian bắt đầuu
+    private final Instant startTime; // Thời gian bắt đầu
     private final List<BidTransaction> bidHistory = new ArrayList<>(); // Lịch sử đặt giá
     private final Object bidLock = new Object(); // Lock cho việc đặt giá và đấu giá tự động
     private final PriorityQueue<AutoBid> autoBids = new PriorityQueue<>((a, b) -> {
@@ -260,18 +260,18 @@ public class Auction {
     public void itemPaid(Bidder bidder) {
         synchronized (bidLock) {
             if (status != AuctionStatus.FINISHED) {
-                throw new IllegalStateException();
+                throw new IllegalStateException("Auction is not in FINISHED status");
             }
 
-            if (highestBidder == null || !highestBidder.equals(bidder)) {
-                throw new IllegalStateException();
+            if (highestBidder == null || !highestBidder.getUsername().equals(bidder.getUsername())) {
+                throw new IllegalStateException("User is not the winner of this auction");
             }
 
             BigDecimal price = currentPrice;
             Seller seller = this.seller;
             boolean success = bidder.getWallet().transfer(price, seller);
             if (!success) {
-                throw new IllegalStateException();
+                throw new IllegalStateException("In-memory wallet transfer failed");
             }
 
             status = AuctionStatus.PAID;

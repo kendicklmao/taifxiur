@@ -28,7 +28,8 @@ public class AuctionService {
     private final WalletService walletService;
     private final UserService userService;
     private static final ExecutorService asyncExecutor = Executors.newFixedThreadPool(2);
-    private static final Map<String, Integer> userIdCache = new ConcurrentHashMap<>(); // Cache để tránh lặp lại query DB
+    private static final Map<String, Integer> userIdCache = new ConcurrentHashMap<>(); // Cache để tránh lặp lại query
+                                                                                       // DB
 
     public AuctionService(UserService userService, WalletService walletService) {
         this.userService = userService;
@@ -342,10 +343,18 @@ public class AuctionService {
     // Giới hạn 1 phiên đấu giá cho mỗi bidder
     private void checkActiveAuctionParticipation(String auctionId, String username) {
         for (Auction a : auctions.values()) {
-            if (!a.getId().equals(auctionId) &&
-                    (a.getStatus() == AuctionStatus.RUNNING || a.getStatus() == AuctionStatus.OPEN)) {
-                if (a.hasBidder(username)) {
-                    throw new IllegalStateException("You can only participate in 1 auction at a time!");
+            if (!a.getId().equals(auctionId)) {
+                // 1. Đang tham gia phiên khác đang chạy hoặc mở
+                boolean isActive = (a.getStatus() == AuctionStatus.RUNNING || a.getStatus() == AuctionStatus.OPEN) && a.hasBidder(username);
+                
+                // 2. Đã thắng phiên cũ nhưng CHƯA trả tiền (trạng thái FINISHED)
+                boolean isUnpaidWin = a.getStatus() == AuctionStatus.FINISHED && a.getHighestBidder() != null && a.getHighestBidder().getUsername().equals(username);
+
+                if (isActive) {
+                    throw new IllegalStateException("You can only participate in 1 active auction at a time!");
+                }
+                if (isUnpaidWin) {
+                    throw new IllegalStateException("You must pay for your won auction before participating in a new one!");
                 }
             }
         }
@@ -430,12 +439,10 @@ public class AuctionService {
     // Lấy tất cả phiên đấu giá và cập nhật trạng thái nếu cần
     public List<Auction> getAllAuctions() {
         syncWithDatabase(); // Luôn đồng bộ với DB trước khi trả về cho Client
-        // System.out.println(" [QUERY] Sync completed. Client requested all auctions.
-        // Total: " + auctions.size());
+        System.out.println(" [QUERY] Sync completed. Client requested all auctions. Total: " + auctions.size());
         for (Auction auction : auctions.values()) {
             auction.updateStatus();
         }
-
         return new ArrayList<>(auctions.values());
     }
 
@@ -445,7 +452,7 @@ public class AuctionService {
         try (Connection conn = DatabaseConfig.getDataSource().getConnection();
                 Statement stmt = conn.createStatement();
                 ResultSet rs = stmt.executeQuery(
-                        "SELECT id, current_price, auction_status, auction_id FROM items WHERE auction_id IS NOT NULL AND auction_status IN ('OPEN', 'RUNNING')")) {
+                        "SELECT id, current_price, auction_status, auction_id FROM items WHERE auction_id IS NOT NULL")) {
 
             java.util.Set<String> dbAuctionIds = new java.util.HashSet<>();
             while (rs.next()) {
@@ -534,7 +541,8 @@ public class AuctionService {
         }
     }
 
-    // Thanh toán tiền đấu giá khi phiên đấu giá kết thúc. Được gọi bởi Auction.finishCallback
+    // Thanh toán tiền đấu giá khi phiên đấu giá kết thúc. Được gọi bởi
+    // Auction.finishCallback
     // Hoạt động cho cả bid thủ công và bid tự động vì cả hai đều đặt highestBidder
     // Chạy ASYNCHRONOUSLY trong background thread pool để tránh bị block
     private void finalizeAuction(Auction auction) {
@@ -543,80 +551,76 @@ public class AuctionService {
             if (auction == null)
                 return;
             try {
-                Bidder winner = auction.getHighestBidder();
-                if (winner != null) {
-                    String auctionId = auction.getId();
-                    String winnerUsername = winner.getUsername();
-                    String sellerUsername = auction.getSeller().getUsername();
-                    BigDecimal price = auction.getCurrentPrice();
-                    String finalizeError = walletService.finalizePaymentForWinner(auctionId, winnerUsername,
-                            sellerUsername, price);
-                    if (finalizeError == null) {
-                        // Cập nhật trạng thái phiên đấu giá trong database thành PAID
-                        try (Connection conn = DatabaseConfig.getDataSource().getConnection();
-                                PreparedStatement pstmt = conn
-                                        .prepareStatement("UPDATE items SET auction_status = ? WHERE auction_id = ?")) {
-                            pstmt.setString(1, AuctionStatus.PAID.name());
-                            pstmt.setString(2, auctionId);
-                            pstmt.executeUpdate();
-                        } catch (SQLException e) {
-                            System.err.println("Error updating auction status to PAID: " + e.getMessage());
-                        }
+                // Cập nhật trạng thái phiên đấu giá trong database thành FINISHED
+                try (Connection conn = DatabaseConfig.getDataSource().getConnection();
+                        PreparedStatement pstmt = conn
+                                .prepareStatement("UPDATE items SET auction_status = ? WHERE auction_id = ?")) {
+                    pstmt.setString(1, AuctionStatus.FINISHED.name());
+                    pstmt.setString(2, auction.getId());
+                    pstmt.executeUpdate();
+                } catch (SQLException e) {
+                    System.err.println("Error updating auction status to FINISHED: " + e.getMessage());
+                }
 
-                        // Thông báo cho client
-                        try {
-                            Gson gson = GsonUtils.createGson();
-                            Response resp = new Response("AUCTION_PAID", auction.getId());
-                            ClientHandler.broadcast(gson.toJson(resp));
-                        } catch (Exception ignored) {
-                        }
-
-                    } else {
-                        System.err.println("Không thể thanh toán tiền cho phiên đấu giá " + auction.getId() + ": "
-                                + finalizeError);
-                    }
-
-                } else {
-                    // Không có người thắng: chỉ cập nhật trạng thái phiên đấu giá thành FINISHED
-                    // trong DB
-                    try (Connection conn = DatabaseConfig.getDataSource().getConnection();
-                            PreparedStatement pstmt = conn
-                                    .prepareStatement("UPDATE items SET auction_status = ? WHERE auction_id = ?")) {
-                        pstmt.setString(1, AuctionStatus.FINISHED.name());
-                        pstmt.setString(2, auction.getId());
-                        pstmt.executeUpdate();
-                    } catch (SQLException e) {
-                        System.err.println("Error updating auction status to FINISHED: " + e.getMessage());
-                    }
-
-                    // Notify clients
-                    try {
-                        Gson gson = GsonUtils.createGson();
-                        Response resp = new Response("AUCTION_FINISHED", auction.getId());
-                        ClientHandler.broadcast(gson.toJson(resp));
-                    } catch (Exception ignored) {
-                    }
+                // Thông báo cho client
+                try {
+                    Gson gson = GsonUtils.createGson();
+                    Response resp = new Response("AUCTION_FINISHED", auction.getId());
+                    ClientHandler.broadcast(gson.toJson(resp));
+                } catch (Exception ignored) {
                 }
 
             } catch (Exception e) {
-                System.err.println("Error finalizing auction payment: " + e.getMessage());
+                System.err.println("Error finalizing auction: " + e.getMessage());
             }
 
         });
     }
 
-    // Đánh dấu vật phẩm là đã thanh toán
+    // Đánh dấu vật phẩm là đã thanh toán (Thanh toán thủ công)
     public void itemPaid(String auctionId, Bidder bidder) {
         if (auctionId == null || bidder == null) {
-            throw new IllegalArgumentException();
+            throw new IllegalArgumentException("Invalid auction ID or bidder");
         }
 
         Auction auction = auctions.get(auctionId);
         if (auction == null) {
-            throw new IllegalArgumentException();
+            throw new IllegalArgumentException("Auction not found");
         }
 
+        // Thực hiện thanh toán trong database
+        String finalizeError = walletService.finalizePaymentForWinner(
+                auctionId,
+                bidder.getUsername(),
+                auction.getSeller().getUsername(),
+                auction.getCurrentPrice());
+
+        if (finalizeError != null) {
+            throw new IllegalStateException("Payment failed: " + finalizeError);
+        }
+
+        // Cập nhật trạng thái phiên đấu giá trong database thành PAID
+        try (Connection conn = DatabaseConfig.getDataSource().getConnection();
+                PreparedStatement pstmt = conn
+                        .prepareStatement("UPDATE items SET auction_status = ? WHERE auction_id = ?")) {
+            pstmt.setString(1, AuctionStatus.PAID.name());
+            pstmt.setString(2, auctionId);
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            System.err.println("Error updating auction status to PAID: " + e.getMessage());
+            throw new RuntimeException("Database error updating status to PAID: " + e.getMessage());
+        }
+
+        // Cập nhật trạng thái in-memory
         auction.itemPaid(bidder);
+
+        // Thông báo cho client
+        try {
+            Gson gson = GsonUtils.createGson();
+            Response resp = new Response("AUCTION_PAID", auction.getId());
+            ClientHandler.broadcast(gson.toJson(resp));
+        } catch (Exception ignored) {
+        }
     }
 
     // Lấy phiên đấu giá theo TÊN người bán

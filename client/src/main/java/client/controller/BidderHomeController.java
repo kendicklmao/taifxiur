@@ -216,10 +216,40 @@ public class BidderHomeController extends BaseHomeController {
             AuctionDetailViewBuilder.populateFullDetails(auctionDetailPane, auction, () -> {
                 this.selectedAuction = null;
             }, chartButton, bidButton, autoBidButton);
+        } else if ("FINISHED".equals(auction.getStatus().toString()) 
+                && auction.getHighestBidder() != null 
+                && auction.getHighestBidder().getUsername().equals(ctx.getCurrentUser().getUsername())) {
+            Button payButton = new Button("Pay");
+            payButton.getStyleClass().add("dashboard-btn-primary");
+            payButton.setOnAction(e -> handlePay(auction));
+
+            AuctionDetailViewBuilder.populateFullDetails(auctionDetailPane, auction, () -> {
+                this.selectedAuction = null;
+            }, chartButton, payButton);
         } else {
             AuctionDetailViewBuilder.populateFullDetails(auctionDetailPane, auction, () -> {
                 this.selectedAuction = null;
             }, chartButton);
+        }
+    }
+
+    private void handlePay(Auction auction) {
+        try {
+            Map<String, String> data = new HashMap<>();
+            data.put("auctionId", auction.getId());
+            data.put("username", ctx.getCurrentUser().getUsername());
+
+            Request req = new Request("ITEM_PAID", data);
+            Response response = ctx.sendRequestAndWait(req, 15);
+
+            if ("SUCCESS".equals(response.getStatus())) {
+                handleRefresh();
+                showAlert("Success", "Payment processed successfully!");
+            } else {
+                showAlert("Error", response.getMessage());
+            }
+        } catch (Exception e) {
+            showAlert("Error", "Failed to process payment: " + e.getMessage());
         }
     }
 

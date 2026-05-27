@@ -23,8 +23,12 @@ public class ItemPaidHandler implements RequestHandler {
 
         User ipUser = userService.getUser(ipUsername);
         if (ipUser instanceof Bidder bidder) {
-            auctionService.itemPaid(ipAuctionId, bidder);
-            return new Response("SUCCESS", "Payment processed");
+            try {
+                auctionService.itemPaid(ipAuctionId, bidder);
+                return new Response("SUCCESS", "Payment processed");
+            } catch (Exception e) {
+                return new Response("FAIL", e.getMessage());
+            }
         } else {
             return new Response("FAIL", "Invalid user for payment");
         }
