@@ -21,6 +21,11 @@ public class ItemPaidHandler implements RequestHandler {
         String ipAuctionId = request.getData().get("auctionId");
         String ipUsername = request.getData().get("username");
 
+        // Check if user is banned
+        if (userService.isBanned(ipUsername)) {
+            return new Response("FAIL", "Your account has been banned. You cannot perform this action.");
+        }
+
         User ipUser = userService.getUser(ipUsername);
         if (ipUser instanceof Bidder bidder) {
             try {

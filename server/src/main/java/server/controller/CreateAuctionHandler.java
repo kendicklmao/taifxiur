@@ -41,6 +41,13 @@ public class CreateAuctionHandler implements RequestHandler {
     public Response handle(Request request, ClientHandler clientHandler) {
         try {
             var data = request.getData();
+            String username = data.get("username");
+
+            // Check if user is banned
+            if (userService.isBanned(username)) {
+                return new Response("FAIL", "Your account has been banned. You cannot perform this action.");
+            }
+
             String name = data.get("name");
             String desc = data.get("description");
             BigDecimal price = new BigDecimal(data.get("price")).setScale(2, RoundingMode.UP);
@@ -50,7 +57,6 @@ public class CreateAuctionHandler implements RequestHandler {
             String category = data.get("category");
             String imageBase64 = data.get("image");
 
-            String username = data.get("username");
             User u = userService.getUser(username);
 
             if (u == null || !(u instanceof Seller)) {
