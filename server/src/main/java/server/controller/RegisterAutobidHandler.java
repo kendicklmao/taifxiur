@@ -42,6 +42,10 @@ public class RegisterAutobidHandler implements RequestHandler {
                     java.util.Map<String, String> payload = new java.util.HashMap<>();
                     payload.put("auctionId", raAuctionId);
                     payload.put("newPrice", updatedAuction.getCurrentPrice().toPlainString());
+                    if (updatedAuction.getHighestBidder() != null) {
+                        payload.put("highestBidder", updatedAuction.getHighestBidder().getUsername());
+                    }
+                    payload.put("bidTime", java.time.Instant.now().toString());
                     Gson gson = GsonUtils.createGson();
                     Response updateResponse = new Response("UPDATE_PRICE", gson.toJson(payload));
                     ClientHandler.broadcast(gson.toJson(updateResponse));
