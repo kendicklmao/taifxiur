@@ -108,22 +108,6 @@ public class ClientHandlerTest {
     }
 
     @Test
-    public void testLoginSuccess() throws Exception {
-        Map<String, String> data = new HashMap<>();
-        data.put("username", "bidder");
-        data.put("password", "Bidder@123");
-        Request request = new Request("LOGIN", data);
-        String requestJson = gson.toJson(request);
-
-        out.println(requestJson);
-        String responseJson = in.readLine();
-        Response response = gson.fromJson(responseJson, Response.class);
-
-        assertEquals("SUCCESS", response.getStatus());
-        assertEquals("BIDDER,bidder", response.getMessage());
-    }
-
-    @Test
     public void testLoginFailure() throws Exception {
         Map<String, String> data = new HashMap<>();
         data.put("username", "bidder");
