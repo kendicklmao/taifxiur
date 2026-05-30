@@ -466,6 +466,10 @@ public class AuctionService {
                     Auction auction = auctions.get(auctionId);
                     if (dbPrice != null && dbPrice.compareTo(auction.getCurrentPrice()) > 0) {
                         auction.setCurrentPriceForDBRestore(dbPrice);
+                        // Khi phát hiện giá thay đổi từ DB (do server khác update), cần đồng bộ lại lịch sử đặt giá và auto bid
+                        auction.clearBidsAndAutoBids();
+                        loadBidHistoryForAuction(conn, auction, userService);
+                        loadAutoBidsForAuction(conn, auction, userService);
                     }
 
                     if (dbStatus != null) {

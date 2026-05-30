@@ -321,6 +321,15 @@ public class Auction {
         }
     }
 
+    // Xóa lịch sử đặt giá và auto bid (Dùng khi sync database)
+    public void clearBidsAndAutoBids() {
+        synchronized (bidLock) {
+            bidHistory.clear();
+            autoBids.clear();
+            highestBidder = null;
+        }
+    }
+
     // Đặt lại giá trị bid từ DB
     public void restoreBid(Bidder bidder, BigDecimal amount, Instant timestamp) {
         synchronized (bidLock) {
