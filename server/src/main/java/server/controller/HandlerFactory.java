@@ -30,7 +30,7 @@ public class HandlerFactory {
         handlers.put("GET_FINISHED_AUCTIONS", new GetFinishedAuctionsHandler(auctionService));
         handlers.put("CREATE_AUCTION", new CreateAuctionHandler(auctionService, userService, storageService));
         handlers.put("GET_SELLER_AUCTIONS", new GetSellerAuctionsHandler(auctionService));
-        handlers.put("TERMINATE_AUCTION", new TerminateAuctionHandler(auctionService));
+        handlers.put("TERMINATE_AUCTION", new TerminateAuctionHandler(auctionService, userService));
         handlers.put("LOGOUT", new LogOutHandler(userService));
         handlers.put("GET_ALL_USERS", new GetAllUsersHandler(userService));
         handlers.put("BAN_USER", new BanUserHandler(userService, auctionService));
@@ -42,8 +42,8 @@ public class HandlerFactory {
         handlers.put("REJECT_DEPOSIT_REQUEST", new RejectDepositRequestHandler(walletService));
         handlers.put("APPROVE_WITHDRAW_REQUEST", new ApproveWithdrawRequestHandler(walletService));
         handlers.put("REJECT_WITHDRAW_REQUEST", new RejectWithdrawRequestHandler(walletService));
-        handlers.put("CREATE_DEPOSIT_REQUEST", new CreateDepositRequestHandler(walletService));
-        handlers.put("CREATE_WITHDRAW_REQUEST", new CreateWithdrawRequestHandler(walletService));
+        handlers.put("CREATE_DEPOSIT_REQUEST", new CreateDepositRequestHandler(walletService, userService));
+        handlers.put("CREATE_WITHDRAW_REQUEST", new CreateWithdrawRequestHandler(walletService, userService));
         handlers.put("GET_WALLET_BALANCE", new GetWalletBalanceHandler(walletService));
 
         return handlers;

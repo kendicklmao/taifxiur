@@ -26,6 +26,11 @@ public class RegisterAutobidHandler implements RequestHandler {
         String raAmount = request.getData().get("maxBid");
         String raUsername = request.getData().get("username");
 
+        // Check if user is banned
+        if (userService.isBanned(raUsername)) {
+            return new Response("FAIL", "Your account has been banned. You cannot perform this action.");
+        }
+
         User raUser = userService.getUser(raUsername);
         if (raUser instanceof Bidder bidder) {
             BigDecimal maxBid = new BigDecimal(raAmount);
