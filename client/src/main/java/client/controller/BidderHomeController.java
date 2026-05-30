@@ -296,65 +296,101 @@ public class BidderHomeController extends BaseHomeController {
     }
 
     private void showBidAmountDialog(Auction auction, boolean isAutoBid) {
-        Dialog<String> dialog = new Dialog<>();
-        dialog.setTitle(isAutoBid ? "Auto Bid" : "Place Bid");
-        dialog.setHeaderText("Enter bid amount for: " + auction.getItem().getName());
-
-        shared.utils.DialogHelper.applyCustomStyle(dialog);
-
-        TextField amountField = new TextField();
-        amountField.setPromptText("Enter amount");
-        amountField.getStyleClass().add("dashboard-input");
-
-        BigDecimal minBid = (auction.getHighestBidder() == null) 
-                            ? auction.getStartPrice() 
-                            : auction.getCurrentPrice().add(auction.getItem().getMinIncrement());
-
-        VBox content = new VBox(10);
-        content.setStyle("-fx-padding: 20px;");
-        content.getChildren().add(new Label("Current price: $" + auction.getCurrentPrice()));
-        
-        if (auction.getHighestBidder() == null) {
-            content.getChildren().add(new Label("Minimum bid: $" + minBid + " (Starting Price)"));
-        } else {
-            content.getChildren().add(new Label("Minimum bid: $" + minBid + " (Current + $" + auction.getItem().getMinIncrement() + ")"));
-        }
-        
-        content.getChildren().add(new Label("Enter amount:"));
-        content.getChildren().add(amountField);
-
-        dialog.getDialogPane().setContent(content);
-        dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
-
-        dialog.setResultConverter(dialogButton -> {
-            if (dialogButton == ButtonType.OK) {
-                return amountField.getText();
-            }
-            return null;
-        });
-
-        dialog.showAndWait().ifPresent(amount -> {
-            if (amount != null && !amount.isEmpty()) {
-                try {
-                    BigDecimal bidAmount = new BigDecimal(amount);
-                    if (bidAmount.compareTo(minBid) < 0) {
-                        showAlert("Error", "Bid amount must be at least $" + minBid);
-                        return;
-                    }
-
-                    if (isAutoBid) {
-                        registerAutoBid(auction, amount);
-                    } else {
-                        placeBid(auction, amount);
-                    }
-
-                } catch (NumberFormatException e) {
-                    showAlert("Error", "Please enter a valid number!");
+        // Fetch latest auction info from server before showing dialog
+        Task<Map<String, String>> task = new Task<>() {
+            @Override
+            protected Map<String, String> call() throws Exception {
+                Map<String, String> data = new HashMap<>();
+                data.put("auctionId", auction.getId());
+                Response response = ctx.sendRequestAndWait(new Request("GET_AUCTION_INFO", data), 10);
+                if ("SUCCESS".equals(response.getStatus())) {
+                    return gson.fromJson(response.getMessage(), new com.google.gson.reflect.TypeToken<Map<String, String>>(){}.getType());
                 }
-            } else {
-                showAlert("Error", "Please enter a valid amount!");
+                return null;
             }
+        };
+
+        task.setOnSucceeded(e -> {
+            Map<String, String> auctionInfo = task.getValue();
+            if (auctionInfo == null) {
+                showAlert("Error", "Could not fetch latest auction information");
+                return;
+            }
+
+            // Parse the latest auction data
+            BigDecimal currentPrice = new BigDecimal(auctionInfo.get("currentPrice"));
+            BigDecimal startPrice = new BigDecimal(auctionInfo.get("startPrice"));
+            BigDecimal minIncrement = new BigDecimal(auctionInfo.get("minIncrement"));
+            String highestBidder = auctionInfo.get("highestBidder");
+
+            BigDecimal minBid = (highestBidder == null || highestBidder.isEmpty())
+                                ? startPrice
+                                : currentPrice.add(minIncrement);
+
+            // Now show the dialog with fresh data
+            Dialog<String> dialog = new Dialog<>();
+            dialog.setTitle(isAutoBid ? "Auto Bid" : "Place Bid");
+            dialog.setHeaderText("Enter bid amount for: " + auction.getItem().getName());
+
+            shared.utils.DialogHelper.applyCustomStyle(dialog);
+
+            TextField amountField = new TextField();
+            amountField.setPromptText("Enter amount");
+            amountField.getStyleClass().add("dashboard-input");
+
+            VBox content = new VBox(10);
+            content.setStyle("-fx-padding: 20px;");
+            content.getChildren().add(new Label("Current price: $" + currentPrice));
+
+            if (highestBidder == null || highestBidder.isEmpty()) {
+                content.getChildren().add(new Label("Minimum bid: $" + minBid + " (Starting Price)"));
+            } else {
+                content.getChildren().add(new Label("Minimum bid: $" + minBid + " (Current + $" + minIncrement + ")"));
+            }
+
+            content.getChildren().add(new Label("Enter amount:"));
+            content.getChildren().add(amountField);
+
+            dialog.getDialogPane().setContent(content);
+            dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+
+            final BigDecimal finalMinBid = minBid;
+            dialog.setResultConverter(dialogButton -> {
+                if (dialogButton == ButtonType.OK) {
+                    return amountField.getText();
+                }
+                return null;
+            });
+
+            dialog.showAndWait().ifPresent(amount -> {
+                if (amount != null && !amount.isEmpty()) {
+                    try {
+                        BigDecimal bidAmount = new BigDecimal(amount);
+                        if (bidAmount.compareTo(finalMinBid) < 0) {
+                            showAlert("Error", "Bid amount must be at least $" + finalMinBid);
+                            return;
+                        }
+
+                        if (isAutoBid) {
+                            registerAutoBid(auction, amount);
+                        } else {
+                            placeBid(auction, amount);
+                        }
+
+                    } catch (NumberFormatException ex) {
+                        showAlert("Error", "Please enter a valid number!");
+                    }
+                } else {
+                    showAlert("Error", "Please enter a valid amount!");
+                }
+            });
         });
+
+        task.setOnFailed(e -> {
+            showAlert("Error", "Could not fetch auction information: " + task.getException().getMessage());
+        });
+
+        new Thread(task).start();
     }
 
     private void placeBid(Auction auction, String amount) {
