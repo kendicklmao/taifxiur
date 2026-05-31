@@ -61,9 +61,13 @@ public class SellerHomeController extends BaseHomeController {
     @FXML
     private Spinner<Integer> startMinuteSpinner;
     @FXML
+    private Spinner<Integer> startSecondSpinner;
+    @FXML
     private Spinner<Integer> endHourSpinner;
     @FXML
     private Spinner<Integer> endMinuteSpinner;
+    @FXML
+    private Spinner<Integer> endSecondSpinner;
     @FXML
     private VBox customTimingPane;
     @FXML
@@ -99,10 +103,12 @@ public class SellerHomeController extends BaseHomeController {
         startDatePicker.setValue(startTime.toLocalDate());
         startHourSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 23, startTime.getHour()));
         startMinuteSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 59, startTime.getMinute()));
+        startSecondSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 59, startTime.getSecond()));
 
         endDatePicker.setValue(endTime.toLocalDate());
         endHourSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 23, endTime.getHour()));
         endMinuteSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 59, endTime.getMinute()));
+        endSecondSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 59, endTime.getSecond()));
 
         // Chọn loại increment
         incrementTypeBox.getItems().addAll("Default (5%)", "Custom Amount");
@@ -315,11 +321,13 @@ public class SellerHomeController extends BaseHomeController {
 
             int startHour = startHourSpinner.getValue();
             int startMinute = startMinuteSpinner.getValue();
+            int startSecond = startSecondSpinner.getValue();
             int endHour = endHourSpinner.getValue();
             int endMinute = endMinuteSpinner.getValue();
+            int endSecond = endSecondSpinner.getValue();
 
-            startTime = startDate.atTime(startHour, startMinute).atZone(ZoneId.systemDefault()).toInstant();
-            endTime = endDate.atTime(endHour, endMinute).atZone(ZoneId.systemDefault()).toInstant();
+            startTime = startDate.atTime(startHour, startMinute, startSecond).atZone(ZoneId.systemDefault()).toInstant();
+            endTime = endDate.atTime(endHour, endMinute, endSecond).atZone(ZoneId.systemDefault()).toInstant();
 
             if (startTime.isAfter(endTime)) {
                 alertService.showAlert("Error", "Start time must be before end time!", welcomeLabel);
@@ -422,10 +430,12 @@ public class SellerHomeController extends BaseHomeController {
                 startDatePicker.setValue(nextStartTime.toLocalDate());
                 startHourSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 23, nextStartTime.getHour()));
                 startMinuteSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 59, nextStartTime.getMinute()));
+                startSecondSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 59, nextStartTime.getSecond()));
 
                 endDatePicker.setValue(nextEndTime.toLocalDate());
                 endHourSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 23, nextEndTime.getHour()));
                 endMinuteSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 59, nextEndTime.getMinute()));
+                endSecondSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 59, nextEndTime.getSecond()));
 
                 categoryBox.setValue(null);
                 dynamicForm.getChildren().clear();

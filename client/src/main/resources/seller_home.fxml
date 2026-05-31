@@ -106,6 +106,8 @@
                                         <Spinner fx:id="startHourSpinner" prefWidth="120" editable="true"/>
                                         <Label text=":" style="-fx-text-fill: #8b8ba7;"/>
                                         <Spinner fx:id="startMinuteSpinner" prefWidth="120" editable="true"/>
+                                        <Label text=":" style="-fx-text-fill: #8b8ba7;"/>
+                                        <Spinner fx:id="startSecondSpinner" prefWidth="120" editable="true"/>
                                     </HBox>
                                 </VBox>
                             </HBox>
@@ -120,6 +122,8 @@
                                         <Spinner fx:id="endHourSpinner" prefWidth="120" editable="true"/>
                                         <Label text=":" style="-fx-text-fill: #8b8ba7;"/>
                                         <Spinner fx:id="endMinuteSpinner" prefWidth="120" editable="true"/>
+                                        <Label text=":" style="-fx-text-fill: #8b8ba7;"/>
+                                        <Spinner fx:id="endSecondSpinner" prefWidth="120" editable="true"/>
                                     </HBox>
                                 </VBox>
                             </HBox>
