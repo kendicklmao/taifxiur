@@ -286,15 +286,17 @@ public class AuctionService {
                 String bidderUsername = getUsernameFromId(conn, bidderIdVal);
                 User bidderUser = userService.getUser(bidderUsername);
 
-                if (bidderUser instanceof Bidder) {
+                 if (bidderUser instanceof Bidder) {
                     try {
-                        auction.registerAutoBid((Bidder) bidderUser, maxBid, timeStamp);
+                        auction.restoreAutoBid((Bidder) bidderUser, maxBid, timeStamp);
                     } catch (Exception e) {
                         System.err.println(
                                 " [RESTORE] Skipped 1 autobid for auction " + auction.getId() + ": " + e.getMessage());
                     }
                 }
             }
+            // Chạy lại AutoBidService một lần duy nhất sau khi đã khôi phục toàn bộ autobids
+            auction.AutoBidService();
         } catch (SQLException e) {
             System.err.println("Error loading auto-bids: " + e.getMessage());
         }
@@ -334,17 +336,17 @@ public class AuctionService {
         auction.setBanChecker(username -> userService.isUserBanned(username));
         auction.setBidListener(
                 (bidder, price) -> saveBidToDatabase(auction.getId(), bidder, price, auction.getItem().getDbId()));
-        auction.startScheduler();
-        auctions.put(id, auction);
-        System.out.println(" [MEMORY] Added new auction to map. Current total in memory: " + auctions.size());
 
-        int dbId = saveItemAndAuctionToDatabase(item, seller, startPrice, startTime, endTime, id); // Lưu item và
+        int dbId = saveItemAndAuctionToDatabase(item, seller, startPrice, startTime, endTime, id, auction.getStatus()); // Lưu item và
                                                                                                    // auction vào
                                                                                                    // database
         if (dbId == -1) {
-            auctions.remove(id); // remove from in-memory map if DB save failed
             throw new RuntimeException("Failed to save auction to database.");
         }
+
+        auction.startScheduler();
+        auctions.put(id, auction);
+        System.out.println(" [MEMORY] Added new auction to map. Current total in memory: " + auctions.size());
 
         return auction;
     }
@@ -527,7 +529,7 @@ public class AuctionService {
                         if (dbBidCount > ramBidCount) {
                             loadNewBidsForAuction(conn, auction, userService, ramBidCount);
                         }
-                        if (dbPrice != null && dbPrice.compareTo(auction.getCurrentPrice()) != 0) {
+                        if (dbPrice != null && dbPrice.compareTo(auction.getCurrentPrice()) > 0) {
                             auction.setCurrentPriceForDBRestore(dbPrice);
                         }
 
@@ -785,7 +787,7 @@ public class AuctionService {
 
     // Phương thức trợ giúp để lưu mặt hàng vào cơ sở dữ liệu với thông tin giá cả
     private int saveItemAndAuctionToDatabase(Item item, Seller seller, BigDecimal startPrice, Instant startTime,
-            Instant endTime, String auctionId) {
+            Instant endTime, String auctionId, AuctionStatus status) {
         try (Connection conn = DatabaseConfig.getDataSource().getConnection();
                 PreparedStatement pstmt = conn.prepareStatement(
                         "INSERT INTO items (seller_id, name, description, category, status, " +
@@ -823,7 +825,7 @@ public class AuctionService {
 
             // Set auction information
             pstmt.setString(18, auctionId);
-            pstmt.setString(19, AuctionStatus.OPEN.name());
+            pstmt.setString(19, status.name());
             pstmt.setTimestamp(20, Timestamp.from(startTime));
             pstmt.setTimestamp(21, Timestamp.from(endTime));
 
@@ -892,40 +894,36 @@ public class AuctionService {
 
     // Lưu lịch sử đặt thầu vào database
     private void saveBidToDatabase(String auctionId, Bidder bidder, BigDecimal amount, int itemId) {
-        try (Connection conn = DatabaseConfig.getDataSource().getConnection();
-                PreparedStatement pstmt = conn.prepareStatement(
+        try (Connection conn = DatabaseConfig.getDataSource().getConnection()) {
+            conn.setAutoCommit(false);
+            try {
+                // 1. Thêm thầu mới
+                try (PreparedStatement pstmt = conn.prepareStatement(
                         "INSERT INTO bids (auction_id, bidder_id, bid_amount, bid_time) VALUES (?, ?, ?, CURRENT_TIMESTAMP)")) {
+                    pstmt.setString(1, auctionId);
+                    pstmt.setInt(2, getUserIdFromDatabase(bidder.getUsername()));
+                    pstmt.setBigDecimal(3, amount);
+                    pstmt.executeUpdate();
+                }
 
-            pstmt.setString(1, auctionId);
-            pstmt.setInt(2, getUserIdFromDatabase(bidder.getUsername()));
-            pstmt.setBigDecimal(3, amount);
+                // 2. Cập nhật giá hiện tại của phiên đấu giá
+                try (PreparedStatement pstmt = conn.prepareStatement(
+                        "UPDATE items SET current_price = ? WHERE id = ?")) {
+                    pstmt.setBigDecimal(1, amount);
+                    pstmt.setInt(2, itemId);
+                    pstmt.executeUpdate();
+                }
 
-            int result = pstmt.executeUpdate();
-            System.out.println("Bid inserted: " + result + " rows affected (Auto/Manual)");
-
-            // Cập nhật giá hiện tại của phiên đấu giá
-            updateItemPrice(itemId, amount);
+                conn.commit();
+                System.out.println("Bid inserted and item price updated successfully in DB.");
+            } catch (SQLException e) {
+                conn.rollback();
+                throw e;
+            }
         } catch (SQLException e) {
             System.err.println("Error storing bid: " + e.getMessage());
             e.printStackTrace();
         }
-    }
-
-    // Update auction current price (ASYNC to avoid blocking)
-    private void updateItemPrice(int itemId, BigDecimal newPrice) {
-        asyncExecutor.execute(() -> {
-            try (Connection conn = DatabaseConfig.getDataSource().getConnection();
-                    PreparedStatement pstmt = conn.prepareStatement(
-                            "UPDATE items SET current_price = ? WHERE id = ?")) {
-
-                pstmt.setBigDecimal(1, newPrice);
-                pstmt.setInt(2, itemId);
-                pstmt.executeUpdate();
-            } catch (SQLException e) {
-                System.err.println("Error updating auction price: " + e.getMessage());
-            }
-
-        });
     }
 
     // Cập nhật trạng thái auction vào database

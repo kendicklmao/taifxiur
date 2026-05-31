@@ -110,7 +110,7 @@ public class Auction {
 
             // Lọc ra các autobid hợp lệ
             List<AutoBid> activeList = new ArrayList<>();
-            for (AutoBid ab : autoBids) {
+            for (AutoBid ab: autoBids) {
                 if (banChecker == null || !banChecker.test(ab.getBidder().getUsername())) {
                     activeList.add(ab);
                 }
@@ -166,8 +166,8 @@ public class Auction {
                 }
             } while (bidPlaced);
 
-            // Post-processing check cho TH2: max price của B < max price của A + min increment
-            // Trong đó B là ab1 (người có max cao nhất), A là ab2 (người có max cao nhì)
+            // Post-processing check cho TH1 và TH2
+            // Trong đó ab1 là người có max cao nhất, ab2 là người có max cao nhì
             if (activeList.size() >= 2) {
                 AutoBid ab1 = activeList.get(0);
                 AutoBid ab2 = activeList.get(1);
@@ -175,13 +175,18 @@ public class Auction {
                 BigDecimal maxB = ab1.getMaxBid();
                 BigDecimal maxA = ab2.getMaxBid();
 
-                // Nếu người chiến thắng cuối cùng của vòng lặp là B, nhưng B không đủ bước giá để vượt qua A
-                if (newHighestBidder != null &&
-                    newHighestBidder.getUsername().equals(ab1.getBidder().getUsername()) &&
-                    maxB.compareTo(maxA.add(increment)) < 0) {
-
+                // Trường hợp 2: max price của B < max price của A + min increment
+                if (maxB.compareTo(maxA.add(increment)) < 0) {
                     newHighestBidder = ab2.getBidder();
                     newCurrentPrice = maxA;
+                } 
+                // Trường hợp 1: max price của B >= max price của A + min increment
+                else {
+                    newHighestBidder = ab1.getBidder();
+                    // Đảm bảo giá chiến thắng ít nhất phải là giá cao nhì + min increment
+                    if (newCurrentPrice.compareTo(maxA.add(increment)) < 0) {
+                        newCurrentPrice = maxA.add(increment);
+                    }
                 }
             }
 
@@ -228,8 +233,8 @@ public class Auction {
                 throw new IllegalArgumentException();
             }
 
-            if (status != AuctionStatus.RUNNING) {
-                throw new IllegalArgumentException("Auction is not in a biddable state (must be RUNNING)");
+            if (status != AuctionStatus.OPEN && status != AuctionStatus.RUNNING) {
+                throw new IllegalArgumentException("Auction is not in a biddable state (must be OPEN or RUNNING)");
             }
 
             // Xóa auto-bid cũ của người này nếu có để tránh trùng lặp
@@ -241,11 +246,30 @@ public class Auction {
         }
     }
 
+    public void restoreAutoBid(Bidder bidder, BigDecimal maxBid, Instant timeStamp) {
+        synchronized (bidLock) {
+            if (bidder == null || maxBid == null) {
+                throw new IllegalArgumentException();
+            }
+            maxBid = maxBid.setScale(2, RoundingMode.UP);
+            autoBids.removeIf(ab -> ab.getBidder().getUsername().equals(bidder.getUsername()));
+            autoBids.add(new AutoBid(bidder, maxBid, timeStamp));
+        }
+    }
+
     // Bắt đầu phiên giao dịch
     private void scheduleStart() {
         long delay = startTime.getEpochSecond() - Instant.now().getEpochSecond();
-        if (delay < 0) {
-            delay = 0;
+        if (delay <= 0) {
+            synchronized (bidLock) {
+                if (status == AuctionStatus.OPEN) {
+                    status = AuctionStatus.RUNNING;
+                    if (statusChangeListener != null) {
+                        statusChangeListener.accept(this);
+                    }
+                }
+            }
+            return;
         }
 
         globalScheduler.schedule(() -> {
