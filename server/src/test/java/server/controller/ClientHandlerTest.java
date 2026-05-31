@@ -110,8 +110,8 @@ public class ClientHandlerTest {
     @Test
     public void testLoginSuccess() throws Exception {
         Map<String, String> data = new HashMap<>();
-        data.put("username", "bidder");
-        data.put("password", "Bidder@123");
+        data.put("username", "lamdaingo");
+        data.put("password", "Admin@123");
         Request request = new Request("LOGIN", data);
         String requestJson = gson.toJson(request);
 
@@ -120,7 +120,7 @@ public class ClientHandlerTest {
         Response response = gson.fromJson(responseJson, Response.class);
 
         assertEquals("SUCCESS", response.getStatus());
-        assertEquals("BIDDER,bidder", response.getMessage());
+        assertEquals("BIDDER,lamdaingo", response.getMessage());
     }
 
     @Test
