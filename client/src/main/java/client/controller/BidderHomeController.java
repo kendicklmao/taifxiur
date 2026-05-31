@@ -239,7 +239,7 @@ public class BidderHomeController extends BaseHomeController {
             data.put("auctionId", auction.getId());
             data.put("username", ctx.getCurrentUser().getUsername());
 
-            Request req = new Request("ITEM_PAID", data);
+            Request req = new Request("PAY_ITEM", data);
             Response response = ctx.sendRequestAndWait(req, 15);
 
             if ("SUCCESS".equals(response.getStatus())) {

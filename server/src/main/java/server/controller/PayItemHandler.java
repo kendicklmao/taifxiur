@@ -7,11 +7,11 @@ import shared.models.User;
 import shared.network.Request;
 import shared.network.Response;
 
-public class ItemPaidHandler implements RequestHandler {
+public class PayItemHandler implements RequestHandler {
     private final AuctionService auctionService;
     private final UserService userService;
 
-    public ItemPaidHandler(AuctionService auctionService, UserService userService) {
+    public PayItemHandler(AuctionService auctionService, UserService userService) {
         this.auctionService = auctionService;
         this.userService = userService;
     }
@@ -29,7 +29,7 @@ public class ItemPaidHandler implements RequestHandler {
         User ipUser = userService.getUser(ipUsername);
         if (ipUser instanceof Bidder bidder) {
             try {
-                auctionService.itemPaid(ipAuctionId, bidder);
+                auctionService.payItem(ipAuctionId, bidder);
                 return new Response("SUCCESS", "Payment processed");
             } catch (Exception e) {
                 return new Response("FAIL", e.getMessage());

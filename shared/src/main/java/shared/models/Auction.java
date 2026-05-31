@@ -309,7 +309,7 @@ public class Auction {
     }
 
     // Bidder thắng trả tiền
-    public void itemPaid(Bidder bidder) {
+    public void payItem(Bidder bidder) {
         synchronized (bidLock) {
             if (status != AuctionStatus.FINISHED) {
                 throw new IllegalStateException("Auction is not in FINISHED status");

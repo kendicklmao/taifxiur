@@ -668,7 +668,7 @@ public class AuctionService {
     }
 
     // Đánh dấu vật phẩm là đã thanh toán (Thanh toán thủ công)
-    public void itemPaid(String auctionId, Bidder bidder) {
+    public void payItem(String auctionId, Bidder bidder) {
         if (auctionId == null || bidder == null) {
             throw new IllegalArgumentException("Invalid auction ID or bidder");
         }
@@ -702,7 +702,7 @@ public class AuctionService {
         }
 
         // Cập nhật trạng thái in-memory
-        auction.itemPaid(bidder);
+        auction.payItem(bidder);
 
         // Thông báo cho client
         try {

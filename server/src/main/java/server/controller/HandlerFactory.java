@@ -26,7 +26,7 @@ public class HandlerFactory {
         handlers.put("GET_AUCTION_INFO", new GetAuctionInfoHandler(auctionService));
         handlers.put("PLACE_BID", new PlaceBidHandler(auctionService, walletService, userService));
         handlers.put("REGISTER_AUTOBID", new RegisterAutobidHandler(userService, auctionService));
-        handlers.put("ITEM_PAID", new ItemPaidHandler(auctionService, userService));
+        handlers.put("PAY_ITEM", new PayItemHandler(auctionService, userService));
         handlers.put("GET_FINISHED_AUCTIONS", new GetFinishedAuctionsHandler(auctionService));
         handlers.put("CREATE_AUCTION", new CreateAuctionHandler(auctionService, userService, storageService));
         handlers.put("GET_SELLER_AUCTIONS", new GetSellerAuctionsHandler(auctionService));
