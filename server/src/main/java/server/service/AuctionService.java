@@ -2,6 +2,7 @@ package server.service;
 
 import server.database.DatabaseConfig;
 import shared.enums.AuctionStatus;
+import shared.enums.Category;
 import shared.models.Auction;
 import shared.models.Bidder;
 import shared.models.Item;
@@ -119,66 +120,43 @@ public class AuctionService {
     private Item loadItemFromDatabase(Connection conn, int itemId) {
         try (PreparedStatement pstmt = conn.prepareStatement(
                 "SELECT name, description, category, image_url, base_price, " +
-                        "brand, item_status, model_year, km_travel, artist, year_created, is_original, seller_id, min_increment "
-                        +
+                        "brand, item_status, model_year, km_travel, artist, year_created, is_original, seller_id, min_increment " +
                         "FROM items WHERE id = ?")) {
 
             pstmt.setInt(1, itemId);
             ResultSet rs = pstmt.executeQuery();
 
             if (rs.next()) {
-                String name = rs.getString("name");
-                String description = rs.getString("description");
-                String category = rs.getString("category");
+                Category category = Category.valueOf(rs.getString("category"));
+
                 int sellerId = rs.getInt("seller_id");
                 String imageUrl = rs.getString("image_url");
                 BigDecimal minIncrement = rs.getBigDecimal("min_increment");
                 BigDecimal basePrice = rs.getBigDecimal("base_price");
 
                 User sellerUser = userService.getUser(getUsernameFromId(conn, sellerId));
-                if (!(sellerUser instanceof Seller))
+                if (!(sellerUser instanceof Seller seller)) {
                     return null;
-                Seller seller = (Seller) sellerUser;
-
-                Item item = null;
-                if ("ELECTRONICS".equals(category)) {
-                    String brand = rs.getString("brand");
-                    String statusStr = rs.getString("item_status");
-                    shared.enums.ItemStatus itemStatus = shared.enums.ItemStatus
-                            .valueOf(statusStr != null ? statusStr : "NEW");
-                    item = new shared.models.Electronic(name, description, seller, basePrice, brand, itemStatus);
-                } else if ("VEHICLES".equals(category)) {
-                    String brand = rs.getString("brand");
-                    int model = rs.getInt("model_year");
-                    int km = rs.getInt("km_travel");
-                    item = new shared.models.Vehicle(name, description, seller, basePrice, brand, model, km);
-                } else if ("ARTS".equals(category)) {
-                    String artist = rs.getString("artist");
-                    int year = rs.getInt("year_created");
-                    boolean isOriginal = rs.getBoolean("is_original");
-                    item = new shared.models.Art(name, description, seller, basePrice, artist, year, isOriginal);
-                } else if ("FASHIONS".equals(category)) {
-                    String brand = rs.getString("brand");
-                    String statusStr = rs.getString("item_status");
-                    shared.enums.ItemStatus itemStatus = shared.enums.ItemStatus
-                            .valueOf(statusStr != null ? statusStr : "NEW");
-                    item = new shared.models.Fashion(name, description, seller, basePrice, brand, itemStatus);
-                } else if ("COLLECTIBLES".equals(category)) {
-                    int year = rs.getInt("year_created");
-                    item = new shared.models.Collectible(name, description, seller, basePrice, year);
                 }
 
-                if (item != null) {
-                    item.setImageUrl(imageUrl);
-                    if (minIncrement != null) {
-                        item.setMinIncrement(minIncrement);
-                    } else {
-                        // Mặc định nếu min_increment bị thiếu
-                        throw new RuntimeException("min_increment is null for item " + itemId);
-                    }
+                ItemFactory factory = ItemFactoryProvider.getFactory(category);
 
-                    item.setDbId(itemId);
+                if (factory == null) {
+                    throw new IllegalArgumentException(
+                            "Unsupported category: " + category);
                 }
+
+                Item item = factory.create(rs, seller, basePrice);
+
+                item.setImageUrl(imageUrl);
+
+                if (minIncrement == null) {
+                    throw new RuntimeException(
+                            "min_increment is null for item " + itemId);
+                }
+
+                item.setMinIncrement(minIncrement);
+                item.setDbId(itemId);
 
                 return item;
             }
