@@ -241,6 +241,7 @@ public class Auction {
 
             autoBids.add(new AutoBid(bidder, maxBid, timeStamp));
             AutoBidService();
+            extendIfNeeded();
         }
     }
 
