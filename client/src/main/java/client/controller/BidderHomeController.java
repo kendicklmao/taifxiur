@@ -469,9 +469,9 @@ public class BidderHomeController extends BaseHomeController {
                         }
                     }
                     if (selectedAuction != null && selectedAuction.getId().equals(auctionId)) {
-                        showAuctionDetails(selectedAuction);
+                        showAuctionDetails(targetAuction);
                         if (activeChartController != null && activeChartAuction != null && activeChartAuction.getId().equals(auctionId)) {
-                            activeChartController.populateChart(selectedAuction);
+                            activeChartController.populateChart(targetAuction);
                         }
                     }
                 });

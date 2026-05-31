@@ -466,7 +466,10 @@ public class Auction {
 
     public void setEndTimeForDBRestore(Instant newEndTime) {
         synchronized (bidLock) {
-            if (this.endTime.equals(newEndTime)) {
+            if (newEndTime == null) {
+                return;
+            }
+            if (this.endTime != null && this.endTime.getEpochSecond() == newEndTime.getEpochSecond()) {
                 return;
             }
             this.endTime = newEndTime;
