@@ -453,4 +453,10 @@ public class Auction {
             this.currentPrice = this.startPrice;
         }
     }
+
+    public void clearAutoBids() {
+        synchronized (bidLock) {
+            this.autoBids.clear();
+        }
+    }
 }

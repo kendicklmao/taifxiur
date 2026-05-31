@@ -323,7 +323,7 @@ public class AuctionService {
         if (auctionId == null || bidder == null || amount == null) {
             throw new IllegalArgumentException();
         }
-        Auction auction = auctions.get(auctionId);
+        Auction auction = getAuction(auctionId);
         if (auction == null) {
             throw new IllegalArgumentException();
         }
@@ -365,6 +365,7 @@ public class AuctionService {
         if (id == null) {
             return null;
         }
+        syncWithDatabase();
         return auctions.get(id);
     }
 
@@ -374,7 +375,7 @@ public class AuctionService {
             throw new IllegalArgumentException();
         }
 
-        Auction auction = auctions.get(auctionId);
+        Auction auction = getAuction(auctionId);
         if (auction == null) {
             throw new IllegalArgumentException();
         }
@@ -464,14 +465,25 @@ public class AuctionService {
                 if (auctions.containsKey(auctionId)) {
                     // Nếu đã có trong RAM, cập nhật giá và trạng thái mới nhất từ DB
                     Auction auction = auctions.get(auctionId);
-                    if (dbPrice != null && dbPrice.compareTo(auction.getCurrentPrice()) > 0) {
-                        auction.clearBidHistory();
-                        auction.setCurrentPriceForDBRestore(dbPrice);
-                        loadBidHistoryForAuction(conn, auction, userService);
-                    }
-
                     if (dbStatus != null) {
                         auction.setStatusForDBRestore(AuctionStatus.valueOf(dbStatus));
+                    }
+
+                    if (auction.getStatus() == AuctionStatus.OPEN || auction.getStatus() == AuctionStatus.RUNNING) {
+                        auction.clearBidHistory();
+                        loadBidHistoryForAuction(conn, auction, userService);
+                        if (dbPrice != null && dbPrice.compareTo(auction.getCurrentPrice()) > 0) {
+                            auction.setCurrentPriceForDBRestore(dbPrice);
+                        }
+
+                        auction.clearAutoBids();
+                        loadAutoBidsForAuction(conn, auction, userService);
+                    } else {
+                        if (dbPrice != null && dbPrice.compareTo(auction.getCurrentPrice()) > 0) {
+                            auction.clearBidHistory();
+                            auction.setCurrentPriceForDBRestore(dbPrice);
+                            loadBidHistoryForAuction(conn, auction, userService);
+                        }
                     }
 
                 } else {
@@ -585,7 +597,7 @@ public class AuctionService {
             throw new IllegalArgumentException("Invalid auction ID or bidder");
         }
 
-        Auction auction = auctions.get(auctionId);
+        Auction auction = getAuction(auctionId);
         if (auction == null) {
             throw new IllegalArgumentException("Auction not found");
         }
@@ -641,7 +653,7 @@ public class AuctionService {
     }
 
     public String terminateAuction(String auctionId, String username) {
-        Auction auction = auctions.get(auctionId);
+        Auction auction = getAuction(auctionId);
         if (auction == null) {
             return "Auction not found.";
         }
