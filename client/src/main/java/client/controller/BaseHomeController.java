@@ -18,6 +18,7 @@ import javafx.scene.layout.TilePane;
 import javafx.scene.layout.VBox;
 import client.support.AuctionCardBuilder;
 import java.util.List;
+import java.util.ArrayList;
 
 public abstract class BaseHomeController extends UserController {
 
@@ -85,6 +86,18 @@ public abstract class BaseHomeController extends UserController {
         // Xóa các card không còn tồn tại
         grid.getChildren().removeAll(existingCards.values());
         existingCards.keySet().forEach(auctionCardMap::remove);
+
+        // Đảm bảo thứ tự các node trong grid khớp với danh sách auctions đã được lọc và sắp xếp
+        List<javafx.scene.Node> sortedNodes = new ArrayList<>();
+        for (Auction auction : auctions) {
+            VBox card = auctionCardMap.get(auction.getId());
+            if (card != null) {
+                sortedNodes.add(card);
+            }
+        }
+        if (!grid.getChildren().equals(sortedNodes)) {
+            grid.getChildren().setAll(sortedNodes);
+        }
     }
 
     @FXML
