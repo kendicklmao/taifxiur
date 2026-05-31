@@ -11,16 +11,10 @@ import server.service.*;
 import shared.enums.Category;
 import shared.utils.GsonUtils;
 
-import shared.enums.ItemStatus;
-import shared.models.Art;
 import shared.models.Auction;
-import shared.models.Collectible;
-import shared.models.Electronic;
-import shared.models.Fashion;
 import shared.models.Item;
 import shared.models.Seller;
 import shared.models.User;
-import shared.models.Vehicle;
 import shared.network.Request;
 import shared.network.Response;
 
@@ -54,10 +48,7 @@ public class CreateAuctionHandler implements RequestHandler {
             if (!(user instanceof Seller seller)) {
                 return new Response("FAIL", "Invalid user");
             }
-
-            String name = data.get("name");
-            String desc = data.get("description");
-
+            
             BigDecimal price = new BigDecimal(data.get("price"))
                     .setScale(2, RoundingMode.UP);
 
