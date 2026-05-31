@@ -26,5 +26,5 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Fake Deploy
+      - name: Deploy
         run: echo "Deploy success"
