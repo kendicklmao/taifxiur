@@ -48,6 +48,7 @@ public class Auction {
     private transient Consumer<Auction> statusChangeListener; // Callback khi trạng thái thay đổi
     private transient Predicate<String> banChecker; // Kiểm tra người bị cấm
     private transient BiConsumer<Bidder, BigDecimal> bidListener; // Callback khi có bid mới
+    private transient Consumer<Auction> endTimeChangeListener; // Callback khi thời gian kết thúc thay đổi
 
     public Auction(String id, Item item, BigDecimal startPrice, Seller seller, Instant startTime, Instant endTime) {
         if (id == null || id.isBlank()) {
@@ -383,9 +384,11 @@ public class Auction {
         }
     }
 
-    // Kéo dài phiên đấu giá nếu cần
     private void extendIfNeeded() {
         synchronized (bidLock) {
+            if (status != AuctionStatus.RUNNING) {
+                return;
+            }
             long remaining = endTime.getEpochSecond() - Instant.now().getEpochSecond();
             if (remaining <= EXTEND_THRESHOLD) {
                 endTime = endTime.plusSeconds(EXTEND_TIME);
@@ -393,6 +396,9 @@ public class Auction {
                     finishTask.cancel(false);
                 }
                 scheduleFinish();
+                if (endTimeChangeListener != null) {
+                    endTimeChangeListener.accept(this);
+                }
             }
         }
     }
@@ -450,6 +456,31 @@ public class Auction {
 
     public Instant getEndTime() {
         return endTime;
+    }
+
+    public void setEndTime(Instant endTime) {
+        synchronized (bidLock) {
+            this.endTime = endTime;
+        }
+    }
+
+    public void setEndTimeForDBRestore(Instant newEndTime) {
+        synchronized (bidLock) {
+            if (this.endTime.equals(newEndTime)) {
+                return;
+            }
+            this.endTime = newEndTime;
+            if (status == AuctionStatus.RUNNING) {
+                if (finishTask != null) {
+                    finishTask.cancel(false);
+                }
+                scheduleFinish();
+            }
+        }
+    }
+
+    public void setEndTimeChangeListener(Consumer<Auction> listener) {
+        this.endTimeChangeListener = listener;
     }
 
     public void updateStatus() {

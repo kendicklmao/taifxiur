@@ -73,10 +73,10 @@ public class AuctionService {
                         continue;
                     }
 
-                    // Tạo auction và khôi phục state
                     Auction auction = new Auction(auctionId, item, startPrice, (Seller) seller, startTime, endTime);
                     auction.setFinishCallback(a -> finalizeAuction(a));
                     auction.setStatusChangeListener(a -> updateAuctionStatusInDatabase(a));
+                    auction.setEndTimeChangeListener(a -> updateAuctionEndTimeInDatabase(a));
 
                     // Restore current price if different from start price
                     if (currentPrice != null && currentPrice.compareTo(startPrice) > 0) {
@@ -333,6 +333,7 @@ public class AuctionService {
         // giá kết thúc
         auction.setFinishCallback(a -> finalizeAuction(a));
         auction.setStatusChangeListener(a -> updateAuctionStatusInDatabase(a));
+        auction.setEndTimeChangeListener(a -> updateAuctionEndTimeInDatabase(a));
         auction.setBanChecker(username -> userService.isUserBanned(username));
         auction.setBidListener(
                 (bidder, price) -> saveBidToDatabase(auction.getId(), bidder, price, auction.getItem().getDbId()));
@@ -483,7 +484,7 @@ public class AuctionService {
     // Đồng bộ hóa dữ liệu từ Database vào RAM.
     // Giúp nhiều Server chạy song song vẫn nhìn thấy dữ liệu của nhau.
     private void syncWithDatabase() {
-        String sql = "SELECT i.auction_id, i.current_price, i.auction_status, " +
+        String sql = "SELECT i.auction_id, i.current_price, i.auction_status, i.end_time, " +
                      "       COALESCE(b.bid_count, 0) as db_bid_count, " +
                      "       COALESCE(ab.autobid_sum, 0) as db_autobid_sum, " +
                      "       COALESCE(ab.autobid_count, 0) as db_autobid_count " +
@@ -510,6 +511,7 @@ public class AuctionService {
                 dbAuctionIds.add(auctionId);
                 BigDecimal dbPrice = rs.getBigDecimal("current_price");
                 String dbStatus = rs.getString("auction_status");
+                Instant dbEndTime = rs.getTimestamp("end_time").toInstant();
                 int dbBidCount = rs.getInt("db_bid_count");
                 BigDecimal dbAutoBidSum = rs.getBigDecimal("db_autobid_sum");
                 if (dbAutoBidSum == null) {
@@ -520,6 +522,9 @@ public class AuctionService {
                 if (auctions.containsKey(auctionId)) {
                     // Nếu đã có trong RAM, cập nhật giá và trạng thái mới nhất từ DB
                     Auction auction = auctions.get(auctionId);
+                    if (dbEndTime != null) {
+                        auction.setEndTimeForDBRestore(dbEndTime);
+                    }
                     if (dbStatus != null) {
                         auction.setStatusForDBRestore(AuctionStatus.valueOf(dbStatus));
                     }
@@ -596,6 +601,7 @@ public class AuctionService {
                         Auction auction = new Auction(targetAuctionId, item, startPrice, (Seller) seller, startTime,
                                 endTime);
                         auction.setFinishCallback(a -> finalizeAuction(a));
+                        auction.setEndTimeChangeListener(a -> updateAuctionEndTimeInDatabase(a));
                         auction.setBanChecker(username -> userService.isUserBanned(username));
 
                         if (currentPrice != null && currentPrice.compareTo(startPrice) > 0) {
@@ -942,6 +948,24 @@ public class AuctionService {
             }
         } catch (SQLException e) {
             System.err.println("Error updating auction status in database: " + e.getMessage());
+        }
+    }
+
+    private void updateAuctionEndTimeInDatabase(Auction auction) {
+        try (Connection conn = DatabaseConfig.getDataSource().getConnection();
+                PreparedStatement pstmt = conn.prepareStatement(
+                        "UPDATE items SET end_time = ? WHERE auction_id = ?")) {
+
+            pstmt.setTimestamp(1, Timestamp.from(auction.getEndTime()));
+            pstmt.setString(2, auction.getId());
+
+            int rows = pstmt.executeUpdate();
+            if (rows > 0) {
+                System.out.println("[DB-SYNC] Updated auction " + auction.getId() + " end_time to " + auction.getEndTime()
+                        + " in database.");
+            }
+        } catch (SQLException e) {
+            System.err.println("Error updating auction end_time in database: " + e.getMessage());
         }
     }
 

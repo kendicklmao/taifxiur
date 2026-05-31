@@ -45,6 +45,7 @@ public class RegisterAutobidHandler implements RequestHandler {
                     if (updatedAuction.getHighestBidder() != null) {
                         payload.put("highestBidder", updatedAuction.getHighestBidder().getUsername());
                     }
+                    payload.put("endTime", updatedAuction.getEndTime().toString());
                     payload.put("bidTime", java.time.Instant.now().toString());
                     Gson gson = GsonUtils.createGson();
                     Response updateResponse = new Response("UPDATE_PRICE", gson.toJson(payload));

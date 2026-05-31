@@ -449,22 +449,23 @@ public class BidderHomeController extends BaseHomeController {
                 String auctionId = payload.get("auctionId");
                 String newPrice = payload.get("newPrice");
                 Platform.runLater(() -> {
-                    VBox card = auctionCardMap.get(auctionId);
-                    if (card != null) {
-                        Label priceLabel = (Label) card.getProperties().get("priceLabel");
-                        if (priceLabel != null) {
-                            priceLabel.setText("Current Bid: $" + newPrice);
-                        }
-                    }
                     Auction targetAuction = allAuctions.stream().filter(a -> a.getId().equals(auctionId)).findFirst().orElse(null);
                     if (targetAuction != null) {
                         targetAuction.setCurrentPriceForDBRestore(new java.math.BigDecimal(newPrice));
+                        String newEndTimeStr = payload.get("endTime");
+                        if (newEndTimeStr != null) {
+                            targetAuction.setEndTime(java.time.Instant.parse(newEndTimeStr));
+                        }
                         String highestBidder = payload.get("highestBidder");
                         if (highestBidder != null && !highestBidder.isEmpty()) {
                             String bidTimeStr = payload.get("bidTime");
                             java.time.Instant bidTime = bidTimeStr != null ? java.time.Instant.parse(bidTimeStr) : java.time.Instant.now();
                             shared.models.Bidder bidderObj = new shared.models.Bidder(highestBidder, "", "", "", "", "", "");
                             targetAuction.restoreBid(bidderObj, new java.math.BigDecimal(newPrice), bidTime);
+                        }
+                        VBox card = auctionCardMap.get(auctionId);
+                        if (card != null) {
+                            client.support.AuctionCardBuilder.updateCardData(card, targetAuction);
                         }
                     }
                     if (selectedAuction != null && selectedAuction.getId().equals(auctionId)) {

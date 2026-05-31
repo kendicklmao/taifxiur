@@ -48,6 +48,7 @@ public class PlaceBidHandler implements RequestHandler {
                         if (updatedAuction.getHighestBidder() != null) {
                             payload.put("highestBidder", updatedAuction.getHighestBidder().getUsername());
                         }
+                        payload.put("endTime", updatedAuction.getEndTime().toString());
                         payload.put("bidTime", java.time.Instant.now().toString());
                         Response updateResponse = new Response("UPDATE_PRICE", gson.toJson(payload));
                         ClientHandler.broadcast(gson.toJson(updateResponse));

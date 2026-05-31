@@ -179,4 +179,41 @@ public class AuctionServiceTest {
         BigDecimal expectedPrice = new BigDecimal("100.00").add(item.getMinIncrement());
         assertEquals(-1, updatedAuction.getCurrentPrice().compareTo(expectedPrice));
     }
+
+    @Test
+    public void testAutoSnipingExtension() {
+        Electronic item = new Electronic("Test Sniping Item", "Description", seller, new BigDecimal("10.00"), "Brand",
+                ItemStatus.NEW);
+        item.setMinIncrement(new BigDecimal("10.00"));
+        Instant startTime = Instant.now().minus(1, ChronoUnit.MINUTES);
+        // End time is 5 seconds in the future (within the 10-second threshold)
+        Instant originalEndTime = Instant.now().plus(5, ChronoUnit.SECONDS);
+        Auction auction = auctionService.createAuction(seller, item, new BigDecimal("100.00"), startTime, originalEndTime);
+
+        if (auction != null) {
+            createdAuctionIds.add(auction.getId());
+        }
+
+        // Place a bid
+        boolean result = auctionService.placeBid(auction.getId(), bidder, new BigDecimal("150.00"));
+        assertTrue(result);
+
+        Auction updatedAuction = auctionService.getAuction(auction.getId());
+        // Verify endTime in memory is extended
+        Instant extendedEndTime = updatedAuction.getEndTime();
+        assertTrue(extendedEndTime.isAfter(originalEndTime));
+
+        // Verify endTime in DB is also extended
+        try (java.sql.Connection conn = DatabaseConfig.getDataSource().getConnection();
+             java.sql.PreparedStatement pstmt = conn.prepareStatement("SELECT end_time FROM items WHERE auction_id = ?")) {
+            pstmt.setString(1, auction.getId());
+            try (java.sql.ResultSet rs = pstmt.executeQuery()) {
+                assertTrue(rs.next());
+                Instant dbEndTime = rs.getTimestamp("end_time").toInstant();
+                assertEquals(extendedEndTime.getEpochSecond(), dbEndTime.getEpochSecond());
+            }
+        } catch (java.sql.SQLException e) {
+            fail("Database error: " + e.getMessage());
+        }
+    }
 }
