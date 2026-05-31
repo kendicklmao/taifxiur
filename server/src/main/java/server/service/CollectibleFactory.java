@@ -7,6 +7,7 @@ import shared.models.Seller;
 import java.math.BigDecimal;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Map;
 
 public class CollectibleFactory implements ItemFactory {
 
@@ -23,6 +24,21 @@ public class CollectibleFactory implements ItemFactory {
                 seller,
                 basePrice,
                 rs.getInt("year_created")
+        );
+    }
+    @Override
+    public Item create(
+            Map<String, String> data,
+            Seller seller,
+            BigDecimal price) {
+
+        return new Collectible(
+                data.get("name"),
+                data.get("description"),
+                seller,
+                price,
+                Integer.parseInt(
+                        data.getOrDefault("yearField", "0"))
         );
     }
 }

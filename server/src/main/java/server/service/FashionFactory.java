@@ -8,6 +8,7 @@ import shared.models.Seller;
 import java.math.BigDecimal;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Map;
 import java.util.Optional;
 
 public class FashionFactory implements ItemFactory {
@@ -31,6 +32,23 @@ public class FashionFactory implements ItemFactory {
                 basePrice,
                 rs.getString("brand"),
                 status
+        );
+    }
+    @Override
+    public Item create(
+            Map<String, String> data,
+            Seller seller,
+            BigDecimal price) {
+
+        return new Fashion(
+                data.get("name"),
+                data.get("description"),
+                seller,
+                price,
+                data.getOrDefault("brandField", "Brand"),
+                ItemStatus.valueOf(
+                        data.getOrDefault("statusField", "NEW")
+                                .toUpperCase())
         );
     }
 }
