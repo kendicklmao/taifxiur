@@ -459,4 +459,20 @@ public class Auction {
             this.autoBids.clear();
         }
     }
+
+    public int getAutoBidsCount() {
+        synchronized (bidLock) {
+            return this.autoBids.size();
+        }
+    }
+
+    public BigDecimal getAutoBidsSum() {
+        synchronized (bidLock) {
+            BigDecimal sum = BigDecimal.ZERO;
+            for (AutoBid ab : this.autoBids) {
+                sum = sum.add(ab.getMaxBid());
+            }
+            return sum;
+        }
+    }
 }

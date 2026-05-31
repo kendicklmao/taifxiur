@@ -231,6 +231,37 @@ public class AuctionService {
         }
     }
 
+    // Chỉ tải thêm các thầu mới từ DB
+    private void loadNewBidsForAuction(Connection conn, Auction auction, UserService userService, int skipCount) {
+        try (PreparedStatement pstmt = conn.prepareStatement(
+                "SELECT b.bidder_id, b.bid_amount, b.bid_time FROM bids b " +
+                        "WHERE b.auction_id = ? ORDER BY b.bid_time ASC")) {
+
+            pstmt.setString(1, auction.getId());
+            try (ResultSet rs = pstmt.executeQuery()) {
+                int index = 0;
+                while (rs.next()) {
+                    if (index < skipCount) {
+                        index++;
+                        continue;
+                    }
+                    int bidderId = rs.getInt("bidder_id");
+                    BigDecimal bidAmount = rs.getBigDecimal("bid_amount");
+                    String bidderUsername = getUsernameFromId(conn, bidderId);
+                    User bidderUser = userService.getUser(bidderUsername);
+
+                    if (bidderUser instanceof Bidder) {
+                        auction.restoreBid((Bidder) bidderUser, bidAmount, rs.getTimestamp("bid_time").toInstant());
+                    }
+                    index++;
+                }
+            }
+
+        } catch (SQLException e) {
+            System.err.println("Error loading new bids: " + e.getMessage());
+        }
+    }
+
     // Tải auto-bids cho một phiên đấu giá
     private void loadAutoBidsForAuction(Connection conn, Auction auction, UserService userService) {
         try (PreparedStatement pstmt = conn.prepareStatement(
@@ -450,10 +481,26 @@ public class AuctionService {
     // Đồng bộ hóa dữ liệu từ Database vào RAM.
     // Giúp nhiều Server chạy song song vẫn nhìn thấy dữ liệu của nhau.
     private void syncWithDatabase() {
+        String sql = "SELECT i.auction_id, i.current_price, i.auction_status, " +
+                     "       COALESCE(b.bid_count, 0) as db_bid_count, " +
+                     "       COALESCE(ab.autobid_sum, 0) as db_autobid_sum, " +
+                     "       COALESCE(ab.autobid_count, 0) as db_autobid_count " +
+                     "FROM items i " +
+                     "LEFT JOIN ( " +
+                     "    SELECT auction_id, COUNT(*) as bid_count " +
+                     "    FROM bids " +
+                     "    GROUP BY auction_id " +
+                     ") b ON i.auction_id = b.auction_id " +
+                     "LEFT JOIN ( " +
+                     "    SELECT auction_id, SUM(max_bid_amount) as autobid_sum, COUNT(*) as autobid_count " +
+                     "    FROM auto_bids " +
+                     "    GROUP BY auction_id " +
+                     ") ab ON i.auction_id = ab.auction_id " +
+                     "WHERE i.auction_id IS NOT NULL";
+
         try (Connection conn = DatabaseConfig.getDataSource().getConnection();
                 Statement stmt = conn.createStatement();
-                ResultSet rs = stmt.executeQuery(
-                        "SELECT id, current_price, auction_status, auction_id FROM items WHERE auction_id IS NOT NULL")) {
+                ResultSet rs = stmt.executeQuery(sql)) {
 
             java.util.Set<String> dbAuctionIds = new java.util.HashSet<>();
             while (rs.next()) {
@@ -461,6 +508,12 @@ public class AuctionService {
                 dbAuctionIds.add(auctionId);
                 BigDecimal dbPrice = rs.getBigDecimal("current_price");
                 String dbStatus = rs.getString("auction_status");
+                int dbBidCount = rs.getInt("db_bid_count");
+                BigDecimal dbAutoBidSum = rs.getBigDecimal("db_autobid_sum");
+                if (dbAutoBidSum == null) {
+                    dbAutoBidSum = BigDecimal.ZERO;
+                }
+                int dbAutoBidCount = rs.getInt("db_autobid_count");
 
                 if (auctions.containsKey(auctionId)) {
                     // Nếu đã có trong RAM, cập nhật giá và trạng thái mới nhất từ DB
@@ -470,19 +523,34 @@ public class AuctionService {
                     }
 
                     if (auction.getStatus() == AuctionStatus.OPEN || auction.getStatus() == AuctionStatus.RUNNING) {
-                        auction.clearBidHistory();
-                        loadBidHistoryForAuction(conn, auction, userService);
-                        if (dbPrice != null && dbPrice.compareTo(auction.getCurrentPrice()) > 0) {
+                        int ramBidCount = auction.getBidHistory().size();
+                        if (dbBidCount > ramBidCount) {
+                            loadNewBidsForAuction(conn, auction, userService, ramBidCount);
+                        }
+                        if (dbPrice != null && dbPrice.compareTo(auction.getCurrentPrice()) != 0) {
                             auction.setCurrentPriceForDBRestore(dbPrice);
                         }
 
-                        auction.clearAutoBids();
-                        loadAutoBidsForAuction(conn, auction, userService);
+                        int ramAutoBidCount = auction.getAutoBidsCount();
+                        BigDecimal ramAutoBidSum = auction.getAutoBidsSum();
+                        if (ramAutoBidSum == null) {
+                            ramAutoBidSum = BigDecimal.ZERO;
+                        }
+                        
+                        boolean autoBidsChanged = (ramAutoBidCount != dbAutoBidCount) || 
+                            (dbAutoBidSum.compareTo(ramAutoBidSum) != 0);
+
+                        if (autoBidsChanged) {
+                            auction.clearAutoBids();
+                            loadAutoBidsForAuction(conn, auction, userService);
+                        }
                     } else {
-                        if (dbPrice != null && dbPrice.compareTo(auction.getCurrentPrice()) > 0) {
-                            auction.clearBidHistory();
+                        if (dbPrice != null && dbPrice.compareTo(auction.getCurrentPrice()) != 0) {
+                            int ramBidCount = auction.getBidHistory().size();
+                            if (dbBidCount > ramBidCount) {
+                                loadNewBidsForAuction(conn, auction, userService, ramBidCount);
+                            }
                             auction.setCurrentPriceForDBRestore(dbPrice);
-                            loadBidHistoryForAuction(conn, auction, userService);
                         }
                     }
 
