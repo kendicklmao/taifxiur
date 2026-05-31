@@ -104,76 +104,106 @@ public class Auction {
     // Hệ thống đấu giá tự động
     public void AutoBidService() {
         synchronized (bidLock) {
-
-            if (autoBids.isEmpty() || status != AuctionStatus.RUNNING) {
+            if (status != AuctionStatus.RUNNING) {
                 return;
             }
 
-            AutoBid highest = autoBids.poll();
-
-            // Kiểm tra xem người có bid cao nhất có bị cấm không
-            if (banChecker != null && banChecker.test(highest.getBidder().getUsername())) {
-                System.out.println(
-                        "DEBUG AUTOBID: User " + highest.getBidder().getUsername() + " is banned. Removing autobid.");
-                return; // Bỏ qua chu kỳ autobid này
+            // Lọc ra các autobid hợp lệ
+            List<AutoBid> activeList = new ArrayList<>();
+            for (AutoBid ab : autoBids) {
+                if (banChecker == null || !banChecker.test(ab.getBidder().getUsername())) {
+                    activeList.add(ab);
+                }
             }
 
-            AutoBid second = autoBids.peek();
+            if (activeList.isEmpty()) {
+                return;
+            }
+
+            // Sắp xếp giảm dần theo maxBid, nếu bằng nhau thì thời gian đăng ký sớm hơn lên trước
+            activeList.sort((a, b) -> {
+                int cmp = b.getMaxBid().compareTo(a.getMaxBid());
+                if (cmp != 0) {
+                    return cmp;
+                }
+                return a.getTimeStamp().compareTo(b.getTimeStamp());
+            });
 
             BigDecimal increment = item.getMinIncrement();
-            BigDecimal newPrice;
+            Bidder newHighestBidder = highestBidder;
+            BigDecimal newCurrentPrice = currentPrice;
 
-            if (highest.getBidder().equals(highestBidder)) {
-                // Nếu người có bid cao nhất đã thắng thì outbid bid cao thứ 2 nếu có
-                if (second != null) {
-                    newPrice = second.getMaxBid().add(increment);
-                    if (newPrice.compareTo(highest.getMaxBid()) > 0) {
-                        newPrice = highest.getMaxBid();
+            if (activeList.size() == 1) {
+                AutoBid ab1 = activeList.get(0);
+                if (highestBidder == null) {
+                    newHighestBidder = ab1.getBidder();
+                    newCurrentPrice = startPrice;
+                } else if (!highestBidder.getUsername().equals(ab1.getBidder().getUsername())) {
+                    BigDecimal required = currentPrice.add(increment);
+                    if (ab1.getMaxBid().compareTo(required) >= 0) {
+                        newHighestBidder = ab1.getBidder();
+                        newCurrentPrice = required;
                     }
-                    newPrice = newPrice.setScale(2, RoundingMode.UP);
-                    if (newPrice.compareTo(currentPrice) > 0) {
-                        currentPrice = newPrice;
-                        bidHistory.add(new BidTransaction(highest.getBidder(), newPrice, Instant.now()));
-                        if (bidListener != null) {
-                            bidListener.accept(highest.getBidder(), newPrice);
+                }
+            } else {
+                AutoBid ab1 = activeList.get(0); // B (max cao nhất)
+                AutoBid ab2 = activeList.get(1); // A (max cao nhì)
+
+                BigDecimal maxB = ab1.getMaxBid();
+                BigDecimal maxA = ab2.getMaxBid();
+
+                Bidder duelWinner;
+                BigDecimal duelPrice;
+
+                // TH1: max price của B >= max price của A + min increment
+                if (maxB.compareTo(maxA.add(increment)) >= 0) {
+                    duelWinner = ab1.getBidder();
+                    duelPrice = maxA.add(increment);
+                } else {
+                    // TH2: max price của B < max price của A + min increment
+                    duelWinner = ab2.getBidder();
+                    duelPrice = maxA;
+                }
+
+                // Nếu người thắng hiện tại không phải là 1 trong 2 người này (ví dụ có 1 người đặt tay cao hơn)
+                if (highestBidder != null && 
+                    !highestBidder.getUsername().equals(ab1.getBidder().getUsername()) && 
+                    !highestBidder.getUsername().equals(ab2.getBidder().getUsername())) {
+                    
+                    BigDecimal required = currentPrice.add(increment);
+                    // So sánh winner của duel với người đặt tay hiện tại
+                    if (duelWinner.getUsername().equals(ab1.getBidder().getUsername())) {
+                        if (maxB.compareTo(required) >= 0) {
+                            newHighestBidder = ab1.getBidder();
+                            newCurrentPrice = duelPrice.compareTo(required) > 0 ? duelPrice : required;
+                        }
+                    } else {
+                        if (maxA.compareTo(required) >= 0) {
+                            newHighestBidder = ab2.getBidder();
+                            newCurrentPrice = duelPrice.compareTo(required) > 0 ? duelPrice : required;
                         }
                     }
-                }
-
-            } else {
-                // Người khác đang thắng hoặc chưa có ai thắng
-                BigDecimal minToOutbid = (highestBidder == null) ? currentPrice : currentPrice.add(increment);
-
-                if (second != null) {
-                    newPrice = second.getMaxBid().add(increment);
-                    if (newPrice.compareTo(minToOutbid) < 0) {
-                        newPrice = minToOutbid;
-                    }
                 } else {
-                    newPrice = minToOutbid;
-                }
-
-                if (newPrice.compareTo(highest.getMaxBid()) > 0) {
-                    newPrice = highest.getMaxBid();
-                }
-
-                newPrice = newPrice.setScale(2, RoundingMode.UP);
-
-                // Sửa điều kiện so sánh: Nếu chưa có ai bid (highestBidder == null),
-                // thì chỉ cần newPrice >= currentPrice (giá khởi điểm) là đủ.
-                BigDecimal minRequiredForPlace = (highestBidder == null) ? currentPrice : currentPrice.add(increment);
-
-                if (newPrice.compareTo(minRequiredForPlace) >= 0) {
-                    currentPrice = newPrice;
-                    highestBidder = highest.getBidder();
-                    bidHistory.add(new BidTransaction(highest.getBidder(), newPrice, Instant.now()));
-                    if (bidListener != null) {
-                        bidListener.accept(highest.getBidder(), newPrice);
-                    }
+                    newHighestBidder = duelWinner;
+                    newCurrentPrice = duelPrice;
                 }
             }
 
-            autoBids.add(highest);
+            newCurrentPrice = newCurrentPrice.setScale(2, RoundingMode.UP);
+
+            // Chỉ cập nhật và ghi nhận giao dịch nếu giá trị mới khác với giá hiện tại hoặc người thắng thay đổi
+            boolean changed = (newCurrentPrice.compareTo(currentPrice) != 0) || 
+                              (highestBidder == null) || 
+                              (!highestBidder.getUsername().equals(newHighestBidder.getUsername()));
+
+            if (changed) {
+                currentPrice = newCurrentPrice;
+                highestBidder = newHighestBidder;
+                bidHistory.add(new BidTransaction(newHighestBidder, newCurrentPrice, Instant.now()));
+                if (bidListener != null) {
+                    bidListener.accept(newHighestBidder, newCurrentPrice);
+                }
+            }
         }
     }
 
