@@ -6,7 +6,6 @@
 <BorderPane xmlns:fx="http://javafx.com/fxml" fx:controller="client.controller.BidderHomeController"
             styleClass="app-shell">
 
-    <!-- TOP APP BAR -->
     <top>
         <VBox styleClass="app-bar" spacing="0">
             <HBox alignment="CENTER_LEFT" spacing="18">
@@ -23,12 +22,10 @@
         </VBox>
     </top>
 
-    <!-- CENTER -->
     <center>
         <ScrollPane fitToWidth="true" hbarPolicy="NEVER">
             <VBox styleClass="app-content" spacing="22">
 
-                <!-- Wallet card -->
                 <HBox styleClass="dash-card-accent" spacing="20" alignment="CENTER_LEFT">
                     <VBox spacing="6" HBox.hgrow="ALWAYS">
                         <Label text="WALLET BALANCE" styleClass="balance-label"/>
@@ -45,7 +42,6 @@
                     </VBox>
                 </HBox>
 
-                <!-- Live Auctions section -->
                 <VBox styleClass="dash-card" spacing="18">
                     <HBox alignment="CENTER_LEFT" spacing="12">
                         <VBox spacing="4" HBox.hgrow="ALWAYS">
@@ -55,7 +51,6 @@
                         </VBox>
                     </HBox>
 
-                    <!-- Search and Sort Controls -->
                     <HBox spacing="12" alignment="CENTER_LEFT">
                         <TextField fx:id="searchField"
                                    promptText="Search by item name..."
@@ -70,7 +65,6 @@
                               style="-fx-padding: 4 0 4 0;"/>
                 </VBox>
 
-                <!-- Right-side Auction Detail Pane -->
                 <VBox fx:id="auctionDetailPane" styleClass="dash-card" spacing="16" HBox.hgrow="NEVER"
                       minWidth="320" managed="false" visible="false">
                     <!-- Content will be populated dynamically -->
