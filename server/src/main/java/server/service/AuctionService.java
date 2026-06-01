@@ -188,7 +188,7 @@ public class AuctionService {
     private void loadBidHistoryForAuction(Connection conn, Auction auction, UserService userService) {
         try (PreparedStatement pstmt = conn.prepareStatement(
                 "SELECT b.bidder_id, b.bid_amount, b.bid_time FROM bids b " +
-                        "WHERE b.auction_id = ? ORDER BY b.bid_time ASC")) {
+                        "WHERE b.auction_id = ? ORDER BY b.bid_time ASC, b.id ASC")) {
 
             pstmt.setString(1, auction.getId());
             ResultSet rs = pstmt.executeQuery();
@@ -213,7 +213,7 @@ public class AuctionService {
     private void loadNewBidsForAuction(Connection conn, Auction auction, UserService userService, int skipCount) {
         try (PreparedStatement pstmt = conn.prepareStatement(
                 "SELECT b.bidder_id, b.bid_amount, b.bid_time FROM bids b " +
-                        "WHERE b.auction_id = ? ORDER BY b.bid_time ASC")) {
+                        "WHERE b.auction_id = ? ORDER BY b.bid_time ASC, b.id ASC")) {
 
             pstmt.setString(1, auction.getId());
             try (ResultSet rs = pstmt.executeQuery()) {
@@ -349,7 +349,114 @@ public class AuctionService {
             return false; // Số dư không đủ
         }
 
-        return auction.placeBid(bidder, amount);
+        synchronized (auction.getBidLock()) {
+            try (Connection conn = DatabaseConfig.getDataSource().getConnection()) {
+                conn.setAutoCommit(false);
+                try {
+                    int itemId = -1;
+                    BigDecimal startPrice = null;
+                    String statusStr = null;
+                    BigDecimal minIncrement = null;
+                    Instant endTime = null;
+
+                    // 1. Lock the auction item row in the database
+                    try (PreparedStatement pstmt = conn.prepareStatement(
+                            "SELECT id, base_price, auction_status, min_increment, end_time FROM items WHERE auction_id = ? FOR UPDATE")) {
+                        pstmt.setString(1, auctionId);
+                        try (ResultSet rs = pstmt.executeQuery()) {
+                            if (rs.next()) {
+                                itemId = rs.getInt("id");
+                                startPrice = rs.getBigDecimal("base_price");
+                                statusStr = rs.getString("auction_status");
+                                minIncrement = rs.getBigDecimal("min_increment");
+                                Timestamp et = rs.getTimestamp("end_time");
+                                endTime = (et != null) ? et.toInstant() : null;
+                            }
+                        }
+                    }
+
+                    if (itemId == -1 || statusStr == null) {
+                        conn.rollback();
+                        return false;
+                    }
+
+                    AuctionStatus status = AuctionStatus.valueOf(statusStr);
+                    if (status != AuctionStatus.RUNNING) {
+                        conn.rollback();
+                        return false;
+                    }
+
+                    if (endTime != null && Instant.now().isAfter(endTime)) {
+                        // Update status to FINISHED in database
+                        try (PreparedStatement pstmt = conn.prepareStatement(
+                                "UPDATE items SET auction_status = ? WHERE id = ?")) {
+                            pstmt.setString(1, AuctionStatus.FINISHED.name());
+                            pstmt.setInt(2, itemId);
+                            pstmt.executeUpdate();
+                        }
+                        conn.commit();
+                        return false;
+                    }
+
+                    // 2. Query the highest bid from the database to determine minRequired
+                    BigDecimal highestBidAmount = null;
+                    try (PreparedStatement pstmt = conn.prepareStatement(
+                            "SELECT bid_amount FROM bids WHERE auction_id = ? ORDER BY bid_time DESC, id DESC LIMIT 1")) {
+                        pstmt.setString(1, auctionId);
+                        try (ResultSet rs = pstmt.executeQuery()) {
+                            if (rs.next()) {
+                                highestBidAmount = rs.getBigDecimal("bid_amount");
+                            }
+                        }
+                    }
+
+                    BigDecimal minRequired;
+                    if (highestBidAmount == null) {
+                        minRequired = startPrice;
+                    } else {
+                        minRequired = highestBidAmount.add(minIncrement != null ? minIncrement : BigDecimal.ZERO);
+                    }
+
+                    BigDecimal formattedAmount = amount.setScale(2, java.math.RoundingMode.UP);
+                    if (formattedAmount.compareTo(minRequired) < 0) {
+                        conn.rollback();
+                        return false;
+                    }
+
+                    // 3. Insert new bid into the database
+                    int bidderUserId = getUserIdFromDatabase(bidder.getUsername());
+                    try (PreparedStatement pstmt = conn.prepareStatement(
+                            "INSERT INTO bids (auction_id, bidder_id, bid_amount, bid_time) VALUES (?, ?, ?, CURRENT_TIMESTAMP)")) {
+                        pstmt.setString(1, auctionId);
+                        pstmt.setInt(2, bidderUserId);
+                        pstmt.setBigDecimal(3, formattedAmount);
+                        pstmt.executeUpdate();
+                    }
+
+                    // 4. Update item's current price in the database
+                    try (PreparedStatement pstmt = conn.prepareStatement(
+                            "UPDATE items SET current_price = ? WHERE id = ?")) {
+                        pstmt.setBigDecimal(1, formattedAmount);
+                        pstmt.setInt(2, itemId);
+                        pstmt.executeUpdate();
+                    }
+
+                    conn.commit();
+
+                    // 5. Update local memory representation of the Auction object
+                    auction.applyConfirmedBid(bidder, formattedAmount, Instant.now());
+                    return true;
+
+                } catch (SQLException e) {
+                    conn.rollback();
+                    System.err.println("SQLException during placeBid transaction: " + e.getMessage());
+                    return false;
+                }
+            } catch (SQLException e) {
+                System.err.println("Failed to acquire DB connection: " + e.getMessage());
+                return false;
+            }
+        }
     }
 
     // Giới hạn 1 phiên đấu giá cho mỗi bidder
@@ -654,6 +761,28 @@ public class AuctionService {
         Auction auction = getAuction(auctionId);
         if (auction == null) {
             throw new IllegalArgumentException("Auction not found");
+        }
+
+        // Query the database to check if the bidder is indeed the winner (highest bidder)
+        try (Connection conn = DatabaseConfig.getDataSource().getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(
+                     "SELECT b.bidder_id, u.username FROM bids b " +
+                     "JOIN users u ON b.bidder_id = u.id " +
+                     "WHERE b.auction_id = ? " +
+                     "ORDER BY b.bid_time DESC, b.id DESC LIMIT 1")) {
+            pstmt.setString(1, auctionId);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    String dbWinner = rs.getString("username");
+                    if (!dbWinner.equalsIgnoreCase(bidder.getUsername())) {
+                        throw new IllegalStateException("User is not the winner of this auction");
+                    }
+                } else {
+                    throw new IllegalStateException("No bids found for this auction");
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Database error verifying winner: " + e.getMessage());
         }
 
         // Thực hiện thanh toán trong database
