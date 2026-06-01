@@ -415,7 +415,7 @@
     -fx-max-width: infinity;
 }
 
-.dialog-pane:header .header-panel {
+.dialog-pane .header-panel {
     -fx-background-color: #161629;
     -fx-alignment: center;
     -fx-padding: 24px 24px 10px 24px;
