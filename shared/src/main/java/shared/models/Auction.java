@@ -396,6 +396,20 @@ public class Auction {
         }
     }
 
+    public Object getBidLock() {
+        return bidLock;
+    }
+
+    public void applyConfirmedBid(Bidder bidder, BigDecimal amount, Instant timestamp) {
+        synchronized (bidLock) {
+            this.currentPrice = amount;
+            this.highestBidder = bidder;
+            this.bidHistory.add(new BidTransaction(bidder, amount, timestamp));
+            AutoBidService();
+            extendIfNeeded();
+        }
+    }
+
     // Đặt lại giá trị bid từ DB
     public void restoreBid(Bidder bidder, BigDecimal amount, Instant timestamp) {
         synchronized (bidLock) {
