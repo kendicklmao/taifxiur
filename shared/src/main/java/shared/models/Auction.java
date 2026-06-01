@@ -167,27 +167,22 @@ public class Auction {
                 }
             } while (bidPlaced);
 
-            // Post-processing check cho TH1 và TH2
-            // Trong đó ab1 là người có max cao nhất, ab2 là người có max cao nhì
+            // Post-processing: nếu có ít nhất 2 auto-bidder thì người có maxBid cao nhất (ab1)
+            // sẽ thắng. Giá cuối cùng là min(ab1.maxBid, ab2.maxBid + increment).
             if (activeList.size() >= 2) {
-                AutoBid ab1 = activeList.get(0);
-                AutoBid ab2 = activeList.get(1);
+                AutoBid ab1 = activeList.get(0); // top max
+                AutoBid ab2 = activeList.get(1); // second max
 
-                BigDecimal maxB = ab1.getMaxBid();
-                BigDecimal maxA = ab2.getMaxBid();
+                BigDecimal topMax = ab1.getMaxBid();
+                BigDecimal secondMax = ab2.getMaxBid();
 
-                // Trường hợp 2: max price của B < max price của A + min increment
-                if (maxB.compareTo(maxA.add(increment)) < 0) {
-                    newHighestBidder = ab2.getBidder();
-                    newCurrentPrice = maxA;
-                } 
-                // Trường hợp 1: max price của B >= max price của A + min increment
-                else {
-                    newHighestBidder = ab1.getBidder();
-                    // Đảm bảo giá chiến thắng ít nhất phải là giá cao nhì + min increment
-                    if (newCurrentPrice.compareTo(maxA.add(increment)) < 0) {
-                        newCurrentPrice = maxA.add(increment);
-                    }
+                newHighestBidder = ab1.getBidder();
+                BigDecimal clearingPrice = secondMax.add(increment);
+                // If topMax < secondMax + increment then winner pays topMax, otherwise pays secondMax + increment
+                if (topMax.compareTo(clearingPrice) < 0) {
+                    newCurrentPrice = topMax;
+                } else {
+                    newCurrentPrice = clearingPrice;
                 }
             }
 
