@@ -238,11 +238,34 @@ public class Auction {
                 throw new IllegalArgumentException("Auction is not in a biddable state (must be OPEN or RUNNING)");
             }
 
-            // Xóa auto-bid cũ của người này nếu có để tránh trùng lặp
-            autoBids.removeIf(ab -> ab.getBidder().getUsername().equals(bidder.getUsername()));
+            // If user already had an autobid, preserve their original timestamp so they do not
+            // become a "new entrant" and accidentally override themselves.
+            Instant preservedTs = timeStamp;
+            AutoBid existing = null;
+            for (AutoBid ab : autoBids) {
+                if (ab.getBidder().getUsername().equals(bidder.getUsername())) {
+                    existing = ab;
+                    break;
+                }
+            }
 
-            autoBids.add(new AutoBid(bidder, maxBid, timeStamp));
-            AutoBidService();
+            boolean isUpdate = false;
+            if (existing != null) {
+                isUpdate = true;
+                preservedTs = existing.getTimeStamp();
+                // remove old entry
+                autoBids.removeIf(ab -> ab.getBidder().getUsername().equals(bidder.getUsername()));
+            }
+
+            autoBids.add(new AutoBid(bidder, maxBid, preservedTs));
+
+            // If the user is only updating their own autobid while they are already the
+            // current highest bidder, do not run AutoBidService (avoid self-overriding behavior).
+            boolean wasHighest = (highestBidder != null && highestBidder.getUsername().equals(bidder.getUsername()));
+            if (!(isUpdate && wasHighest)) {
+                AutoBidService();
+            }
+
             extendIfNeeded();
         }
     }
