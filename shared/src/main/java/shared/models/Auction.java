@@ -169,28 +169,26 @@ public class Auction {
                 }
             } while (bidPlaced);
 
-            // Post-processing check cho TH1 và TH2
-            // Trong đó ab1 là người có max cao nhất, ab2 là người có max cao nhì
+            // Post-processing: Fix giá nếu có 2+ autobid
+            // Vòng lặp simulation đã xác định đúng người thắng rồi, chỉ fix giá thôi
             if (activeList.size() >= 2) {
-                AutoBid ab1 = activeList.get(0);
-                AutoBid ab2 = activeList.get(1);
+                AutoBid ab1 = activeList.get(0);  // cao nhất
+                AutoBid ab2 = activeList.get(1);  // cao thứ 2
 
-                BigDecimal maxB = ab1.getMaxBid();
-                BigDecimal maxA = ab2.getMaxBid();
+                BigDecimal maxA = ab1.getMaxBid();  // cao nhất
+                BigDecimal maxB = ab2.getMaxBid();  // cao thứ 2
 
-                // Trường hợp 2: max price của B < max price của A + min increment
-                if (maxB.compareTo(maxA.add(increment)) < 0) {
-                    newHighestBidder = ab2.getBidder();
-                    newCurrentPrice = maxA;
-                } 
-                // Trường hợp 1: max price của B >= max price của A + min increment
-                else {
-                    newHighestBidder = ab1.getBidder();
-                    // Đảm bảo giá chiến thắng ít nhất phải là giá cao nhì + min increment
-                    if (newCurrentPrice.compareTo(maxA.add(increment)) < 0) {
-                        newCurrentPrice = maxA.add(increment);
+                // Nếu maxA >= maxB + increment: A thắng, đảm bảo giá = maxB + increment
+                if (maxA.compareTo(maxB.add(increment)) >= 0) {
+                    BigDecimal requiredPrice = maxB.add(increment);
+                    if (newCurrentPrice.compareTo(requiredPrice) < 0) {
+                        newCurrentPrice = requiredPrice;
                     }
+                    // Đảm bảo A là người thắng
+                    newHighestBidder = ab1.getBidder();
                 }
+                // Khi maxA < maxB + increment: A không đủ để outbid B với B+increment
+                // -> Vòng lặp đã xác định A vẫn thắng, giữ kết quả từ vòng lặp
             }
 
             newCurrentPrice = newCurrentPrice.setScale(2, RoundingMode.UP);
