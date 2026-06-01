@@ -78,11 +78,11 @@ public class AlertServiceImpl implements IAlertService {
         mainBox.setStyle("-fx-padding: 30 24 30 24;");
 
         // 1. Icon (Top)
-        String iconPath = "/success.png";
+        String iconPath = "/pics/success.png";
         if (type == Alert.AlertType.ERROR) {
-            iconPath = "/error.png";
+            iconPath = "/pics/error.png";
         } else if (type == Alert.AlertType.CONFIRMATION) {
-            iconPath = "/question.png";
+            iconPath = "/pics/question.png";
         }
 
         try {
