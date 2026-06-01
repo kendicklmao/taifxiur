@@ -413,7 +413,7 @@ public class Auction {
     // Đặt lại giá trị bid từ DB
     public void restoreBid(Bidder bidder, BigDecimal amount, Instant timestamp) {
         synchronized (bidLock) {
-            if (currentPrice == null || amount.compareTo(currentPrice) >= 0) {
+            if (currentPrice == null || highestBidder == null || amount.compareTo(currentPrice) > 0) {
                 currentPrice = amount;
                 highestBidder = bidder;
             }

@@ -453,17 +453,17 @@ public class BidderHomeController extends BaseHomeController {
                 Platform.runLater(() -> {
                     Auction targetAuction = allAuctions.stream().filter(a -> a.getId().equals(auctionId)).findFirst().orElse(null);
                     if (targetAuction != null) {
-                        targetAuction.setCurrentPriceForDBRestore(new java.math.BigDecimal(newPrice));
-                        String newEndTimeStr = payload.get("endTime");
-                        if (newEndTimeStr != null) {
-                            targetAuction.setEndTime(java.time.Instant.parse(newEndTimeStr));
-                        }
                         String highestBidder = payload.get("highestBidder");
                         if (highestBidder != null && !highestBidder.isEmpty()) {
                             String bidTimeStr = payload.get("bidTime");
                             java.time.Instant bidTime = bidTimeStr != null ? java.time.Instant.parse(bidTimeStr) : java.time.Instant.now();
                             shared.models.Bidder bidderObj = new shared.models.Bidder(highestBidder, "", "", "", "", "", "");
                             targetAuction.restoreBid(bidderObj, new java.math.BigDecimal(newPrice), bidTime);
+                        }
+                        targetAuction.setCurrentPriceForDBRestore(new java.math.BigDecimal(newPrice));
+                        String newEndTimeStr = payload.get("endTime");
+                        if (newEndTimeStr != null) {
+                            targetAuction.setEndTime(java.time.Instant.parse(newEndTimeStr));
                         }
                         VBox card = auctionCardMap.get(auctionId);
                         if (card != null) {

@@ -188,19 +188,19 @@ public class AuctionService {
     private void loadBidHistoryForAuction(Connection conn, Auction auction, UserService userService) {
         try (PreparedStatement pstmt = conn.prepareStatement(
                 "SELECT b.bidder_id, b.bid_amount, b.bid_time FROM bids b " +
-                        "WHERE b.auction_id = ? ORDER BY b.bid_time ASC, b.id ASC")) {
+                        "WHERE b.auction_id = ? ORDER BY b.id ASC")) {
 
             pstmt.setString(1, auction.getId());
-            ResultSet rs = pstmt.executeQuery();
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    int bidderId = rs.getInt("bidder_id");
+                    BigDecimal bidAmount = rs.getBigDecimal("bid_amount");
+                    String bidderUsername = getUsernameFromId(conn, bidderId);
+                    User bidderUser = userService.getUser(bidderUsername);
 
-            while (rs.next()) {
-                int bidderId = rs.getInt("bidder_id");
-                BigDecimal bidAmount = rs.getBigDecimal("bid_amount");
-                String bidderUsername = getUsernameFromId(conn, bidderId);
-                User bidderUser = userService.getUser(bidderUsername);
-
-                if (bidderUser instanceof Bidder) {
-                    auction.restoreBid((Bidder) bidderUser, bidAmount, rs.getTimestamp("bid_time").toInstant());
+                    if (bidderUser instanceof Bidder) {
+                        auction.restoreBid((Bidder) bidderUser, bidAmount, rs.getTimestamp("bid_time").toInstant());
+                    }
                 }
             }
 
@@ -213,7 +213,7 @@ public class AuctionService {
     private void loadNewBidsForAuction(Connection conn, Auction auction, UserService userService, int skipCount) {
         try (PreparedStatement pstmt = conn.prepareStatement(
                 "SELECT b.bidder_id, b.bid_amount, b.bid_time FROM bids b " +
-                        "WHERE b.auction_id = ? ORDER BY b.bid_time ASC, b.id ASC")) {
+                        "WHERE b.auction_id = ? ORDER BY b.id ASC")) {
 
             pstmt.setString(1, auction.getId());
             try (ResultSet rs = pstmt.executeQuery()) {
@@ -401,7 +401,7 @@ public class AuctionService {
                     // 2. Query the highest bid from the database to determine minRequired
                     BigDecimal highestBidAmount = null;
                     try (PreparedStatement pstmt = conn.prepareStatement(
-                            "SELECT bid_amount FROM bids WHERE auction_id = ? ORDER BY bid_time DESC, id DESC LIMIT 1")) {
+                            "SELECT bid_amount FROM bids WHERE auction_id = ? ORDER BY bid_amount DESC, id ASC LIMIT 1")) {
                         pstmt.setString(1, auctionId);
                         try (ResultSet rs = pstmt.executeQuery()) {
                             if (rs.next()) {
@@ -559,7 +559,6 @@ public class AuctionService {
     // Lấy tất cả phiên đấu giá và cập nhật trạng thái nếu cần
     public List<Auction> getAllAuctions() {
         syncWithDatabase(); // Luôn đồng bộ với DB trước khi trả về cho Client
-        System.out.println(" [QUERY] Sync completed. Client requested all auctions. Total: " + auctions.size());
         for (Auction auction: auctions.values()) {
             auction.updateStatus();
         }
@@ -637,11 +636,11 @@ public class AuctionService {
                             loadAutoBidsForAuction(conn, auction, userService);
                         }
                     } else {
-                        if (dbPrice != null && dbPrice.compareTo(auction.getCurrentPrice()) != 0) {
-                            int ramBidCount = auction.getBidHistory().size();
-                            if (dbBidCount > ramBidCount) {
-                                loadNewBidsForAuction(conn, auction, userService, ramBidCount);
-                            }
+                        int ramBidCount = auction.getBidHistory().size();
+                        if (dbBidCount > ramBidCount) {
+                            loadNewBidsForAuction(conn, auction, userService, ramBidCount);
+                        }
+                        if (dbPrice != null) {
                             auction.setCurrentPriceForDBRestore(dbPrice);
                         }
                     }
@@ -769,7 +768,7 @@ public class AuctionService {
                      "SELECT b.bidder_id, u.username FROM bids b " +
                      "JOIN users u ON b.bidder_id = u.id " +
                      "WHERE b.auction_id = ? " +
-                     "ORDER BY b.bid_time DESC, b.id DESC LIMIT 1")) {
+                     "ORDER BY b.bid_amount DESC, b.id ASC LIMIT 1")) {
             pstmt.setString(1, auctionId);
             try (ResultSet rs = pstmt.executeQuery()) {
                 if (rs.next()) {
