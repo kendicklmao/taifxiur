@@ -3,7 +3,6 @@ package server.database;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 
-// Database configuration cho Supabase PostgreSQL connection sử dụng HikariCP
 public class DatabaseConfig {
     private static volatile HikariDataSource dataSource;
 

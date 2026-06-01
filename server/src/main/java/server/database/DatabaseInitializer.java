@@ -4,7 +4,6 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
 
-// Khởi tạo cơ sở dữ liệu
 public class DatabaseInitializer {
 
     public static void initializeDatabase() throws Exception {
@@ -23,11 +22,10 @@ public class DatabaseInitializer {
 
     private static boolean isDatabaseInitialized(Connection conn) {
         try (Statement stmt = conn.createStatement()) {
-            // Kiểm tra sự tồn tại của bảng db_version
             stmt.executeQuery("SELECT 1 FROM db_version WHERE version = 1");
-            return true; // Nếu không có lỗi, bảng đã tồn tại và có version = 1
+            return true;
         } catch (SQLException e) {
-            return false; // Bảng không tồn tại hoặc có lỗi
+            return false;
         }
     }
 }

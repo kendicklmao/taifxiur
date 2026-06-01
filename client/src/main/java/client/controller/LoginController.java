@@ -36,12 +36,10 @@ public class LoginController extends UserController {
 
     private INavigator navigator;
 
-    // Constructor mặc định cho FXML loading
     public LoginController() {
         this.navigator = Navigator.getInstance();
     }
-    
-    // Constructor cho testing
+
     public LoginController(AppContext ctx, INavigator navigator, IAlertService alertService) {
         this.ctx = ctx;
         this.navigator = navigator;

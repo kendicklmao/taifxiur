@@ -19,7 +19,6 @@ public class CreateWithdrawRequestHandler implements RequestHandler {
     public Response handle(Request request, ClientHandler clientHandler) {
         String withdrawUsername = request.getData().get("username");
 
-        // Check if user is banned
         if (userService.isBanned(withdrawUsername)) {
             return new Response("FAIL", "Your account has been banned. You cannot perform this action.");
         }
