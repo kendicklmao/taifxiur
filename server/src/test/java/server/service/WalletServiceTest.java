@@ -28,10 +28,8 @@ public class WalletServiceTest {
 
     @BeforeEach
     public void setUp() {
-        // Dọn dẹp DB trước khi chạy để đảm bảo môi trường sạch
         cleanupDatabase();
-        String suffix = java.util.UUID.randomUUID().toString().substring(0, 8); // Khởi tạo người dùng riêng cho mỗi
-                                                                                // test để không ảnh hưởng DB thật
+        String suffix = java.util.UUID.randomUUID().toString().substring(0, 8);
         testAdmin = "admin_" + suffix;
         testBidder = "bidder_" + suffix;
         testSeller = "seller_" + suffix;
@@ -44,10 +42,8 @@ public class WalletServiceTest {
                 shared.enums.Role.SELLER);
     }
 
-    @AfterEach // Chạy sau mỗi test
+    @AfterEach
     public void tearDown() {
-        // Dọn dẹp DB bằng cách xóa các user vừa tạo (Cascade sẽ xóa các request, wallet
-        // liên quan)
         try (java.sql.Connection conn = DatabaseConfig.getDataSource().getConnection();
                 java.sql.PreparedStatement stmt = conn
                         .prepareStatement("DELETE FROM users WHERE username IN (?, ?, ?)")) {
@@ -60,12 +56,11 @@ public class WalletServiceTest {
         }
     }
 
-    @AfterAll // Chạy một lần sau tất cả các test
+    @AfterAll
     public static void tearDownClass() {
         DatabaseConfig.closeDataSource();
     }
 
-    // Phương thức dọn dẹp database cũ đã bị bỏ vì ta không muốn xóa dữ liệu thật
     private void cleanupDatabase() {
         // FIXME: Commented out to prevent wiping the actual database during tests
     }

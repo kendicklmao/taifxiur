@@ -42,7 +42,7 @@ public class AuctionServiceTest {
 
     @BeforeEach
     public void setUp() {
-        auctionService.clearCache(); // Xóa cache trước mỗi test
+        auctionService.clearCache();
         createdAuctionIds = new ArrayList<>();
         
         String suffix = java.util.UUID.randomUUID().toString().substring(0, 8);
@@ -50,7 +50,6 @@ public class AuctionServiceTest {
         testBidder = "bidder_" + suffix;
         testAdmin = "admin_" + suffix;
 
-        // Register unique test users
         userService.register(testSeller, "Password@123", "seller" + suffix + "@test.com", "q", "a", "q", "a", Role.SELLER);
         userService.register(testBidder, "Password@123", "bidder" + suffix + "@test.com", "q", "a", "q", "a", Role.BIDDER);
         userService.register(testAdmin, "Password@123", "admin" + suffix + "@test.com", "q", "a", "q", "a", Role.ADMIN);
@@ -58,7 +57,6 @@ public class AuctionServiceTest {
         seller = (Seller) userService.getUser(testSeller);
         bidder = (Bidder) userService.getUser(testBidder);
 
-        // Đảm bảo bidder có tiền để test
         walletService.createDepositRequest(testBidder, new BigDecimal("1000.00"), "Test Bank", "12345");
         String requestId = walletService.getPendingDepositRequests().stream()
                 .filter(r -> r.get("username").equals(testBidder))
@@ -74,7 +72,7 @@ public class AuctionServiceTest {
     @AfterEach
     public void tearDown() {
         cleanupDatabase();
-        auctionService.clearCache(); // Xóa cache sau mỗi test
+        auctionService.clearCache();
     }
 
     @AfterAll
@@ -86,8 +84,7 @@ public class AuctionServiceTest {
         try (java.sql.Connection conn = DatabaseConfig.getDataSource().getConnection()) {
             conn.setAutoCommit(false);
             try {
-                // 1. Delete bids, autobids, and items for test auctions
-                for (String auctionId : createdAuctionIds) {
+                for (String auctionId: createdAuctionIds) {
                     try (java.sql.PreparedStatement pstmt = conn.prepareStatement("DELETE FROM bids WHERE auction_id = ?")) {
                         pstmt.setString(1, auctionId);
                         pstmt.executeUpdate();
@@ -102,7 +99,6 @@ public class AuctionServiceTest {
                     }
                 }
 
-                // 2. Delete test users (wallets & deposit requests will cascade delete)
                 try (java.sql.PreparedStatement pstmt = conn.prepareStatement("DELETE FROM users WHERE username IN (?, ?, ?)")) {
                     pstmt.setString(1, testSeller);
                     pstmt.setString(2, testBidder);
@@ -142,7 +138,7 @@ public class AuctionServiceTest {
         Electronic item = new Electronic("Test Item", "Description", seller, new BigDecimal("10.00"), "Brand",
                 ItemStatus.NEW);
         item.setMinIncrement(new BigDecimal("10.00"));
-        Instant startTime = Instant.now().minus(1, ChronoUnit.MINUTES); // Auction starts immediately
+        Instant startTime = Instant.now().minus(1, ChronoUnit.MINUTES);
         Instant endTime = startTime.plus(1, ChronoUnit.HOURS);
         Auction auction = auctionService.createAuction(seller, item, new BigDecimal("100.00"), startTime, endTime);
 
@@ -162,7 +158,7 @@ public class AuctionServiceTest {
         Electronic item = new Electronic("Test Item", "Description", seller, new BigDecimal("10.00"), "Brand",
                 ItemStatus.NEW);
         item.setMinIncrement(new BigDecimal("10.00"));
-        Instant startTime = Instant.now().minus(1, ChronoUnit.MINUTES); // Auction starts immediately
+        Instant startTime = Instant.now().minus(1, ChronoUnit.MINUTES);
         Instant endTime = startTime.plus(1, ChronoUnit.HOURS);
         Auction auction = auctionService.createAuction(seller, item, new BigDecimal("100.00"), startTime, endTime);
 
@@ -186,7 +182,6 @@ public class AuctionServiceTest {
                 ItemStatus.NEW);
         item.setMinIncrement(new BigDecimal("10.00"));
         Instant startTime = Instant.now().minus(1, ChronoUnit.MINUTES);
-        // End time is 5 seconds in the future (within the 10-second threshold)
         Instant originalEndTime = Instant.now().plus(5, ChronoUnit.SECONDS);
         Auction auction = auctionService.createAuction(seller, item, new BigDecimal("100.00"), startTime, originalEndTime);
 
@@ -194,16 +189,13 @@ public class AuctionServiceTest {
             createdAuctionIds.add(auction.getId());
         }
 
-        // Place a bid
         boolean result = auctionService.placeBid(auction.getId(), bidder, new BigDecimal("150.00"));
         assertTrue(result);
 
         Auction updatedAuction = auctionService.getAuction(auction.getId());
-        // Verify endTime in memory is extended
         Instant extendedEndTime = updatedAuction.getEndTime();
         assertTrue(extendedEndTime.isAfter(originalEndTime));
 
-        // Verify endTime in DB is also extended
         try (java.sql.Connection conn = DatabaseConfig.getDataSource().getConnection();
              java.sql.PreparedStatement pstmt = conn.prepareStatement("SELECT end_time FROM items WHERE auction_id = ?")) {
             pstmt.setString(1, auction.getId());

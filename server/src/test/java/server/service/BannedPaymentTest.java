@@ -40,15 +40,12 @@ public class BannedPaymentTest {
         testSeller = "seller_" + UUID.randomUUID().toString().substring(0, 8);
         String admin = "admin";
 
-        // 1. Register users
         userService.register(testBidder, "Pass@123", testBidder + "@test.com", "q", "a", "q", "a", Role.BIDDER);
         userService.register(testSeller, "Pass@123", testSeller + "@test.com", "q", "a", "q", "a", Role.SELLER);
 
-        // 2. Deposit money into the bidder's wallet
         String depositResult = walletService.createDepositRequest(testBidder, new BigDecimal("1000"), "Test Bank", "12345");
 
         assertNull(depositResult);
-        // Get the ID of the request just created to approve it
         String requestId = walletService.getPendingDepositRequests().stream()
                 .filter(r -> r.get("username").equals(testBidder))
                 .findFirst()
@@ -56,15 +53,11 @@ public class BannedPaymentTest {
                 .orElseThrow(() -> new RuntimeException("Deposit request not found"));
         walletService.approveDeposit(requestId, admin);
 
-        // 3. Ban the bidder
         userService.banUser(testBidder, admin);
         assertTrue(userService.isUserBanned(testBidder), "User should be banned");
 
-        // 4. Finalize payment for an auction where the banned bidder won
-        String result = walletService.finalizePaymentForWinner(UUID.randomUUID().toString(), testBidder, testSeller,
-                new BigDecimal("100.00"));
+        String result = walletService.finalizePaymentForWinner(UUID.randomUUID().toString(), testBidder, testSeller, new BigDecimal("100.00"));
 
-        // 5. Check that the payment was blocked due to the ban
         assertEquals("Bidder is banned. Payment blocked.", result);
     }
 }

@@ -142,7 +142,7 @@ public class ClientHandlerTest {
     @Test
     public void testRegisterSuccess() throws Exception {
         String newUser = "newbidder" + System.currentTimeMillis();
-        testUsers.add(newUser); // Track for automatic cleanup in tearDown()
+        testUsers.add(newUser);
 
         Map<String, String> data = new HashMap<>();
         data.put("username", newUser);
