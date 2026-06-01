@@ -15,7 +15,6 @@ public class ChangePasswordHandler implements RequestHandler {
     public Response handle(Request request, ClientHandler clientHandler) {
         String cpUser = request.getData().get("username");
 
-        // Check if user is banned
         if (userService.isBanned(cpUser)) {
             return new Response("FAIL", "Your account has been banned. You cannot perform this action.");
         }

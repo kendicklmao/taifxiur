@@ -61,7 +61,6 @@ public class AdminHomeController extends BaseHomeController {
             refreshWalletRequests();
         });
 
-        // Tìm kiếm gợi ý (Autocomplete)
         usernameField.getEditor().textProperty().addListener((obs, oldText, newText) -> {
             if (newText == null || newText.isEmpty()) {
                 usernameField.setItems(javafx.collections.FXCollections.observableArrayList(allUsernames));
@@ -80,11 +79,9 @@ public class AdminHomeController extends BaseHomeController {
     protected void onSocketMessage(Response res) {
         if ("AUCTION_CREATED".equals(res.getStatus()) || "AUCTION_UPDATED".equals(res.getStatus()) || "UPDATE_PRICE".equals(res.getStatus())) {
             this.refreshAuctions();
-            
-            // Tự động làm mới Pane chi tiết nếu đang xem đúng phiên đấu giá đó
+
             if (selectedAuction != null) {
                 if ("UPDATE_PRICE".equals(res.getStatus())) {
-                    // Xử lý nhanh cho UPDATE_PRICE (thường gửi JSON payload)
                     try {
                         java.lang.reflect.Type type = new com.google.gson.reflect.TypeToken<Map<String, String>>(){}.getType();
                         Map<String, String> payload = gson.fromJson(res.getMessage(), type);

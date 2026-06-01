@@ -28,11 +28,9 @@ public class AuctionChartController {
         XYChart.Series<String, Number> series = new XYChart.Series<>();
         series.setName("Bid Price");
 
-        // Thêm giá khởi điểm vào đồ thị
         LocalDateTime startTime = LocalDateTime.ofInstant(auction.getStartTime(), ZoneId.systemDefault());
         series.getData().add(new XYChart.Data<>(startTime.format(formatter), auction.getStartPrice()));
 
-        // Thêm các giá bid từ lịch sử
         for (BidTransaction bid: auction.getBidHistory()) {
             LocalDateTime bidTime = LocalDateTime.ofInstant(bid.getTime(), ZoneId.systemDefault());
             series.getData().add(new XYChart.Data<>(bidTime.format(formatter), bid.getAmount()));

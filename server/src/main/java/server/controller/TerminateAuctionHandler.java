@@ -20,7 +20,6 @@ public class TerminateAuctionHandler implements RequestHandler {
         String terminateAuctionId = request.getData().get("auctionId");
         String terminateUsername = request.getData().get("username");
 
-        // Check if user is banned
         if (userService.isBanned(terminateUsername)) {
             return new Response("FAIL", "Your account has been banned. You cannot perform this action.");
         }
