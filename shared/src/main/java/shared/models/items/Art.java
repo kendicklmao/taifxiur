@@ -1,4 +1,4 @@
-package shared.models;
+package shared.models.items;
 
 import shared.enums.Category;
 import shared.models.users.Seller;

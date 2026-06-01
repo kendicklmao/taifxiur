@@ -2,9 +2,9 @@ package shared.utils;
 
 import com.google.gson.*;
 import shared.enums.Category;
-import shared.items.ItemFactory;
-import shared.items.ItemFactoryProvider;
-import shared.models.*;
+import shared.models.itemfactory.ItemFactory;
+import shared.models.itemfactory.ItemFactoryProvider;
+import shared.models.items.Item;
 import shared.models.users.Admin;
 import shared.models.users.Bidder;
 import shared.models.users.Seller;

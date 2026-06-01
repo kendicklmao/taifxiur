@@ -3,10 +3,10 @@ package server.service;
 import server.database.DatabaseConfig;
 import shared.enums.AuctionStatus;
 import shared.enums.Category;
-import shared.items.ItemFactory;
-import shared.items.ItemFactoryProvider;
 import shared.models.Auction;
-import shared.models.Item;
+import shared.models.itemfactory.ItemFactory;
+import shared.models.itemfactory.ItemFactoryProvider;
+import shared.models.items.Item;
 import shared.models.users.Bidder;
 import shared.models.users.Seller;
 import shared.models.users.User;
@@ -944,21 +944,21 @@ public class AuctionService {
             pstmt.setTimestamp(21, Timestamp.from(endTime));
 
             // Set item-specific fields based on type
-            if (item instanceof shared.models.Electronic electronic) {
+            if (item instanceof shared.models.items.Electronic electronic) {
                 pstmt.setString(9, electronic.getBrand()); // brand
                 pstmt.setString(10, electronic.getStatus().name()); // item_status
-            } else if (item instanceof shared.models.Vehicle vehicle) {
+            } else if (item instanceof shared.models.items.Vehicle vehicle) {
                 pstmt.setString(9, vehicle.getBrand()); // brand
                 pstmt.setInt(11, vehicle.getModel()); // model_year
                 pstmt.setInt(12, vehicle.getKMTravel()); // km_travel
-            } else if (item instanceof shared.models.Art art) {
+            } else if (item instanceof shared.models.items.Art art) {
                 pstmt.setString(13, art.getArtist()); // artist
                 pstmt.setInt(14, art.getYearCreated()); // year_created
                 pstmt.setBoolean(15, art.getIsOriginal()); // is_original
-            } else if (item instanceof shared.models.Fashion fashion) {
+            } else if (item instanceof shared.models.items.Fashion fashion) {
                 pstmt.setString(9, fashion.getBrand()); // brand
                 pstmt.setString(10, fashion.getStatus().name()); // item_status
-            } else if (item instanceof shared.models.Collectible collectible) {
+            } else if (item instanceof shared.models.items.Collectible collectible) {
                 pstmt.setInt(14, collectible.getYearCreated()); // year_created
             }
 

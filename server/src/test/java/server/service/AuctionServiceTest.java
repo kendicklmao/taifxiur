@@ -7,7 +7,7 @@ import shared.enums.AuctionStatus;
 import shared.enums.ItemStatus;
 import shared.enums.Role;
 import shared.models.Auction;
-import shared.models.Electronic;
+import shared.models.items.Electronic;
 import shared.models.users.Bidder;
 import shared.models.users.Seller;
 

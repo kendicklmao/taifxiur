@@ -2,12 +2,12 @@ package shared.models.users;
 
 import shared.enums.ItemStatus;
 import shared.enums.Role;
-import shared.models.Art;
-import shared.models.Collectible;
-import shared.models.Electronic;
-import shared.models.Fashion;
-import shared.models.Item;
-import shared.models.Vehicle;
+import shared.models.items.Art;
+import shared.models.items.Collectible;
+import shared.models.items.Electronic;
+import shared.models.items.Fashion;
+import shared.models.items.Item;
+import shared.models.items.Vehicle;
 
 import java.math.BigDecimal;
 import java.util.Collection;

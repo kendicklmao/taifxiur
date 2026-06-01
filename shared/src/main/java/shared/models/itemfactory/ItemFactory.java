@@ -1,7 +1,8 @@
-package shared.items;
+package shared.models.itemfactory;
 
 import com.google.gson.JsonObject;
-import shared.models.Item;
+
+import shared.models.items.Item;
 import shared.models.users.Seller;
 
 import java.math.BigDecimal;

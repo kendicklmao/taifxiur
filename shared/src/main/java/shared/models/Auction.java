@@ -1,6 +1,7 @@
 package shared.models;
 
 import shared.enums.AuctionStatus;
+import shared.models.items.Item;
 import shared.models.users.Bidder;
 import shared.models.users.Seller;
 
@@ -240,8 +241,8 @@ public class Auction {
                 throw new IllegalArgumentException("Auction is not in a biddable state (must be OPEN or RUNNING)");
             }
 
-            // If user already had an autobid, preserve their original timestamp so they do not
-            // become a "new entrant" and accidentally override themselves.
+            // Nếu người dùng đã có trong danh sách thì giữ nguyên timestamp cũ
+            // để không bị reset
             Instant preservedTs = timeStamp;
             AutoBid existing = null;
             for (AutoBid ab : autoBids) {
@@ -255,14 +256,14 @@ public class Auction {
             if (existing != null) {
                 isUpdate = true;
                 preservedTs = existing.getTimeStamp();
-                // remove old entry
+                // Xóa entry cũ
                 autoBids.removeIf(ab -> ab.getBidder().getUsername().equals(bidder.getUsername()));
             }
 
             autoBids.add(new AutoBid(bidder, maxBid, preservedTs));
 
-            // If the user is only updating their own autobid while they are already the
-            // current highest bidder, do not run AutoBidService (avoid self-overriding behavior).
+            // Nếu người dùng đang cập nhật bid của chính mình và đang là người dẫn đầu thì
+            // không cần AutoBidService()
             boolean wasHighest = (highestBidder != null && highestBidder.getUsername().equals(bidder.getUsername()));
             if (!(isUpdate && wasHighest)) {
                 AutoBidService();

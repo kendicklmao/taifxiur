@@ -1,8 +1,8 @@
-package shared.items;
+package shared.models.itemfactory;
 
 import shared.enums.ItemStatus;
-import shared.models.Fashion;
-import shared.models.Item;
+import shared.models.items.Fashion;
+import shared.models.items.Item;
 import shared.models.users.Seller;
 
 import java.math.BigDecimal;

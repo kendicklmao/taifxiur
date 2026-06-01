@@ -12,6 +12,7 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import shared.models.*;
+import shared.models.items.Item;
 import shared.utils.FormatUtils;
 
 public class AuctionDetailViewBuilder {

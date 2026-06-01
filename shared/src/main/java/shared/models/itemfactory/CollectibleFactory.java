@@ -1,7 +1,7 @@
-package shared.items;
+package shared.models.itemfactory;
 
-import shared.models.Collectible;
-import shared.models.Item;
+import shared.models.items.Collectible;
+import shared.models.items.Item;
 import shared.models.users.Seller;
 
 import java.math.BigDecimal;

@@ -1,4 +1,4 @@
-package shared.items;
+package shared.models.itemfactory;
 
 import shared.enums.Category;
 
