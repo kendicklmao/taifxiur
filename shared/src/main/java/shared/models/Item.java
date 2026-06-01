@@ -1,6 +1,7 @@
 package shared.models;
 
 import shared.enums.Category;
+import shared.models.users.Seller;
 
 import java.io.Serializable;
 import java.math.BigDecimal;

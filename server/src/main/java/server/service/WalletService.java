@@ -59,7 +59,6 @@ public class WalletService {
              PreparedStatement pstmt = conn.prepareStatement(
                      "INSERT INTO deposit_requests (id, bidder_id, amount, bank_name, account_number, status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)")) {
 
-            // Sửa lỗi: Cho phép bất kỳ người dùng nào cũng có thể nạp tiền
             Integer userId = getUserIdByUsername(conn, username);
             if (userId == null) {
                 return "User not found";
@@ -437,12 +436,8 @@ public class WalletService {
         }
     }
 
-    private record PendingRequestData(int userId, BigDecimal amount) {
-    }
+    private record PendingRequestData(int userId, BigDecimal amount) {}
 
-    // --- Hold / reservation functionality for bids ---
-
-    // Get available wallet balance (just total balance, no holds)
     public BigDecimal getAvailableBalance(String username) {
         if (!Validator.isValidUsername(username))
             return null;
@@ -472,7 +467,6 @@ public class WalletService {
         }
     }
 
-    // Create or update a hold for a bidder on an auction. Returns null on success, or error message.
     public String createOrUpdateHold(String auctionId, String bidderUsername, BigDecimal amount) {
         if (auctionId == null || Validator.normalize(auctionId).isEmpty())
             return "Invalid auction id";
@@ -491,7 +485,6 @@ public class WalletService {
                 }
 
                 ensureWalletExists(conn, bidderId);
-                // If there's an existing hold for this auction by the bidder, allow updating it by considering the existing hold amount when checking available funds.
                 BigDecimal existingHold = BigDecimal.ZERO;
                 try (PreparedStatement check = conn.prepareStatement(
                         "SELECT amount FROM wallet_holds WHERE auction_id = ? AND bidder_id = ? AND status = 'HELD'")) {
@@ -512,13 +505,10 @@ public class WalletService {
                         .subtract(existingHold == null ? BigDecimal.ZERO : existingHold);
                 BigDecimal balance = getWalletBalance(conn, bidderId);
                 BigDecimal available = balance.subtract(totalHeldExcludingCurrent);
-                // Now ensure available (excluding current auction's existing hold) is enough for the requested amount
                 if (available.compareTo(amount) < 0) {
                     conn.rollback();
                     return "Insufficient available balance";
                 }
-
-                // Upsert hold
                 try (PreparedStatement upsert = conn.prepareStatement(
                         "INSERT INTO wallet_holds (auction_id, bidder_id, amount, status, created_at, updated_at) " +
                                 "VALUES (?, ?, ?, 'HELD', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP) " +
@@ -545,7 +535,6 @@ public class WalletService {
         }
     }
 
-    // Release (cancel) a hold for a bidder on an auction
     public void releaseHold(String auctionId, String bidderUsername) {
         if (auctionId == null || Validator.normalize(auctionId).isEmpty() || !Validator.isValidUsername(bidderUsername))
             return;
@@ -566,7 +555,6 @@ public class WalletService {
         }
     }
 
-    // Release all holds for an auction (used when auction finishes to release non-winning holds)
     public void releaseAllHoldsForAuction(String auctionId) {
         if (auctionId == null || Validator.normalize(auctionId).isEmpty())
             return;
@@ -579,9 +567,7 @@ public class WalletService {
             System.err.println("Error releasing holds for auction: " + e.getMessage());
         }
     }
-
-    // Finalize payment for a winning bidder: deduct amount and credit seller.
-// Returns null on success or error message.
+    
     public String finalizePaymentForWinner(String auctionId, String bidderUsername, String sellerUsername,
             BigDecimal amount) {
         if (auctionId == null || Validator.normalize(auctionId).isEmpty())
@@ -604,7 +590,6 @@ public class WalletService {
                     return "User not found";
                 }
 
-                // Check if bidder is banned
                 try (PreparedStatement checkBanned = conn.prepareStatement("SELECT is_banned FROM users WHERE id = ?")) {
                     checkBanned.setInt(1, bidderId);
                     ResultSet rsBanned = checkBanned.executeQuery();
@@ -617,16 +602,13 @@ public class WalletService {
                 ensureWalletExists(conn, bidderId);
                 ensureWalletExists(conn, sellerId);
 
-                // Check bidder has sufficient balance to pay
                 BigDecimal bidderBalance = getWalletBalance(conn, bidderId);
                 if (bidderBalance.compareTo(amount) < 0) {
                     conn.rollback();
                     return "Bidder insufficient balance";
                 }
 
-                // Deduct amount from bidder wallet
                 updateWalletBalance(conn, bidderId, amount.negate());
-                // Credit seller wallet
                 updateWalletBalance(conn, sellerId, amount);
 
                 conn.commit();

@@ -5,7 +5,7 @@ import java.io.PrintWriter;
 import java.net.Socket;
 
 import shared.models.Auction;
-import shared.models.User;
+import shared.models.users.User;
 import shared.network.Request;
 import shared.network.Response;
 import shared.utils.GsonUtils;

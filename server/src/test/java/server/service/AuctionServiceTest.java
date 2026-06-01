@@ -7,9 +7,9 @@ import shared.enums.AuctionStatus;
 import shared.enums.ItemStatus;
 import shared.enums.Role;
 import shared.models.Auction;
-import shared.models.Bidder;
 import shared.models.Electronic;
-import shared.models.Seller;
+import shared.models.users.Bidder;
+import shared.models.users.Seller;
 
 import java.math.BigDecimal;
 import java.time.Instant;

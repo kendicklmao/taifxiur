@@ -4,6 +4,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import shared.enums.AuctionStatus;
 import shared.enums.ItemStatus;
+import shared.models.users.Bidder;
+import shared.models.users.Seller;
 
 import java.math.BigDecimal;
 import java.time.Instant;

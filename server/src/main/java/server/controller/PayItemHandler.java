@@ -2,8 +2,8 @@ package server.controller;
 
 import server.service.AuctionService;
 import server.service.UserService;
-import shared.models.Bidder;
-import shared.models.User;
+import shared.models.users.Bidder;
+import shared.models.users.User;
 import shared.network.Request;
 import shared.network.Response;
 

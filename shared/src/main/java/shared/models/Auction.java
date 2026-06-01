@@ -1,6 +1,8 @@
 package shared.models;
 
 import shared.enums.AuctionStatus;
+import shared.models.users.Bidder;
+import shared.models.users.Seller;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;

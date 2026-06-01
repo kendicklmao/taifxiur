@@ -1,12 +1,14 @@
 package shared.utils;
 
 import com.google.gson.Gson;
+
+import shared.models.users.Admin;
+import shared.models.users.Bidder;
+import shared.models.users.Seller;
+import shared.models.users.User;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import shared.models.Admin;
-import shared.models.Bidder;
-import shared.models.Seller;
-import shared.models.User;
 
 import static org.junit.jupiter.api.Assertions.*;
 

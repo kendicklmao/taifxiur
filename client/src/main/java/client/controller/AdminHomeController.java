@@ -11,7 +11,7 @@ import javafx.scene.control.*;
 
 import shared.models.AdminActionLog;
 import shared.models.Auction;
-import shared.models.User;
+import shared.models.users.User;
 import shared.network.Request;
 import shared.network.Response;
 

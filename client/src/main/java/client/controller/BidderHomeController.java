@@ -451,7 +451,7 @@ public class BidderHomeController extends BaseHomeController {
                         if (highestBidder != null && !highestBidder.isEmpty()) {
                             String bidTimeStr = payload.get("bidTime");
                             java.time.Instant bidTime = bidTimeStr != null ? java.time.Instant.parse(bidTimeStr) : java.time.Instant.now();
-                            shared.models.Bidder bidderObj = new shared.models.Bidder(highestBidder, "", "", "", "", "", "");
+                            shared.models.users.Bidder bidderObj = new shared.models.users.Bidder(highestBidder, "", "", "", "", "", "");
                             targetAuction.restoreBid(bidderObj, new java.math.BigDecimal(newPrice), bidTime);
                         }
                         targetAuction.setCurrentPriceForDBRestore(new java.math.BigDecimal(newPrice));

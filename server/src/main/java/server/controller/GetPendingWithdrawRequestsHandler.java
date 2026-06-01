@@ -6,7 +6,7 @@ import com.google.gson.Gson;
 import shared.utils.GsonUtils;
 import server.service.UserService;
 import server.service.WalletService;
-import shared.models.User;
+import shared.models.users.User;
 import shared.network.Request;
 import shared.network.Response;
 

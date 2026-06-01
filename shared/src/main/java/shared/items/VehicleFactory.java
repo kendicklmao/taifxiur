@@ -1,9 +1,9 @@
-package server.service;
+package shared.items;
 
 
 import shared.models.Item;
-import shared.models.Seller;
 import shared.models.Vehicle;
+import shared.models.users.Seller;
 
 import java.math.BigDecimal;
 import java.sql.ResultSet;
@@ -42,5 +42,13 @@ public class VehicleFactory implements ItemFactory {
                 Integer.parseInt(
                         data.getOrDefault("kmField", "0"))
         );
+    }
+
+    @Override
+    public Item create(com.google.gson.JsonObject obj, String name, String description, BigDecimal startingPrice) {
+        String brand = obj.get("brand").getAsString();
+        int model = obj.get("model").getAsInt();
+        int km = obj.get("kmTravel").getAsInt();
+        return new Vehicle(name, description, null, startingPrice, brand, model, km);
     }
 }

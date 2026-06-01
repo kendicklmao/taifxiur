@@ -3,6 +3,8 @@ package shared.models;
 import java.math.BigDecimal;
 import java.time.Instant;
 
+import shared.models.users.Bidder;
+
 // Lần đặt giá
 public class BidTransaction {
     private final Bidder bidder; // Người đấu giá

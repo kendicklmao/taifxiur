@@ -3,6 +3,10 @@ package server.service;
 import server.database.DatabaseConfig;
 import shared.enums.Role;
 import shared.models.*;
+import shared.models.users.Admin;
+import shared.models.users.Bidder;
+import shared.models.users.Seller;
+import shared.models.users.User;
 import shared.utils.Validator;
 
 import java.math.BigDecimal;
@@ -257,7 +261,7 @@ public class UserService {
     // Lấy thông tin người dùng từ cơ sở dữ liệu theo tên người dùng
     private User getUserFromDatabase(String username) {
         try (Connection conn = DatabaseConfig.getDataSource().getConnection();
-                PreparedStatement pstmt = conn.prepareStatement("SELECT * FROM users WHERE username = ?")) {
+            PreparedStatement pstmt = conn.prepareStatement("SELECT * FROM users WHERE username = ?")) {
 
             pstmt.setString(1, username);
             ResultSet rs = pstmt.executeQuery();
@@ -416,10 +420,10 @@ public class UserService {
         newPassword = Validator.normalize(newPassword);
 
         try (Connection conn = DatabaseConfig.getDataSource().getConnection();
-                PreparedStatement selectStmt = conn.prepareStatement("""
-                                SELECT * FROM users
-                                WHERE username = ? AND email = ?
-                                """)) {
+            PreparedStatement selectStmt = conn.prepareStatement("""
+                    SELECT * FROM users
+                    WHERE username = ? AND email = ?
+                    """)) {
 
             selectStmt.setString(1, username);
             selectStmt.setString(2, email);

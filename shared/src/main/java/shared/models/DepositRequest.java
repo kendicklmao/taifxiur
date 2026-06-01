@@ -1,6 +1,7 @@
 package shared.models;
 
 import shared.enums.RequestStatus;
+import shared.models.users.Bidder;
 
 import java.math.BigDecimal;
 import java.util.UUID;

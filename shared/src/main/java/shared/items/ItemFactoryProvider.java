@@ -1,4 +1,4 @@
-package server.service;
+package shared.items;
 
 import shared.enums.Category;
 

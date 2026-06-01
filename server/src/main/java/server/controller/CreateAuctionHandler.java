@@ -9,12 +9,14 @@ import java.util.UUID;
 import com.google.gson.Gson;
 import server.service.*;
 import shared.enums.Category;
+import shared.items.ItemFactory;
+import shared.items.ItemFactoryProvider;
 import shared.utils.GsonUtils;
 
 import shared.models.Auction;
 import shared.models.Item;
-import shared.models.Seller;
-import shared.models.User;
+import shared.models.users.Seller;
+import shared.models.users.User;
 import shared.network.Request;
 import shared.network.Response;
 

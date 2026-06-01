@@ -3,11 +3,13 @@ package server.service;
 import server.database.DatabaseConfig;
 import shared.enums.AuctionStatus;
 import shared.enums.Category;
+import shared.items.ItemFactory;
+import shared.items.ItemFactoryProvider;
 import shared.models.Auction;
-import shared.models.Bidder;
 import shared.models.Item;
-import shared.models.Seller;
-import shared.models.User;
+import shared.models.users.Bidder;
+import shared.models.users.Seller;
+import shared.models.users.User;
 
 import java.math.BigDecimal;
 import java.sql.*;

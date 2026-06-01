@@ -3,6 +3,10 @@ package shared.models;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import shared.enums.Role;
+import shared.models.users.Admin;
+import shared.models.users.Bidder;
+import shared.models.users.Seller;
+
 import static org.junit.jupiter.api.Assertions.*;
 import java.math.BigDecimal;
 

@@ -1,8 +1,8 @@
-package server.service;
+package shared.items;
 
 import shared.models.Art;
 import shared.models.Item;
-import shared.models.Seller;
+import shared.models.users.Seller;
 
 import java.math.BigDecimal;
 import java.sql.ResultSet;
@@ -45,5 +45,13 @@ public class ArtFactory implements ItemFactory {
                 Boolean.parseBoolean(
                         data.getOrDefault("originalBox", "false"))
         );
+    }
+
+    @Override
+    public Item create(com.google.gson.JsonObject obj, String name, String description, BigDecimal startingPrice) {
+        String artist = obj.get("artist").getAsString();
+        int year = obj.get("yearCreated").getAsInt();
+        boolean original = obj.get("isOriginal").getAsBoolean();
+        return new Art(name, description, null, startingPrice, artist, year, original);
     }
 }

@@ -3,7 +3,7 @@ package server.controller;
 import server.service.UserAlreadyLoggedInException;
 import server.service.UserLockedException;
 import server.service.UserService;
-import shared.models.User;
+import shared.models.users.User;
 import shared.network.Request;
 import shared.network.Response;
 
