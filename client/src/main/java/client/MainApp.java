@@ -20,7 +20,7 @@ public class MainApp extends Application {
         mediaPlayer.setVolume(0.5);
         mediaPlayer.play();
 
-        stage.setTitle("Auction House");
+        stage.setTitle("VinAuction");
         stage.getIcons().add(new javafx.scene.image.Image(getClass().getResourceAsStream("/pics/logo.png")));
         stage.setMinWidth(900);
         stage.setMinHeight(700);

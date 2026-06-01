@@ -10,7 +10,7 @@
         <VBox styleClass="app-bar" spacing="0">
             <HBox alignment="CENTER_LEFT" spacing="18">
                 <HBox spacing="6" alignment="CENTER_LEFT">
-                    <Label text="AUCTION HOUSE" styleClass="app-brand, app-brand-accent"/>
+                    <Label text="VinAuction" styleClass="app-brand, app-brand-accent"/>
                 </HBox>
                 <Label text="ADMIN" styleClass="app-role-pill"/>
                 <Pane HBox.hgrow="ALWAYS"/>

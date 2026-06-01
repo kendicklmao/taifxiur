@@ -13,9 +13,9 @@
               prefWidth="420" minWidth="300" HBox.hgrow="SOMETIMES">
             <VBox spacing="16" VBox.vgrow="ALWAYS" alignment="CENTER_LEFT">
                 <HBox spacing="10" alignment="CENTER_LEFT">
-                    <Label text="AUCTION HOUSE" styleClass="brand-mark, brand-accent"/>
+                    <Label text="VinAuction" styleClass="brand-mark, brand-accent"/>
                 </HBox>
-                <Label text="Premium live auctions" styleClass="brand-tagline"/>
+                <Label text="Premium Auction House by VinGroup" styleClass="brand-tagline"/>
             </VBox>
 
             <VBox spacing="18" VBox.vgrow="ALWAYS" alignment="CENTER_LEFT">
@@ -28,7 +28,7 @@
 
             <VBox spacing="14" alignment="BOTTOM_LEFT">
                 <Separator styleClass="hero-divider"/>
-                <Label text="© 2026 Auction House — Established 2026" styleClass="footer-text"/>
+                <Label text="© 2026 VinAuction by VinGroup" styleClass="footer-text"/>
             </VBox>
         </VBox>
 

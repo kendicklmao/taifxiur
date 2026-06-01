@@ -29,7 +29,6 @@ public class PlaceBidHandler implements RequestHandler {
         String pAmount = request.getData().get("amount");
         String pUsername = request.getData().get("username");
 
-        // Check if user is banned
         if (userService.isBanned(pUsername)) {
             return new Response("FAIL", "Your account has been banned. You cannot perform this action.");
         }
