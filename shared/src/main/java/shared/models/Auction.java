@@ -161,6 +161,8 @@ public class Auction {
                         newCurrentPrice = nextPrice;
                         bidPlaced = true;
                     } else if (challenger.getMaxBid().compareTo(newCurrentPrice) > 0) {
+                        // Challenger có maxBid cao hơn current price, nên họ trở thành highest bidder
+                        newHighestBidder = challenger.getBidder();
                         newCurrentPrice = challenger.getMaxBid();
                         bidPlaced = true;
                     }
