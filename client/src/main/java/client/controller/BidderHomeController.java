@@ -61,6 +61,8 @@ public class BidderHomeController extends BaseHomeController {
         // Setup filter
         sortComboBox.getItems().addAll("Name (A-Z)", "Price (Low to High)");
         FilteredList<Auction> filteredData = new FilteredList<>(allAuctions, p -> true);
+        SortedList<Auction> sortedData = new SortedList<>(filteredData);
+
         searchField.textProperty().addListener((observable, oldValue, newValue) -> {
             filteredData.setPredicate(auction -> {
                 if (newValue == null || newValue.isEmpty()) {
@@ -68,23 +70,23 @@ public class BidderHomeController extends BaseHomeController {
                 }
                 return auction.getItem().getName().toLowerCase().contains(newValue.toLowerCase());
             });
+            updateAuctionGrid(sortedData);
         });
-
-        SortedList<Auction> sortedData = new SortedList<>(filteredData);
 
         sortComboBox.valueProperty().addListener((observable, oldValue, newValue) -> {
             if (newValue == null) {
                 sortedData.setComparator(null);
-                return;
+            } else {
+                switch (newValue) {
+                    case "Name (A-Z)":
+                        sortedData.setComparator(Comparator.comparing(a -> a.getItem().getName(), String.CASE_INSENSITIVE_ORDER));
+                        break;
+                    case "Price (Low to High)":
+                        sortedData.setComparator(Comparator.comparing(Auction::getCurrentPrice));
+                        break;
+                }
             }
-            switch (newValue) {
-                case "Name (A-Z)":
-                    sortedData.setComparator(Comparator.comparing(a -> a.getItem().getName()));
-                    break;
-                case "Price (Low to High)":
-                    sortedData.setComparator(Comparator.comparing(Auction::getCurrentPrice));
-                    break;
-            }
+            updateAuctionGrid(sortedData);
         });
 
         sortedData.addListener((ListChangeListener<Auction>) c -> updateAuctionGrid(sortedData));
