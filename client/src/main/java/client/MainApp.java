@@ -16,8 +16,8 @@ public class MainApp extends Application {
 
         mediaPlayer = new MediaPlayer(media);
 
-        mediaPlayer.setCycleCount(MediaPlayer.INDEFINITE); // replay vô hạn
-        mediaPlayer.setVolume(0.5); // âm lượng 50%
+        mediaPlayer.setCycleCount(MediaPlayer.INDEFINITE);
+        mediaPlayer.setVolume(0.5);
         mediaPlayer.play();
 
         stage.setTitle("Auction House");

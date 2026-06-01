@@ -63,7 +63,6 @@ public class AppContext {
     }
 
     public void connect() throws Exception {
-        // Luôn disconnect trước khi connect để đảm bảo state sạch
         disconnect();
 
         System.out.println("DEBUG CLIENT: Connecting to server...");

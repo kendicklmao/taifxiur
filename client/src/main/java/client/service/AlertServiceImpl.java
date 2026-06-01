@@ -49,7 +49,6 @@ public class AlertServiceImpl implements IAlertService {
     private boolean internalShowConfirmation(String title, String message, Window ownerWindow) {
         Alert alert = createSplashAlert(Alert.AlertType.CONFIRMATION, title, message, ownerWindow);
 
-        // Tìm và style lại nút Cancel
         javafx.scene.Node cancelBtn = alert.getDialogPane().lookupButton(javafx.scene.control.ButtonType.CANCEL);
         if (cancelBtn != null) {
             cancelBtn.getStyleClass().add("btn-ghost-white");
@@ -77,7 +76,6 @@ public class AlertServiceImpl implements IAlertService {
         mainBox.setAlignment(javafx.geometry.Pos.CENTER);
         mainBox.setStyle("-fx-padding: 30 24 30 24;");
 
-        // 1. Icon (Top)
         String iconPath = "/pics/success.png";
         if (type == Alert.AlertType.ERROR) {
             iconPath = "/pics/error.png";
@@ -94,13 +92,11 @@ public class AlertServiceImpl implements IAlertService {
         } catch (Exception e) {
         }
 
-        // 2. Title (Middle)
         javafx.scene.control.Label titleLabel = new javafx.scene.control.Label(title.toUpperCase());
         titleLabel.getStyleClass().add("login-title-main");
         titleLabel.setAlignment(javafx.geometry.Pos.CENTER);
         mainBox.getChildren().add(titleLabel);
 
-        // 3. Message (Bottom)
         javafx.scene.control.Label messageLabel = new javafx.scene.control.Label(message);
         messageLabel.setWrapText(true);
         messageLabel.getStyleClass().add("login-subtitle-main");
@@ -110,7 +106,6 @@ public class AlertServiceImpl implements IAlertService {
 
         alert.getDialogPane().setContent(mainBox);
 
-        // Ép phần graphic không chiếm diện tích bằng CSS để tránh bị lệch sang phải
         javafx.scene.Node graphicContainer = alert.getDialogPane().lookup(".graphic-container");
         if (graphicContainer != null) {
             graphicContainer.setStyle("-fx-min-width: 0; -fx-pref-width: 0; -fx-max-width: 0; -fx-padding: 0;");
