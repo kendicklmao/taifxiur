@@ -344,7 +344,6 @@ CREATE TABLE users (
     security_question VARCHAR(255),
     security_answer VARCHAR(255),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    highest_name VARCHAR(255) DEFAULT "Empty",
     is_online BOOLEAN DEFAULT FALSE
 );
 ```
@@ -363,6 +362,7 @@ CREATE TABLE auctions (
     start_time TIMESTAMP,
     end_time TIMESTAMP,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    highest_name VARCHAR(255) DEFAULT NULL,
 );
 ```
 
@@ -384,6 +384,17 @@ CREATE TABLE wallets (
     user_id INTEGER UNIQUE NOT NULL REFERENCES users(id),
     balance DECIMAL(10, 2) DEFAULT 0,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+#### 5. **auto_bids** - Bảng Đặt Giá Tự Động
+```sql
+CREATE TABLE auto_bids (
+    id SERIAL PRIMARY KEY,
+    auction_id INTEGER NOT NULL REFERENCES auctions(id),
+    bidder_id INTEGER NOT NULL REFERENCES users(id),
+    max_bid_amount DECIMAL(10, 2),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 ```
 
