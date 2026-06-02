@@ -356,6 +356,8 @@ CREATE TABLE users (
     security_question VARCHAR(255),
     security_answer VARCHAR(255),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    highest_name VARCHAR(255) DEFAULT "Empty",
+    is_online BOOLEAN DEFAULT FALSE
 );
 ```
 
