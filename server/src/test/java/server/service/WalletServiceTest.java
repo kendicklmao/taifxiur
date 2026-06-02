@@ -28,7 +28,6 @@ public class WalletServiceTest {
 
     @BeforeEach
     public void setUp() {
-        cleanupDatabase();
         String suffix = java.util.UUID.randomUUID().toString().substring(0, 8);
         testAdmin = "admin_" + suffix;
         testBidder = "bidder_" + suffix;
@@ -59,10 +58,6 @@ public class WalletServiceTest {
     @AfterAll
     public static void tearDownClass() {
         DatabaseConfig.closeDataSource();
-    }
-
-    private void cleanupDatabase() {
-        // FIXME: Commented out to prevent wiping the actual database during tests
     }
 
     @Test
