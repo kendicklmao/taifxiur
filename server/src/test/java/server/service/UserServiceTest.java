@@ -81,6 +81,6 @@ public class UserServiceTest {
 
     @Test
     public void testLoginUser() {
-        assertNotNull(userService.login("bidder", "Bidder@123"));
+        assertNotNull(userService.login("lamdaingo", "Admin@123"));
     }
 }
