@@ -112,6 +112,17 @@ public class ClientHandlerTest {
 
     @Test
     public void testLoginSuccess() throws Exception {
+        try (Connection conn = DatabaseConfig.getDataSource().getConnection();
+             PreparedStatement pstmt =
+                     conn.prepareStatement(
+                             "UPDATE users SET is_online = FALSE WHERE username = ?")) {
+
+            pstmt.setString(1, "lamdaingo");
+            pstmt.executeUpdate();
+
+        } catch (SQLException e) {
+            System.err.println("Error updating online status: " + e.getMessage());
+        }
         Map<String, String> data = new HashMap<>();
         data.put("username", "lamdaingo");
         data.put("password", "Admin@123");
