@@ -184,9 +184,6 @@ git clone https://github.com/kendicklmao/taifxiur
    - Tải từ: https://www.postgresql.org/download/
 
 2. **Tạo cơ sở dữ liệu**
-   ```sql
-   CREATE DATABASE auction_platform;
-   ```
 
 3. **Cập nhật file cấu hình database** tại:
    ```
@@ -215,23 +212,11 @@ Quá trình xây dựng sẽ:
 
 ## Hướng Dẫn Chạy Ứng Dụng
 
-### Phương Pháp 1: Chạy Server và Client Cùng Lúc (Windows PowerShell)
-
-```powershell
-# Mở 2 PowerShell windows
-
-# Window 1: Chạy Server
-mvn -pl server exec:java -Dexec.mainClass="server.ServerApplication"
-
-# Window 2: Chạy Client
-mvn -pl client exec:java -Dexec.mainClass="client.Launcher"
-```
-
-### Phương Pháp 2: Chạy từ JAR File
+### Phương Pháp 1: Chạy từ Terminal
 
 ```powershell
 # Xây dựng JAR
-mvn clean package
+mvn clean package -DskipTests
 
 # Chạy Server
 java -jar server\target\server-1.0-SNAPSHOT.jar
@@ -240,7 +225,7 @@ java -jar server\target\server-1.0-SNAPSHOT.jar
 java -jar client\target\client-1.0-SNAPSHOT.jar
 ```
 
-### Phương Pháp 3: Chạy từ IDE (IntelliJ IDEA / Eclipse)
+### Phương Pháp 2: Chạy từ IDE (IntelliJ IDEA / Eclipse)
 
 #### IntelliJ IDEA:
 1. Mở dự án trong IntelliJ
@@ -257,22 +242,22 @@ java -jar client\target\client-1.0-SNAPSHOT.jar
 3. Click chuột phải vào project → **Run As → Maven Build**
 4. Cấu hình tương tự
 
-### Phương Pháp 4: Chạy Đa Instances Client
+### Phương Pháp 3: Chạy Đa Instances Client
 
 Bạn có thể mở nhiều client cùng một lúc:
 
 ```powershell
 # Window 1: Server
-mvn -pl server exec:java -Dexec.mainClass="server.ServerApplication"
+java -jar server\target\server-1.0-SNAPSHOT.jar
 
 # Window 2: Client 1
-mvn -pl client exec:java -Dexec.mainClass="client.Launcher"
+java -jar client\target\client-1.0-SNAPSHOT.jar
 
 # Window 3: Client 2
-mvn -pl client exec:java -Dexec.mainClass="client.Launcher"
+java -jar client\target\client-1.0-SNAPSHOT.jar
 
 # Window 4: Client 3
-mvn -pl client exec:java -Dexec.mainClass="client.Launcher"
+java -jar client\target\client-1.0-SNAPSHOT.jar
 ```
 
 ---
@@ -421,113 +406,3 @@ CREATE TABLE wallets (
 ### Networking
 - **Java Socket**: Kết nối client-server
 - **Custom Protocol**: Giao thức truyền thông tùy chỉnh
-
----
-
-## Khắc Phục Sự Cố
-
-### Lỗi: "Port 54321 already in use"
-**Giải pháp**:
-```powershell
-# Tìm và kết thúc process đang dùng port 54321
-netstat -ano | findstr :54321
-# Kết thúc process
-taskkill /PID <PID> /F
-```
-
-### Lỗi: "Database connection failed"
-**Giải pháp**:
-1. Kiểm tra PostgreSQL đang chạy (nếu dùng PostgreSQL)
-2. Kiểm tra cấu hình database trong `DatabaseConfig.java`
-3. Kiểm tra quyền truy cập database
-
-### Lỗi: "JavaFX modules not found"
-**Giải pháp**:
-```powershell
-# Xóa cache Maven
-mvn clean
-
-# Cài đặt lại dependencies
-mvn install -DskipTests
-```
-
-### Lỗi: "Cannot find JAVA_HOME"
-**Giải pháp**:
-```powershell
-# Thiết lập JAVA_HOME
-$env:JAVA_HOME = "C:\Program Files\Java\jdk-17"
-```
-
-### Client không kết nối được Server
-**Giải pháp**:
-1. Kiểm tra server đã khởi động: `netstat -ano | findstr :54321`
-2. Kiểm tra firewall: Thêm exception cho port 54321
-3. Kiểm tra cấu hình host/port trong code client
-4. Xem logs để tìm lỗi
-
-### Ứng Dụng Bị Lag hoặc Chậm
-**Giải pháp**:
-1. Tăng heap memory:
-   ```powershell
-   $env:_JAVA_OPTIONS = "-Xmx2G"
-   ```
-2. Đóng các ứng dụng khác đang chạy
-3. Kiểm tra hiệu năng database
-4. Tăng kích thước connection pool
-
----
-
-## Các Lệnh Hữu Ích
-
-### Maven Commands
-
-```powershell
-# Xây dựng toàn bộ dự án
-mvn clean install
-
-# Chỉ xây dựng 1 module
-mvn -pl server clean install
-mvn -pl client clean install
-
-# Chạy tests
-mvn test
-
-# Bỏ qua tests khi xây dựng
-mvn clean install -DskipTests
-
-# Xóa tệp được xây dựng
-mvn clean
-
-# Xem dependencies tree
-mvn dependency:tree
-
-# Kiểm tra cập nhật dependencies
-mvn versions:display-dependency-updates
-```
-
-### IDE Terminal Commands
-
-```powershell
-# Biên dịch module
-javac -d target/classes src/main/java/**/*.java
-
-# Chạy class cụ thể
-java -cp "target/classes:lib/*" server.ServerApplication
-
-# Xem version Java
-java -version
-
-# Liệt kê các jar trong thư mục
-dir *.jar /s
-```
-
-
-
-## Tài Liệu Tham Khảo
-
-### Tài Liệu Chính Thức
-- **Java Documentation**: https://docs.oracle.com/en/java/javase/17/
-- **JavaFX Documentation**: https://gluonhq.com/products/javafx/
-- **Maven Documentation**: https://maven.apache.org/
-- **PostgreSQL Documentation**: https://www.postgresql.org/docs/
-
