@@ -46,7 +46,7 @@ public final class TransactionDialogSupport {
         amountField.getStyleClass().add("dashboard-input");
 
         ComboBox<BankList> bankNameComboBox = new ComboBox<>();
-        bankNameComboBox.setPromptText("Select bank name");
+        bankNameComboBox.setPromptText(" Select bank name");
         bankNameComboBox.setEditable(true);
         bankNameComboBox.getStyleClass().add("dashboard-choicebox");
         bankNameComboBox.setMaxWidth(Double.MAX_VALUE);
@@ -69,9 +69,33 @@ public final class TransactionDialogSupport {
         accountNumberField.setPromptText("Enter account number");
         accountNumberField.getStyleClass().add("dashboard-input");
 
+        // Thông tin admin nhận tiền
+        String adminBankName = "MB";
+        String adminAccountNumber = "0337200307";
+
+        Label adminTitle = new Label("Transfer Information");
+        adminTitle.setStyle("-fx-font-weight: bold; -fx-font-size: 14px;");
+
+        Label adminBankLabel = new Label("Bank: " + adminBankName);
+        Label adminAccountLabel = new Label("Account Number: " + adminAccountNumber);
+
         VBox content = new VBox(15);
-        content.getChildren().addAll(new Label("Amount"), amountField, new Label("Bank Name"), bankNameComboBox,
-                new Label("Account Number"), accountNumberField);
+        content.getChildren().addAll(
+                adminTitle,
+                adminBankLabel,
+                adminAccountLabel,
+                new Separator(),
+
+                new Label("Amount"),
+                amountField,
+
+                new Label("Bank Name"),
+                bankNameComboBox,
+
+                new Label("Account Number"),
+                accountNumberField
+        );
+
         content.setStyle("-fx-padding: 20px;");
 
         dialog.getDialogPane().setContent(content);
