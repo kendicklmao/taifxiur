@@ -46,7 +46,7 @@ public final class TransactionDialogSupport {
         amountField.getStyleClass().add("dashboard-input");
 
         ComboBox<BankList> bankNameComboBox = new ComboBox<>();
-        bankNameComboBox.setPromptText(" Select bank name");
+        bankNameComboBox.setPromptText(" Select your bank name");
         bankNameComboBox.setEditable(true);
         bankNameComboBox.getStyleClass().add("dashboard-choicebox");
         bankNameComboBox.setMaxWidth(Double.MAX_VALUE);
@@ -66,7 +66,7 @@ public final class TransactionDialogSupport {
         });
 
         TextField accountNumberField = new TextField();
-        accountNumberField.setPromptText("Enter account number");
+        accountNumberField.setPromptText("Enter your account number");
         accountNumberField.getStyleClass().add("dashboard-input");
 
         // Thông tin admin nhận tiền
