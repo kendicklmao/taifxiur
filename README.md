@@ -285,21 +285,19 @@ java -jar client\target\client-1.0-SNAPSHOT.jar
 ### Màn Hình Trang Chủ
 
 #### Cho Người Bán (Seller Home):
-- **Danh Sách Đấu Giá**: Xem các cuộc đấu giá của bạn
+- **Danh Sách Đấu Giá**: Xem các cuộc đấu giá đã tạo
 - **Tạo Đấu Giá Mới**: Thêm mục hàng mới để đấu giá
 - **Quản Lý Ví**: Nạp tiền hoặc xem số dư
 
 #### Cho Người Mua (Bidder Home):
 - **Danh Sách Đấu Giá Có Sẵn**: Xem tất cả cuộc đấu giá
 - **Đặt Giá**: Tham gia đấu giá cho mục hàng yêu thích
-- **Lịch Sử Đấu Giá**: Xem các cuộc đấu giá đã tham gia
 - **Quản Lý Ví**: Nạp tiền hoặc xem số dư
 
 #### Cho Quản Trị Viên (Admin Home):
 - **Quản Lý Người Dùng**: Xem và quản lý tất cả người dùng
 - **Quản Lý Đấu Giá**: Xem tất cả cuộc đấu giá
 - **Thống Kê**: Xem biểu đồ và số liệu thống kê
-- **Báo Cáo**: Xuất báo cáo
 
 ### Tham Gia Đấu Giá
 
@@ -307,7 +305,8 @@ java -jar client\target\client-1.0-SNAPSHOT.jar
 2. Chọn mục hàng muốn đấu giá
 3. Nhập số tiền đặt giá
 4. Nhấp **Place Bid** để đặt giá
-5. Xem câu chuyện đấu giá thời gian thực
+5. Nhấp **Auto-Bid** để kích hoạt tính năng đặt giá tự động 
+5. Xem lịch sử đấu giá thời gian thực
 
 ---
 
