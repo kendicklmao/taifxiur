@@ -3,6 +3,10 @@ package server.service;
 import server.database.DatabaseConfig;
 import shared.enums.Role;
 import shared.models.*;
+import shared.models.users.Admin;
+import shared.models.users.Bidder;
+import shared.models.users.Seller;
+import shared.models.users.User;
 import shared.utils.Validator;
 
 import java.math.BigDecimal;
@@ -156,7 +160,7 @@ public class UserService {
         System.out.println("DEBUG LOGIN: Getting connection and preparing statement...");
         try (Connection conn = DatabaseConfig.getDataSource().getConnection();
                 PreparedStatement pstmt = conn.prepareStatement(
-                        "SELECT id, password, password_salt, role, is_banned FROM users WHERE username = ?")) {
+                        "SELECT id, password, password_salt, role, is_banned, is_online FROM users WHERE username = ?")) {
 
             pstmt.setString(1, username);
             System.out.println("DEBUG LOGIN: Executing query...");
@@ -165,6 +169,13 @@ public class UserService {
             if (!rs.next()) {
                 System.out.println("DEBUG LOGIN: User not found in DB: " + username);
                 return null;
+            }
+
+            boolean isOnline = rs.getBoolean("is_online");
+
+            if (isOnline) {
+                throw new UserAlreadyLoggedInException(
+                        "User is already logged in from another device");
             }
 
             System.out.println("DEBUG LOGIN: User found in DB. Verifying password...");
@@ -177,7 +188,13 @@ public class UserService {
             String inputHash = shared.utils.Hash.formula(password, storedSalt); // Kiểm tra mật khẩu bằng cách băm thử với Salt đã lưu
             if (storedHash.equals(inputHash)) {
                 System.out.println("DEBUG LOGIN: Password correct for " + username);
+                try (PreparedStatement updateStmt =
+                             conn.prepareStatement(
+                                     "UPDATE users SET is_online = TRUE WHERE username = ?")) {
 
+                    updateStmt.setString(1, username);
+                    updateStmt.executeUpdate();
+                }
                 // Kiểm tra xem user đã đăng nhập chưa (tránh đăng nhập 2 lần)
                 if (loggedIn.putIfAbsent(username, true) != null) {
                     System.out.println("DEBUG LOGIN: User already logged in!");
@@ -257,7 +274,7 @@ public class UserService {
     // Lấy thông tin người dùng từ cơ sở dữ liệu theo tên người dùng
     private User getUserFromDatabase(String username) {
         try (Connection conn = DatabaseConfig.getDataSource().getConnection();
-                PreparedStatement pstmt = conn.prepareStatement("SELECT * FROM users WHERE username = ?")) {
+            PreparedStatement pstmt = conn.prepareStatement("SELECT * FROM users WHERE username = ?")) {
 
             pstmt.setString(1, username);
             ResultSet rs = pstmt.executeQuery();
@@ -416,10 +433,10 @@ public class UserService {
         newPassword = Validator.normalize(newPassword);
 
         try (Connection conn = DatabaseConfig.getDataSource().getConnection();
-                PreparedStatement selectStmt = conn.prepareStatement("""
-                                SELECT * FROM users
-                                WHERE username = ? AND email = ?
-                                """)) {
+            PreparedStatement selectStmt = conn.prepareStatement("""
+                    SELECT * FROM users
+                    WHERE username = ? AND email = ?
+                    """)) {
 
             selectStmt.setString(1, username);
             selectStmt.setString(2, email);
@@ -576,9 +593,19 @@ public class UserService {
     // Logout người dùng
     public void logout(String username) {
         loggedIn.remove(username);
+        try (Connection conn = DatabaseConfig.getDataSource().getConnection();
+             PreparedStatement pstmt =
+                     conn.prepareStatement(
+                             "UPDATE users SET is_online = FALSE WHERE username = ?")) {
+
+            pstmt.setString(1, username);
+            pstmt.executeUpdate();
+
+        } catch (SQLException e) {
+            System.err.println("Error updating online status: " + e.getMessage());
+        }
     }
 
-    // Lấy tất cả người dùng từ cơ sở dữ liệu
     public List<User> getAllUsers() {
         List<User> userList = new ArrayList<>();
 

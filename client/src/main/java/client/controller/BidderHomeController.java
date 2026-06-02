@@ -58,7 +58,6 @@ public class BidderHomeController extends BaseHomeController {
 
         setupHome();
 
-        // Setup filter
         sortComboBox.getItems().addAll("Name (A-Z)", "Price (Low to High)");
         FilteredList<Auction> filteredData = new FilteredList<>(allAuctions, p -> true);
         SortedList<Auction> sortedData = new SortedList<>(filteredData);
@@ -96,7 +95,6 @@ public class BidderHomeController extends BaseHomeController {
             loadAuction();
         });
 
-        // Tự động làm mới giao diện và ví mỗi 2 giây
         javafx.animation.Timeline autoRefresh = new javafx.animation.Timeline(
             new javafx.animation.KeyFrame(javafx.util.Duration.seconds(2), e -> {
                 handleRefresh();
@@ -191,7 +189,6 @@ public class BidderHomeController extends BaseHomeController {
 
     @Override
     protected void onAuctionCardDoubleClicked(Auction auction) {
-        // Lấy dữ liệu mới nhất từ danh sách hiện tại
         Auction latestAuction = allAuctions.stream()
                 .filter(a -> a.getId().equals(auction.getId()))
                 .findFirst()
@@ -298,7 +295,6 @@ public class BidderHomeController extends BaseHomeController {
     }
 
     private void showBidAmountDialog(Auction auction, boolean isAutoBid) {
-        // Fetch latest auction info from server before showing dialog
         Task<Map<String, String>> task = new Task<>() {
             @Override
             protected Map<String, String> call() throws Exception {
@@ -319,7 +315,6 @@ public class BidderHomeController extends BaseHomeController {
                 return;
             }
 
-            // Parse the latest auction data
             BigDecimal currentPrice = new BigDecimal(auctionInfo.get("currentPrice"));
             BigDecimal startPrice = new BigDecimal(auctionInfo.get("startPrice"));
             BigDecimal minIncrement = new BigDecimal(auctionInfo.get("minIncrement"));
@@ -329,7 +324,6 @@ public class BidderHomeController extends BaseHomeController {
                                 ? startPrice
                                 : currentPrice.add(minIncrement);
 
-            // Now show the dialog with fresh data
             Dialog<String> dialog = new Dialog<>();
             dialog.setTitle(isAutoBid ? "Auto Bid" : "Place Bid");
             dialog.setHeaderText("Enter bid amount for: " + auction.getItem().getName());
@@ -453,17 +447,17 @@ public class BidderHomeController extends BaseHomeController {
                 Platform.runLater(() -> {
                     Auction targetAuction = allAuctions.stream().filter(a -> a.getId().equals(auctionId)).findFirst().orElse(null);
                     if (targetAuction != null) {
-                        targetAuction.setCurrentPriceForDBRestore(new java.math.BigDecimal(newPrice));
-                        String newEndTimeStr = payload.get("endTime");
-                        if (newEndTimeStr != null) {
-                            targetAuction.setEndTime(java.time.Instant.parse(newEndTimeStr));
-                        }
                         String highestBidder = payload.get("highestBidder");
                         if (highestBidder != null && !highestBidder.isEmpty()) {
                             String bidTimeStr = payload.get("bidTime");
                             java.time.Instant bidTime = bidTimeStr != null ? java.time.Instant.parse(bidTimeStr) : java.time.Instant.now();
-                            shared.models.Bidder bidderObj = new shared.models.Bidder(highestBidder, "", "", "", "", "", "");
+                            shared.models.users.Bidder bidderObj = new shared.models.users.Bidder(highestBidder, "", "", "", "", "", "");
                             targetAuction.restoreBid(bidderObj, new java.math.BigDecimal(newPrice), bidTime);
+                        }
+                        targetAuction.setCurrentPriceForDBRestore(new java.math.BigDecimal(newPrice));
+                        String newEndTimeStr = payload.get("endTime");
+                        if (newEndTimeStr != null) {
+                            targetAuction.setEndTime(java.time.Instant.parse(newEndTimeStr));
                         }
                         VBox card = auctionCardMap.get(auctionId);
                         if (card != null) {

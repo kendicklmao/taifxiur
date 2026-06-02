@@ -1,4 +1,4 @@
-# Ứng Dụng Quản Lý Đấu Giá Trực Tuyến (Auction House) - LTNC Nhóm 1
+# Ứng Dụng Quản Lý Đấu Giá Trực Tuyến (VinAuction) - LTNC Nhóm 1
 
 ## Nhóm 1 - K70I-CS5
 - Ngô Đại Lâm - MSV 25021839
@@ -341,6 +341,8 @@ CREATE TABLE users (
     security_question VARCHAR(255),
     security_answer VARCHAR(255),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    highest_name VARCHAR(255) DEFAULT "Empty",
+    is_online BOOLEAN DEFAULT FALSE
 );
 ```
 

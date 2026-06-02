@@ -20,7 +20,6 @@ public class BanUserHandler implements RequestHandler {
         String banUsername = request.getData().get("username");
         String banError = userService.banUser(banUsername, clientHandler.getLoggedInUsername());
         if (banError == null) {
-            // Tự động dừng tất cả các phiên đấu giá của người bị ban
             auctionService.terminateAllAuctionsBySeller(banUsername, clientHandler.getLoggedInUsername());
             
             Response broadcastRes = new Response("USER_BANNED", "User " + banUsername + " has been banned");

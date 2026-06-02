@@ -6,12 +6,11 @@
 <BorderPane xmlns:fx="http://javafx.com/fxml" fx:controller="client.controller.AdminHomeController"
             styleClass="app-shell">
 
-    <!-- TOP APP BAR -->
     <top>
         <VBox styleClass="app-bar" spacing="0">
             <HBox alignment="CENTER_LEFT" spacing="18">
                 <HBox spacing="6" alignment="CENTER_LEFT">
-                    <Label text="AUCTION HOUSE" styleClass="app-brand, app-brand-accent"/>
+                    <Label text="VinAuction" styleClass="app-brand, app-brand-accent"/>
                 </HBox>
                 <Label text="ADMIN" styleClass="app-role-pill"/>
                 <Pane HBox.hgrow="ALWAYS"/>
@@ -22,11 +21,9 @@
         </VBox>
     </top>
 
-    <!-- CENTER -->
     <center>
         <TabPane tabClosingPolicy="UNAVAILABLE">
 
-            <!-- TAB 1: ALL AUCTIONS -->
             <Tab text="All Auctions" closable="false">
                 <ScrollPane fitToWidth="true" fitToHeight="true" hbarPolicy="NEVER">
                     <VBox styleClass="app-content" spacing="22">
@@ -55,7 +52,6 @@
                 </ScrollPane>
             </Tab>
 
-            <!-- TAB 2: USER MANAGEMENT -->
             <Tab text="User Management" closable="false">
                 <ScrollPane fitToWidth="true" fitToHeight="true" hbarPolicy="NEVER">
                     <VBox styleClass="app-content" spacing="22">
@@ -74,7 +70,6 @@
                                 </HBox>
                             </VBox>
 
-                            <!-- ACTIONS -->
                             <VBox styleClass="dash-card" spacing="16" HBox.hgrow="ALWAYS" minWidth="0" prefWidth="1000" VBox.vgrow="ALWAYS">
                                 <VBox spacing="4">
                                     <Label text="Actions" styleClass="dashboard-section-title"/>
@@ -100,7 +95,6 @@
                 </ScrollPane>
             </Tab>
 
-            <!-- TAB 3: WALLET REQUESTS -->
             <Tab text="Wallet Requests" closable="false">
                 <ScrollPane fitToWidth="true" fitToHeight="true" hbarPolicy="NEVER">
                     <VBox styleClass="app-content" spacing="22">
@@ -124,7 +118,6 @@
                                 </HBox>
                             </VBox>
 
-                            <!-- WITHDRAW REQUESTS -->
                             <VBox styleClass="dash-card" spacing="16" HBox.hgrow="ALWAYS" minWidth="0" prefWidth="1000" VBox.vgrow="ALWAYS">
                                 <VBox spacing="4">
                                     <Label text="Pending Withdraw Requests" styleClass="dashboard-section-title"/>

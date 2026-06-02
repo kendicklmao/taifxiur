@@ -18,8 +18,7 @@ public class CreateDepositRequestHandler implements RequestHandler {
     @Override
     public Response handle(Request request, ClientHandler clientHandler) {
         String depositUsername = request.getData().get("username");
-        
-        // Check if user is banned
+
         if (userService.isBanned(depositUsername)) {
             return new Response("FAIL", "Your account has been banned. You cannot perform this action.");
         }

@@ -2,8 +2,13 @@ package shared.utils;
 
 import com.google.gson.*;
 import shared.enums.Category;
-import shared.enums.ItemStatus;
-import shared.models.*;
+import shared.models.itemfactory.ItemFactory;
+import shared.models.itemfactory.ItemFactoryProvider;
+import shared.models.items.Item;
+import shared.models.users.Admin;
+import shared.models.users.Bidder;
+import shared.models.users.Seller;
+import shared.models.users.User;
 
 import java.lang.reflect.Type;
 import java.math.BigDecimal;
@@ -101,40 +106,11 @@ public class GsonUtils {
             BigDecimal minIncrement = obj.has("minIncrement") ? obj.get("minIncrement").getAsBigDecimal() : BigDecimal.ZERO;
             String imageUrl = obj.has("imageUrl") ? obj.get("imageUrl").getAsString() : null;
             
-            Item item = switch (category) {
-                case COLLECTIBLES -> {
-                    int yearCreated = obj.get("yearCreated").getAsInt();
-                    yield new Collectible(name, description, null, startingPrice, yearCreated);
-                }
-
-                case ELECTRONICS -> {
-                    String brand = obj.get("brand").getAsString();
-                    ItemStatus status = ItemStatus.valueOf(obj.get("status").getAsString().toUpperCase());
-                    yield new Electronic(name, description, null, startingPrice, brand, status);
-                }
-
-                case ARTS -> {
-                    String artist = obj.get("artist").getAsString();
-                    int year = obj.get("yearCreated").getAsInt();
-                    boolean original = obj.get("isOriginal").getAsBoolean();
-                    yield new Art(name, description, null, startingPrice, artist, year, original);
-                }
-
-                case VEHICLES -> {
-                    String brand = obj.get("brand").getAsString();
-                    int model = obj.get("model").getAsInt();
-                    int km = obj.get("kmTravel").getAsInt();
-                    yield new Vehicle(name, description, null, startingPrice, brand, model, km);
-                }
-
-                case FASHIONS -> {
-                    String brand = obj.get("brand").getAsString();
-                    ItemStatus status = ItemStatus.valueOf(obj.get("status").getAsString().toUpperCase());
-                    yield new Fashion(name, description, null, startingPrice, brand, status);
-                }
-
-                default -> throw new JsonParseException("Unknown category: " + category);
-            };
+            ItemFactory factory = ItemFactoryProvider.getFactory(category);
+            if (factory == null) {
+                throw new JsonParseException("Unknown category: " + category);
+            }
+            Item item = factory.create(obj, name, description, startingPrice);
             
             item.setMinIncrement(minIncrement);
             item.setImageUrl(imageUrl);

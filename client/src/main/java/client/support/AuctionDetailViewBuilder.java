@@ -12,6 +12,7 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import shared.models.*;
+import shared.models.items.Item;
 import shared.utils.FormatUtils;
 
 public class AuctionDetailViewBuilder {
@@ -80,6 +81,7 @@ public class AuctionDetailViewBuilder {
         addDetailRow(detailsGrid, "End Time:", FormatUtils.formatTime(auction.getEndTime()), rowIndex++);
         addDetailRow(detailsGrid, "Status:", auction.getStatus().toString(), rowIndex++);
         addDetailRow(detailsGrid, "Seller:", auction.getSeller().getUsername(), rowIndex++);
+        addDetailRow(detailsGrid, "Highest Bidder:", auction.getHighestBidder() != null ? auction.getHighestBidder().getUsername() : "Empty", rowIndex++);
 
         Item item = auction.getItem();
         Map<String, String> extraDetails = item.getAdditionalDetails();

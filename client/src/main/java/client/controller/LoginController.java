@@ -8,10 +8,10 @@ import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
 import javafx.util.Duration;
-import shared.models.Admin;
-import shared.models.Bidder;
-import shared.models.Seller;
-import shared.models.User;
+import shared.models.users.Admin;
+import shared.models.users.Bidder;
+import shared.models.users.Seller;
+import shared.models.users.User;
 import shared.network.Request;
 import shared.network.Response;
 
@@ -36,12 +36,10 @@ public class LoginController extends UserController {
 
     private INavigator navigator;
 
-    // Constructor mặc định cho FXML loading
     public LoginController() {
         this.navigator = Navigator.getInstance();
     }
-    
-    // Constructor cho testing
+
     public LoginController(AppContext ctx, INavigator navigator, IAlertService alertService) {
         this.ctx = ctx;
         this.navigator = navigator;

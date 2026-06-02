@@ -1,4 +1,4 @@
-package shared.models;
+package shared.models.users;
 
 import shared.enums.Role;
 

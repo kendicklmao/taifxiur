@@ -12,9 +12,11 @@ import shared.enums.Category;
 import shared.utils.GsonUtils;
 
 import shared.models.Auction;
-import shared.models.Item;
-import shared.models.Seller;
-import shared.models.User;
+import shared.models.itemfactory.ItemFactory;
+import shared.models.itemfactory.ItemFactoryProvider;
+import shared.models.items.Item;
+import shared.models.users.Seller;
+import shared.models.users.User;
 import shared.network.Request;
 import shared.network.Response;
 

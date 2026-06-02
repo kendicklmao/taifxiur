@@ -4,10 +4,12 @@ import server.database.DatabaseConfig;
 import shared.enums.AuctionStatus;
 import shared.enums.Category;
 import shared.models.Auction;
-import shared.models.Bidder;
-import shared.models.Item;
-import shared.models.Seller;
-import shared.models.User;
+import shared.models.itemfactory.ItemFactory;
+import shared.models.itemfactory.ItemFactoryProvider;
+import shared.models.items.Item;
+import shared.models.users.Bidder;
+import shared.models.users.Seller;
+import shared.models.users.User;
 
 import java.math.BigDecimal;
 import java.sql.*;
@@ -188,19 +190,19 @@ public class AuctionService {
     private void loadBidHistoryForAuction(Connection conn, Auction auction, UserService userService) {
         try (PreparedStatement pstmt = conn.prepareStatement(
                 "SELECT b.bidder_id, b.bid_amount, b.bid_time FROM bids b " +
-                        "WHERE b.auction_id = ? ORDER BY b.bid_time ASC")) {
+                        "WHERE b.auction_id = ? ORDER BY b.id ASC")) {
 
             pstmt.setString(1, auction.getId());
-            ResultSet rs = pstmt.executeQuery();
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    int bidderId = rs.getInt("bidder_id");
+                    BigDecimal bidAmount = rs.getBigDecimal("bid_amount");
+                    String bidderUsername = getUsernameFromId(conn, bidderId);
+                    User bidderUser = userService.getUser(bidderUsername);
 
-            while (rs.next()) {
-                int bidderId = rs.getInt("bidder_id");
-                BigDecimal bidAmount = rs.getBigDecimal("bid_amount");
-                String bidderUsername = getUsernameFromId(conn, bidderId);
-                User bidderUser = userService.getUser(bidderUsername);
-
-                if (bidderUser instanceof Bidder) {
-                    auction.restoreBid((Bidder) bidderUser, bidAmount, rs.getTimestamp("bid_time").toInstant());
+                    if (bidderUser instanceof Bidder) {
+                        auction.restoreBid((Bidder) bidderUser, bidAmount, rs.getTimestamp("bid_time").toInstant());
+                    }
                 }
             }
 
@@ -213,7 +215,7 @@ public class AuctionService {
     private void loadNewBidsForAuction(Connection conn, Auction auction, UserService userService, int skipCount) {
         try (PreparedStatement pstmt = conn.prepareStatement(
                 "SELECT b.bidder_id, b.bid_amount, b.bid_time FROM bids b " +
-                        "WHERE b.auction_id = ? ORDER BY b.bid_time ASC")) {
+                        "WHERE b.auction_id = ? ORDER BY b.id ASC")) {
 
             pstmt.setString(1, auction.getId());
             try (ResultSet rs = pstmt.executeQuery()) {
@@ -349,7 +351,115 @@ public class AuctionService {
             return false; // Số dư không đủ
         }
 
-        return auction.placeBid(bidder, amount);
+        synchronized (auction.getBidLock()) {
+            try (Connection conn = DatabaseConfig.getDataSource().getConnection()) {
+                conn.setAutoCommit(false);
+                try {
+                    int itemId = -1;
+                    BigDecimal startPrice = null;
+                    String statusStr = null;
+                    BigDecimal minIncrement = null;
+                    Instant endTime = null;
+
+                    // 1. Lock the auction item row in the database
+                    try (PreparedStatement pstmt = conn.prepareStatement(
+                            "SELECT id, base_price, auction_status, min_increment, end_time FROM items WHERE auction_id = ? FOR UPDATE")) {
+                        pstmt.setString(1, auctionId);
+                        try (ResultSet rs = pstmt.executeQuery()) {
+                            if (rs.next()) {
+                                itemId = rs.getInt("id");
+                                startPrice = rs.getBigDecimal("base_price");
+                                statusStr = rs.getString("auction_status");
+                                minIncrement = rs.getBigDecimal("min_increment");
+                                Timestamp et = rs.getTimestamp("end_time");
+                                endTime = (et != null) ? et.toInstant() : null;
+                            }
+                        }
+                    }
+
+                    if (itemId == -1 || statusStr == null) {
+                        conn.rollback();
+                        return false;
+                    }
+
+                    AuctionStatus status = AuctionStatus.valueOf(statusStr);
+                    if (status != AuctionStatus.RUNNING) {
+                        conn.rollback();
+                        return false;
+                    }
+
+                    if (endTime != null && Instant.now().isAfter(endTime)) {
+                        // Update status to FINISHED in database
+                        try (PreparedStatement pstmt = conn.prepareStatement(
+                                "UPDATE items SET auction_status = ? WHERE id = ?")) {
+                            pstmt.setString(1, AuctionStatus.FINISHED.name());
+                            pstmt.setInt(2, itemId);
+                            pstmt.executeUpdate();
+                        }
+                        conn.commit();
+                        return false;
+                    }
+
+                    // 2. Query the highest bid from the database to determine minRequired
+                    BigDecimal highestBidAmount = null;
+                    try (PreparedStatement pstmt = conn.prepareStatement(
+                            "SELECT bid_amount FROM bids WHERE auction_id = ? ORDER BY bid_amount DESC, id ASC LIMIT 1")) {
+                        pstmt.setString(1, auctionId);
+                        try (ResultSet rs = pstmt.executeQuery()) {
+                            if (rs.next()) {
+                                highestBidAmount = rs.getBigDecimal("bid_amount");
+                            }
+                        }
+                    }
+
+                    BigDecimal minRequired;
+                    if (highestBidAmount == null) {
+                        minRequired = startPrice;
+                    } else {
+                        minRequired = highestBidAmount.add(minIncrement != null ? minIncrement : BigDecimal.ZERO);
+                    }
+
+                    BigDecimal formattedAmount = amount.setScale(2, java.math.RoundingMode.UP);
+                    if (formattedAmount.compareTo(minRequired) < 0) {
+                        conn.rollback();
+                        return false;
+                    }
+
+                    // 3. Insert new bid into the database
+                    int bidderUserId = getUserIdFromDatabase(bidder.getUsername());
+                    try (PreparedStatement pstmt = conn.prepareStatement(
+                            "INSERT INTO bids (auction_id, bidder_id, bid_amount, bid_time) VALUES (?, ?, ?, CURRENT_TIMESTAMP)")) {
+                        pstmt.setString(1, auctionId);
+                        pstmt.setInt(2, bidderUserId);
+                        pstmt.setBigDecimal(3, formattedAmount);
+                        pstmt.executeUpdate();
+                    }
+
+                    // 4. Update item's current price in the database
+                    try (PreparedStatement pstmt = conn.prepareStatement(
+                            "UPDATE items SET current_price = ?, highest_name = ? WHERE id = ?")) {
+                        pstmt.setBigDecimal(1, formattedAmount);
+                        pstmt.setString(2, bidder.getUsername());
+                        pstmt.setInt(3, itemId);
+                        pstmt.executeUpdate();
+                    }
+
+                    conn.commit();
+
+                    // 5. Update local memory representation of the Auction object
+                    auction.applyConfirmedBid(bidder, formattedAmount, Instant.now());
+                    return true;
+
+                } catch (SQLException e) {
+                    conn.rollback();
+                    System.err.println("SQLException during placeBid transaction: " + e.getMessage());
+                    return false;
+                }
+            } catch (SQLException e) {
+                System.err.println("Failed to acquire DB connection: " + e.getMessage());
+                return false;
+            }
+        }
     }
 
     // Giới hạn 1 phiên đấu giá cho mỗi bidder
@@ -452,7 +562,6 @@ public class AuctionService {
     // Lấy tất cả phiên đấu giá và cập nhật trạng thái nếu cần
     public List<Auction> getAllAuctions() {
         syncWithDatabase(); // Luôn đồng bộ với DB trước khi trả về cho Client
-        System.out.println(" [QUERY] Sync completed. Client requested all auctions. Total: " + auctions.size());
         for (Auction auction: auctions.values()) {
             auction.updateStatus();
         }
@@ -530,11 +639,11 @@ public class AuctionService {
                             loadAutoBidsForAuction(conn, auction, userService);
                         }
                     } else {
-                        if (dbPrice != null && dbPrice.compareTo(auction.getCurrentPrice()) != 0) {
-                            int ramBidCount = auction.getBidHistory().size();
-                            if (dbBidCount > ramBidCount) {
-                                loadNewBidsForAuction(conn, auction, userService, ramBidCount);
-                            }
+                        int ramBidCount = auction.getBidHistory().size();
+                        if (dbBidCount > ramBidCount) {
+                            loadNewBidsForAuction(conn, auction, userService, ramBidCount);
+                        }
+                        if (dbPrice != null) {
                             auction.setCurrentPriceForDBRestore(dbPrice);
                         }
                     }
@@ -654,6 +763,28 @@ public class AuctionService {
         Auction auction = getAuction(auctionId);
         if (auction == null) {
             throw new IllegalArgumentException("Auction not found");
+        }
+
+        // Query the database to check if the bidder is indeed the winner (highest bidder)
+        try (Connection conn = DatabaseConfig.getDataSource().getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(
+                     "SELECT b.bidder_id, u.username FROM bids b " +
+                     "JOIN users u ON b.bidder_id = u.id " +
+                     "WHERE b.auction_id = ? " +
+                     "ORDER BY b.bid_amount DESC, b.id ASC LIMIT 1")) {
+            pstmt.setString(1, auctionId);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    String dbWinner = rs.getString("username");
+                    if (!dbWinner.equalsIgnoreCase(bidder.getUsername())) {
+                        throw new IllegalStateException("User is not the winner of this auction");
+                    }
+                } else {
+                    throw new IllegalStateException("No bids found for this auction");
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Database error verifying winner: " + e.getMessage());
         }
 
         // Thực hiện thanh toán trong database
@@ -814,21 +945,21 @@ public class AuctionService {
             pstmt.setTimestamp(21, Timestamp.from(endTime));
 
             // Set item-specific fields based on type
-            if (item instanceof shared.models.Electronic electronic) {
+            if (item instanceof shared.models.items.Electronic electronic) {
                 pstmt.setString(9, electronic.getBrand()); // brand
                 pstmt.setString(10, electronic.getStatus().name()); // item_status
-            } else if (item instanceof shared.models.Vehicle vehicle) {
+            } else if (item instanceof shared.models.items.Vehicle vehicle) {
                 pstmt.setString(9, vehicle.getBrand()); // brand
                 pstmt.setInt(11, vehicle.getModel()); // model_year
                 pstmt.setInt(12, vehicle.getKMTravel()); // km_travel
-            } else if (item instanceof shared.models.Art art) {
+            } else if (item instanceof shared.models.items.Art art) {
                 pstmt.setString(13, art.getArtist()); // artist
                 pstmt.setInt(14, art.getYearCreated()); // year_created
                 pstmt.setBoolean(15, art.getIsOriginal()); // is_original
-            } else if (item instanceof shared.models.Fashion fashion) {
+            } else if (item instanceof shared.models.items.Fashion fashion) {
                 pstmt.setString(9, fashion.getBrand()); // brand
                 pstmt.setString(10, fashion.getStatus().name()); // item_status
-            } else if (item instanceof shared.models.Collectible collectible) {
+            } else if (item instanceof shared.models.items.Collectible collectible) {
                 pstmt.setInt(14, collectible.getYearCreated()); // year_created
             }
 
@@ -892,9 +1023,10 @@ public class AuctionService {
 
                 // 2. Cập nhật giá hiện tại của phiên đấu giá
                 try (PreparedStatement pstmt = conn.prepareStatement(
-                        "UPDATE items SET current_price = ? WHERE id = ?")) {
+                        "UPDATE items SET current_price = ?, highest_name = ? WHERE id = ?")) {
                     pstmt.setBigDecimal(1, amount);
-                    pstmt.setInt(2, itemId);
+                    pstmt.setString(2, bidder.getUsername());
+                    pstmt.setInt(3, itemId);
                     pstmt.executeUpdate();
                 }
 

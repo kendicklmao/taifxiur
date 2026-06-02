@@ -7,12 +7,11 @@
 <BorderPane xmlns:fx="http://javafx.com/fxml" fx:controller="client.controller.SellerHomeController"
             styleClass="app-shell">
 
-    <!-- TOP APP BAR -->
     <top>
         <VBox styleClass="app-bar" spacing="0">
             <HBox alignment="CENTER_LEFT" spacing="18">
                 <HBox spacing="6" alignment="CENTER_LEFT">
-                    <Label text="AUCTION HOUSE" styleClass="app-brand, app-brand-accent"/>
+                    <Label text="VinAuction" styleClass="app-brand, app-brand-accent"/>
                 </HBox>
                 <Label text="SELLER" styleClass="app-role-pill"/>
                 <Pane HBox.hgrow="ALWAYS"/>
@@ -24,12 +23,10 @@
         </VBox>
     </top>
 
-    <!-- CENTER -->
     <center>
         <ScrollPane fitToWidth="true" hbarPolicy="NEVER">
             <VBox styleClass="app-content" spacing="22">
 
-                <!-- Wallet card -->
                 <HBox styleClass="dash-card-accent" spacing="20" alignment="CENTER_LEFT">
                     <VBox spacing="6" HBox.hgrow="ALWAYS">
                         <Label text="WALLET BALANCE" styleClass="balance-label"/>
@@ -44,7 +41,6 @@
                     </VBox>
                 </HBox>
 
-                <!-- Two-column responsive area: Create Auction + Your Auctions -->
                 <HBox spacing="22" VBox.vgrow="ALWAYS">
 
                     <!-- CREATE AUCTION -->
@@ -56,7 +52,6 @@
                                    styleClass="dashboard-section-subtitle"/>
                         </VBox>
 
-                        <!-- Product Name -->
                         <VBox spacing="6">
                             <Label text="PRODUCT NAME" styleClass="form-label-register"/>
                             <TextField fx:id="itemNameField" promptText="Enter product name"
@@ -92,7 +87,6 @@
                             </VBox>
                         </VBox>
 
-                        <!-- Auction Timing -->
                         <Label text="AUCTION TIMING" styleClass="form-section-title"/>
                         <VBox fx:id="customTimingPane" spacing="14" visible="true" managed="true">
                             <HBox spacing="14">
@@ -129,7 +123,6 @@
                             </HBox>
                         </VBox>
 
-                        <!-- Description -->
                         <VBox spacing="6">
                             <Label text="DESCRIPTION" styleClass="form-label-register"/>
                             <TextArea fx:id="descField" promptText="Tell bidders about this item..."
@@ -148,7 +141,6 @@
                             </HBox>
                         </VBox>
 
-                        <!-- Dynamic attributes -->
                         <VBox fx:id="dynamicForm" spacing="12"/>
 
                         <Button text="CREATE AUCTION" onAction="#handleCreateAuction"
@@ -156,7 +148,6 @@
                                 maxWidth="Infinity" prefHeight="48" defaultButton="true"/>
                     </VBox>
 
-                    <!-- YOUR AUCTIONS -->
                     <VBox styleClass="dash-card" spacing="16" HBox.hgrow="ALWAYS"
                           minWidth="0" prefWidth="1000">
                         <VBox spacing="4">
@@ -171,10 +162,8 @@
                         </ScrollPane>
                     </VBox>
 
-                    <!-- Right-side Auction Detail Pane -->
                     <VBox fx:id="auctionDetailPane" styleClass="dash-card" spacing="16" HBox.hgrow="ALWAYS"
                           minWidth="0" prefWidth="1000" managed="false" visible="false">
-                        <!-- Content will be populated dynamically -->
                     </VBox>
                 </HBox>
 

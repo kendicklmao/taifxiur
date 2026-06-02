@@ -95,7 +95,6 @@ public class SellerHomeController extends BaseHomeController {
         categoryBox.getItems().addAll(Category.values());
         categoryBox.setOnAction(e -> updateForm());
 
-        // Tạo thời gian mặc định (5 phút sau)
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime startTime = now.plusMinutes(5);
         LocalDateTime endTime = startTime.plusMinutes(30);
@@ -110,7 +109,6 @@ public class SellerHomeController extends BaseHomeController {
         endMinuteSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 59, endTime.getMinute()));
         endSecondSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 59, endTime.getSecond()));
 
-        // Chọn loại increment
         incrementTypeBox.getItems().addAll("Default (5%)", "Custom Amount");
         incrementTypeBox.setValue("Default (5%)");
         incrementTypeBox.setOnAction(e -> {
@@ -128,7 +126,6 @@ public class SellerHomeController extends BaseHomeController {
         });
         delay.play();
 
-        // Tự động làm mới danh sách đấu giá và ví người bán mỗi 2 giây
         javafx.animation.Timeline autoRefresh = new javafx.animation.Timeline(
             new javafx.animation.KeyFrame(javafx.util.Duration.seconds(2), e -> {
                 handleRefresh();
@@ -207,7 +204,6 @@ public class SellerHomeController extends BaseHomeController {
         }
     }
 
-    // Form tạo sản phẩm
     private void updateForm() {
         dynamicForm.getChildren().clear();
         Category c = categoryBox.getValue();

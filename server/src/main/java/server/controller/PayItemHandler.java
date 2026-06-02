@@ -2,8 +2,8 @@ package server.controller;
 
 import server.service.AuctionService;
 import server.service.UserService;
-import shared.models.Bidder;
-import shared.models.User;
+import shared.models.users.Bidder;
+import shared.models.users.User;
 import shared.network.Request;
 import shared.network.Response;
 
@@ -21,7 +21,6 @@ public class PayItemHandler implements RequestHandler {
         String ipAuctionId = request.getData().get("auctionId");
         String ipUsername = request.getData().get("username");
 
-        // Check if user is banned
         if (userService.isBanned(ipUsername)) {
             return new Response("FAIL", "Your account has been banned. You cannot perform this action.");
         }

@@ -6,8 +6,8 @@ import shared.utils.GsonUtils;
 import server.service.AuctionService;
 import server.service.WalletService;
 import server.service.UserService;
-import shared.models.Bidder;
-import shared.models.User;
+import shared.models.users.Bidder;
+import shared.models.users.User;
 import shared.network.Request;
 import shared.network.Response;
 
@@ -29,7 +29,6 @@ public class PlaceBidHandler implements RequestHandler {
         String pAmount = request.getData().get("amount");
         String pUsername = request.getData().get("username");
 
-        // Check if user is banned
         if (userService.isBanned(pUsername)) {
             return new Response("FAIL", "Your account has been banned. You cannot perform this action.");
         }

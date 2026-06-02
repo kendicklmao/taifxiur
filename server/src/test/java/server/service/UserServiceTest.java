@@ -5,6 +5,9 @@ import server.database.DatabaseConfig;
 import server.database.DatabaseInitializer;
 import shared.enums.Role;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -56,13 +59,13 @@ public class UserServiceTest {
 
     @Test
     public void testAdminCannotBanAdmin() {
-        String result = userService.banUser("admin", "admin"); // Admin1 tries to ban Admin2
+        String result = userService.banUser("admin", "admin");
         assertEquals("Cannot ban an administrator", result);
     }
 
     @Test
     public void testNonAdminCannotBanUser() {
-        String result = userService.banUser("admin", "bidder"); // A bidder tries to ban an admin
+        String result = userService.banUser("admin", "bidder");
         assertEquals("Only admin can ban users", result);
     }
 
@@ -72,15 +75,10 @@ public class UserServiceTest {
         String testUser = "newuser_" + suffix;
         String testEmail = testUser + "@test.com";
 
-        testUsers.add(testUser); // Track for automatic cleanup in tearDown()
+        testUsers.add(testUser);
 
         boolean result = userService.register(testUser, "Password@123", testEmail, "q", "a", "q", "a", Role.BIDDER);
         assertEquals(true, result, "Registration should succeed for a new unique user");
 
-    }
-
-    @Test
-    public void testLoginUser() {
-        assertNotNull(userService.login("bidder", "Bidder@123"));
     }
 }

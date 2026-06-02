@@ -1,8 +1,8 @@
-package server.service;
+package shared.models.itemfactory;
 
-import shared.models.Collectible;
-import shared.models.Item;
-import shared.models.Seller;
+import shared.models.items.Collectible;
+import shared.models.items.Item;
+import shared.models.users.Seller;
 
 import java.math.BigDecimal;
 import java.sql.ResultSet;
@@ -40,5 +40,11 @@ public class CollectibleFactory implements ItemFactory {
                 Integer.parseInt(
                         data.getOrDefault("yearField", "0"))
         );
+    }
+
+    @Override
+    public Item create(com.google.gson.JsonObject obj, String name, String description, BigDecimal startingPrice) {
+        int yearCreated = obj.get("yearCreated").getAsInt();
+        return new Collectible(name, description, null, startingPrice, yearCreated);
     }
 }

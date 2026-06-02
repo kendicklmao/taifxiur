@@ -49,7 +49,6 @@ public class RegisterController extends UserController {
         roleBox.getItems().addAll(Role.BIDDER, Role.SELLER);
         roleBox.setValue(Role.BIDDER);
 
-        // Đảm bảo đã kết nối tới Server để thực hiện kiểm tra thời gian thực
         try {
             if (!ctx.isConnected()) {
                 ctx.connect();

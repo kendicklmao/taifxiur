@@ -4,12 +4,13 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import shared.enums.Category;
 import shared.enums.ItemStatus;
+import shared.models.items.Electronic;
+import shared.models.users.Seller;
 
 import java.math.BigDecimal;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-// Unit tests for Item classes
 public class ItemTest {
     private Seller seller;
     private Electronic electronic;
@@ -21,7 +22,6 @@ public class ItemTest {
         electronic.setMinIncrement(new BigDecimal("100000"));
     }
 
-    // Test electronic item creation
     @Test
     public void testElectronicItemCreation() {
         assertNotNull(electronic);
@@ -33,94 +33,78 @@ public class ItemTest {
         assertEquals(Category.ELECTRONICS, electronic.getCategory());
     }
 
-    // Test item name getter and setter
     @Test
     public void testItemNameGetterSetter() {
         electronic.setName("iPhone 16");
         assertEquals("iPhone 16", electronic.getName());
     }
 
-    // Test item description getter and setter
     @Test
     public void testItemDescriptionGetterSetter() {
         electronic.setDescription("New description");
         assertEquals("New description", electronic.getDescription());
     }
 
-    // Test item seller getter
     @Test
     public void testItemSellerGetter() {
         assertEquals(seller, electronic.getSeller());
     }
 
-    // Test item category getter and setter
     @Test
     public void testItemCategoryGetterSetter() {
         electronic.setCategory(Category.ELECTRONICS);
         assertEquals(Category.ELECTRONICS, electronic.getCategory());
     }
 
-    // Test electronic item minimum increment
     @Test
     public void testElectronicMinIncrement() {
         BigDecimal increment = electronic.getMinIncrement();
         assertEquals(0, increment.compareTo(new BigDecimal("100000")));
     }
 
-    // Test valid item with proper name and description
     @Test
     public void testValidItem() {
         assertTrue(electronic.isValid());
     }
-
-    // Test invalid item with null name
     @Test
     public void testInvalidItemNullName() {
         Electronic invalidItem = new Electronic(null, "Description", seller, new BigDecimal("1000"), "Apple", ItemStatus.NEW);
         assertFalse(invalidItem.isValid());
     }
 
-    // Test invalid item with blank name
     @Test
     public void testInvalidItemBlankName() {
         Electronic invalidItem = new Electronic("   ", "Description", seller, new BigDecimal("1000"), "Apple", ItemStatus.NEW);
         assertFalse(invalidItem.isValid());
     }
 
-    // Test invalid item with null description
     @Test
     public void testInvalidItemNullDescription() {
         Electronic invalidItem = new Electronic("iPhone", null, seller, new BigDecimal("1000"), "Apple", ItemStatus.NEW);
         assertFalse(invalidItem.isValid());
     }
 
-    // Test invalid item with blank description
     @Test
     public void testInvalidItemBlankDescription() {
         Electronic invalidItem = new Electronic("iPhone", "   ", seller, new BigDecimal("1000"), "Apple", ItemStatus.NEW);
         assertFalse(invalidItem.isValid());
     }
 
-    // Test item with empty string name is invalid
     @Test
     public void testInvalidItemEmptyName() {
         Electronic invalidItem = new Electronic("", "Description", seller, new BigDecimal("1000"), "Apple", ItemStatus.NEW);
         assertFalse(invalidItem.isValid());
     }
 
-    // Test item electronic brand getter
     @Test
     public void testElectronicBrandGetter() {
         assertEquals("Apple", electronic.getBrand());
     }
-
-    // Test electronic item status getter
     @Test
     public void testElectronicStatusGetter() {
         assertEquals(ItemStatus.NEW, electronic.getStatus());
     }
 
-    // Test electronic item with used status
     @Test
     public void testElectronicUsedStatus() {
         Electronic usedElectronic = new Electronic("Laptop", "Used laptop", seller, new BigDecimal("1000"), "Dell", ItemStatus.USED);

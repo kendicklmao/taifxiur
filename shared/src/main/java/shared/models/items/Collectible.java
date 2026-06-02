@@ -1,6 +1,7 @@
-package shared.models;
+package shared.models.items;
 
 import shared.enums.Category;
+import shared.models.users.Seller;
 
 import java.math.BigDecimal;
 import java.util.Map;

@@ -1,6 +1,7 @@
-package shared.models;
+package shared.models.users;
 
 import shared.enums.Role;
+import shared.models.Wallet;
 import shared.utils.Hash;
 import shared.utils.Validator;
 

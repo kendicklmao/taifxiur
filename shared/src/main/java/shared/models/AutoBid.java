@@ -3,6 +3,8 @@ package shared.models;
 import java.math.BigDecimal;
 import java.time.Instant;
 
+import shared.models.users.Bidder;
+
 public class AutoBid implements Comparable<AutoBid> {
     private final Bidder bidder; // Người đấu giá
     private final BigDecimal maxBid; // Số tiền lớn nhất muốn đấu giá

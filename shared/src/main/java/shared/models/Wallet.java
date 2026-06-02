@@ -2,6 +2,8 @@ package shared.models;
 
 import java.math.BigDecimal;
 
+import shared.models.users.Seller;
+
 // Ví tiền
 public class Wallet {
     private BigDecimal balance = BigDecimal.ZERO; // Số dư

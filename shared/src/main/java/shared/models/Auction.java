@@ -1,6 +1,9 @@
 package shared.models;
 
 import shared.enums.AuctionStatus;
+import shared.models.items.Item;
+import shared.models.users.Bidder;
+import shared.models.users.Seller;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -161,29 +164,34 @@ public class Auction {
                         newCurrentPrice = nextPrice;
                         bidPlaced = true;
                     } else if (challenger.getMaxBid().compareTo(newCurrentPrice) > 0) {
+                        // Challenger có maxBid cao hơn current price, nên họ trở thành highest bidder
+                        newHighestBidder = challenger.getBidder();
                         newCurrentPrice = challenger.getMaxBid();
                         bidPlaced = true;
                     }
                 }
             } while (bidPlaced);
 
-            // Post-processing: nếu có ít nhất 2 auto-bidder thì người có maxBid cao nhất (ab1)
-            // sẽ thắng. Giá cuối cùng là min(ab1.maxBid, ab2.maxBid + increment).
+            // Post-processing: Fix giá nếu có 2+ autobid
+            // Vòng lặp simulation đã xác định đúng người thắng rồi, chỉ fix giá thôi
             if (activeList.size() >= 2) {
-                AutoBid ab1 = activeList.get(0); // top max
-                AutoBid ab2 = activeList.get(1); // second max
+                AutoBid ab1 = activeList.get(0);  // cao nhất
+                AutoBid ab2 = activeList.get(1);  // cao thứ 2
 
-                BigDecimal topMax = ab1.getMaxBid();
-                BigDecimal secondMax = ab2.getMaxBid();
+                BigDecimal maxA = ab1.getMaxBid();  // cao nhất
+                BigDecimal maxB = ab2.getMaxBid();  // cao thứ 2
 
-                newHighestBidder = ab1.getBidder();
-                BigDecimal clearingPrice = secondMax.add(increment);
-                // If topMax < secondMax + increment then winner pays topMax, otherwise pays secondMax + increment
-                if (topMax.compareTo(clearingPrice) < 0) {
-                    newCurrentPrice = topMax;
-                } else {
-                    newCurrentPrice = clearingPrice;
+                // Nếu maxA >= maxB + increment: A thắng, đảm bảo giá = maxB + increment
+                if (maxA.compareTo(maxB.add(increment)) >= 0) {
+                    BigDecimal requiredPrice = maxB.add(increment);
+                    if (newCurrentPrice.compareTo(requiredPrice) < 0) {
+                        newCurrentPrice = requiredPrice;
+                    }
+                    // Đảm bảo A là người thắng
+                    newHighestBidder = ab1.getBidder();
                 }
+                // Khi maxA < maxB + increment: A không đủ để outbid B với B+increment
+                // -> Vòng lặp đã xác định A vẫn thắng, giữ kết quả từ vòng lặp
             }
 
             newCurrentPrice = newCurrentPrice.setScale(2, RoundingMode.UP);
@@ -233,11 +241,34 @@ public class Auction {
                 throw new IllegalArgumentException("Auction is not in a biddable state (must be OPEN or RUNNING)");
             }
 
-            // Xóa auto-bid cũ của người này nếu có để tránh trùng lặp
-            autoBids.removeIf(ab -> ab.getBidder().getUsername().equals(bidder.getUsername()));
+            // Nếu người dùng đã có trong danh sách thì giữ nguyên timestamp cũ
+            // để không bị reset
+            Instant preservedTs = timeStamp;
+            AutoBid existing = null;
+            for (AutoBid ab : autoBids) {
+                if (ab.getBidder().getUsername().equals(bidder.getUsername())) {
+                    existing = ab;
+                    break;
+                }
+            }
 
-            autoBids.add(new AutoBid(bidder, maxBid, timeStamp));
-            AutoBidService();
+            boolean isUpdate = false;
+            if (existing != null) {
+                isUpdate = true;
+                preservedTs = existing.getTimeStamp();
+                // Xóa entry cũ
+                autoBids.removeIf(ab -> ab.getBidder().getUsername().equals(bidder.getUsername()));
+            }
+
+            autoBids.add(new AutoBid(bidder, maxBid, preservedTs));
+
+            // Nếu người dùng đang cập nhật bid của chính mình và đang là người dẫn đầu thì
+            // không cần AutoBidService()
+            boolean wasHighest = (highestBidder != null && highestBidder.getUsername().equals(bidder.getUsername()));
+            if (!(isUpdate && wasHighest)) {
+                AutoBidService();
+            }
+
             extendIfNeeded();
         }
     }
@@ -368,10 +399,24 @@ public class Auction {
         }
     }
 
+    public Object getBidLock() {
+        return bidLock;
+    }
+
+    public void applyConfirmedBid(Bidder bidder, BigDecimal amount, Instant timestamp) {
+        synchronized (bidLock) {
+            this.currentPrice = amount;
+            this.highestBidder = bidder;
+            this.bidHistory.add(new BidTransaction(bidder, amount, timestamp));
+            AutoBidService();
+            extendIfNeeded();
+        }
+    }
+
     // Đặt lại giá trị bid từ DB
     public void restoreBid(Bidder bidder, BigDecimal amount, Instant timestamp) {
         synchronized (bidLock) {
-            if (currentPrice == null || amount.compareTo(currentPrice) >= 0) {
+            if (currentPrice == null || highestBidder == null || amount.compareTo(currentPrice) > 0) {
                 currentPrice = amount;
                 highestBidder = bidder;
             }

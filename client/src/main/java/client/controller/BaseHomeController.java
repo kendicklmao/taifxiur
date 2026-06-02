@@ -32,15 +32,12 @@ public abstract class BaseHomeController extends UserController {
 
     protected Consumer<String> messageListener;
 
-    // Các thuộc tính chung cho Grid
     protected final Map<String, VBox> auctionCardMap = new HashMap<>();
 
-    // Mặc định trả về null, các lớp con dùng Grid sẽ override lại
     protected TilePane getAuctionGrid() {
         return null;
     }
 
-    // Mặc định không làm gì, các lớp con dùng Grid sẽ override lại
     protected void onAuctionCardDoubleClicked(Auction auction) {}
 
     protected void setupHome() {
@@ -83,11 +80,9 @@ public abstract class BaseHomeController extends UserController {
             }
         }
 
-        // Xóa các card không còn tồn tại
         grid.getChildren().removeAll(existingCards.values());
         existingCards.keySet().forEach(auctionCardMap::remove);
 
-        // Đảm bảo thứ tự các node trong grid khớp với danh sách auctions đã được lọc và sắp xếp
         List<javafx.scene.Node> sortedNodes = new ArrayList<>();
         for (Auction auction : auctions) {
             VBox card = auctionCardMap.get(auction.getId());
