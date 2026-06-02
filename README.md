@@ -1,4 +1,4 @@
-# Ứng Dụng Quản Lý Đấu Giá Trực Tuyến (Auction House) - LTNC Nhóm 1
+# Ứng Dụng Quản Lý Đấu Giá Trực Tuyến (VinAuction) - LTNC Nhóm 1
 
 ## Nhóm 1 - K70I-CS5
 - Ngô Đại Lâm - MSV 25021839
