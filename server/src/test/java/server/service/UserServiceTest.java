@@ -5,6 +5,9 @@ import server.database.DatabaseConfig;
 import server.database.DatabaseInitializer;
 import shared.enums.Role;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -81,6 +84,17 @@ public class UserServiceTest {
 
     @Test
     public void testLoginUser() {
-        assertNotNull(userService.login("bidder", "Bidder@123"));
+        assertNotNull(userService.login("lamdaingo", "Admin@123"));
+        try (Connection conn = DatabaseConfig.getDataSource().getConnection();
+             PreparedStatement pstmt =
+                     conn.prepareStatement(
+                             "UPDATE users SET is_online = FALSE WHERE username = ?")) {
+
+            pstmt.setString(1, "lamdaingo");
+            pstmt.executeUpdate();
+
+        } catch (SQLException e) {
+            System.err.println("Error updating online status: " + e.getMessage());
+        }
     }
 }

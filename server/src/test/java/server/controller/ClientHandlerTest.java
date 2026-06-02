@@ -15,6 +15,9 @@ import shared.utils.GsonUtils;
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -109,6 +112,17 @@ public class ClientHandlerTest {
 
     @Test
     public void testLoginSuccess() throws Exception {
+        try (Connection conn = DatabaseConfig.getDataSource().getConnection();
+             PreparedStatement pstmt =
+                     conn.prepareStatement(
+                             "UPDATE users SET is_online = FALSE WHERE username = ?")) {
+
+            pstmt.setString(1, "lamdaingo");
+            pstmt.executeUpdate();
+
+        } catch (SQLException e) {
+            System.err.println("Error updating online status: " + e.getMessage());
+        }
         Map<String, String> data = new HashMap<>();
         data.put("username", "lamdaingo");
         data.put("password", "Admin@123");
@@ -121,6 +135,17 @@ public class ClientHandlerTest {
 
         assertEquals("SUCCESS", response.getStatus());
         assertEquals("BIDDER,lamdaingo", response.getMessage());
+        try (Connection conn = DatabaseConfig.getDataSource().getConnection();
+             PreparedStatement pstmt =
+                     conn.prepareStatement(
+                             "UPDATE users SET is_online = FALSE WHERE username = ?")) {
+
+            pstmt.setString(1, "lamdaingo");
+            pstmt.executeUpdate();
+
+        } catch (SQLException e) {
+            System.err.println("Error updating online status: " + e.getMessage());
+        }
     }
 
     @Test

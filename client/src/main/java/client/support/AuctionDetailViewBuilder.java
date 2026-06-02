@@ -81,6 +81,7 @@ public class AuctionDetailViewBuilder {
         addDetailRow(detailsGrid, "End Time:", FormatUtils.formatTime(auction.getEndTime()), rowIndex++);
         addDetailRow(detailsGrid, "Status:", auction.getStatus().toString(), rowIndex++);
         addDetailRow(detailsGrid, "Seller:", auction.getSeller().getUsername(), rowIndex++);
+        addDetailRow(detailsGrid, "Highest Bidder:", auction.getHighestBidder() != null ? auction.getHighestBidder().getUsername() : "Empty", rowIndex++);
 
         Item item = auction.getItem();
         Map<String, String> extraDetails = item.getAdditionalDetails();
