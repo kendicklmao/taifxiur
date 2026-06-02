@@ -10,7 +10,7 @@
 
 ## Giới Thiệu
 
-Ứng dụng quản lý đấu giá trực tuyến hiện đại, cho phép người dùng tham gia đấu giá, mua bán hàng hóa, và quản lý tài khoản của mình. Ứng dụng được xây dựng với kiến trúc MVC, sử dụng JavaFX cho giao diện người dùng và PostgreSQL cho lưu trữ dữ liệu.
+Ứng dụng quản lý đấu giá trực tuyến hiện đại, cho phép người dùng tham gia đấu giá, mua bán hàng hóa, và quản lý tài khoản của mình. Ứng dụng được xây dựng với kiến trúc client - server, sử dụng JavaFX cho giao diện người dùng và PostgreSQL cho lưu trữ dữ liệu.
 
 ### Đặc Điểm Nổi Bật
 - Giao diện đồ họa hiện đại với JavaFX
