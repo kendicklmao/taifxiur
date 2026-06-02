@@ -6,6 +6,8 @@
 - Nguyễn Đình Huy - MSV 25021799
 - Trịnh Minh Khánh - MSV 25021831
 
+## Video Demo: https://youtu.be/5gwSjSRg0VY
+
 ## Giới Thiệu
 
 Ứng dụng quản lý đấu giá trực tuyến hiện đại, cho phép người dùng tham gia đấu giá, mua bán hàng hóa, và quản lý tài khoản của mình. Ứng dụng được xây dựng với kiến trúc MVC, sử dụng JavaFX cho giao diện người dùng và PostgreSQL cho lưu trữ dữ liệu.
