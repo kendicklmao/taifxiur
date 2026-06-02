@@ -1,4 +1,4 @@
-# Ứng Dụng Quản Lý Đấu Giá Trực Tuyến (VinAuction) - LTNC Nhóm 1
+# Ứng Dụng Quản Lý Đấu Giá Trực Tuyến (VinAuction)
 
 ## Nhóm 1 - K70I-CS5
 - Ngô Đại Lâm - MSV 25021839
@@ -8,7 +8,7 @@
 
 ## Giới Thiệu
 
-Ứng dụng quản lý đấu giá trực tuyến hiện đại, cho phép người dùng tham gia đấu giá, mua bán hàng hóa, và quản lý tài khoản của mình. Ứng dụng được xây dựng với kiến trúc client-server, sử dụng JavaFX cho giao diện người dùng và PostgreSQL cho lưu trữ dữ liệu.
+Ứng dụng quản lý đấu giá trực tuyến hiện đại, cho phép người dùng tham gia đấu giá, mua bán hàng hóa, và quản lý tài khoản của mình. Ứng dụng được xây dựng với kiến trúc MVC, sử dụng JavaFX cho giao diện người dùng và PostgreSQL cho lưu trữ dữ liệu.
 
 ### Đặc Điểm Nổi Bật
 - Giao diện đồ họa hiện đại với JavaFX
@@ -18,6 +18,10 @@
 - Các vai trò người dùng khác nhau (Admin, Người Bán, Người Mua)
 - Biểu đồ thống kê đấu giá
 - Âm thanh nền và hiệu ứng âm thanh
+- Tính năng đặt giá tự động (Auto-Bid)
+- Xử lí lỗi và thông báo người dùng thân thiện
+- Tính năng bảo mật nâng cao (mã hóa mật khẩu, câu hỏi bảo mật)
+- Xử lí ngoại lệ và logic chi tiết
 
 ---
 
