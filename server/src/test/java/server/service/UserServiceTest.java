@@ -84,6 +84,17 @@ public class UserServiceTest {
 
     @Test
     public void testLoginUser() {
+        try (Connection conn = DatabaseConfig.getDataSource().getConnection();
+             PreparedStatement pstmt =
+                     conn.prepareStatement(
+                             "UPDATE users SET is_online = FALSE WHERE username = ?")) {
+
+            pstmt.setString(1, "lamdaingo");
+            pstmt.executeUpdate();
+
+        } catch (SQLException e) {
+            System.err.println("Error updating online status: " + e.getMessage());
+        }
         assertNotNull(userService.login("lamdaingo", "Admin@123"));
         try (Connection conn = DatabaseConfig.getDataSource().getConnection();
              PreparedStatement pstmt =
