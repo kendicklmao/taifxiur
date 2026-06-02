@@ -437,9 +437,10 @@ public class AuctionService {
 
                     // 4. Update item's current price in the database
                     try (PreparedStatement pstmt = conn.prepareStatement(
-                            "UPDATE items SET current_price = ? WHERE id = ?")) {
+                            "UPDATE items SET current_price = ?, highest_name = ? WHERE id = ?")) {
                         pstmt.setBigDecimal(1, formattedAmount);
-                        pstmt.setInt(2, itemId);
+                        pstmt.setString(2, bidder.getUsername());
+                        pstmt.setInt(3, itemId);
                         pstmt.executeUpdate();
                     }
 
@@ -1022,9 +1023,10 @@ public class AuctionService {
 
                 // 2. Cập nhật giá hiện tại của phiên đấu giá
                 try (PreparedStatement pstmt = conn.prepareStatement(
-                        "UPDATE items SET current_price = ? WHERE id = ?")) {
+                        "UPDATE items SET current_price = ?, highest_name = ? WHERE id = ?")) {
                     pstmt.setBigDecimal(1, amount);
-                    pstmt.setInt(2, itemId);
+                    pstmt.setString(2, bidder.getUsername());
+                    pstmt.setInt(3, itemId);
                     pstmt.executeUpdate();
                 }
 
