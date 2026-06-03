@@ -517,7 +517,7 @@ public class SellerHomeController extends BaseHomeController {
             if (balance != null) {
                 walletBalanceLabel.setText("Balance: $" + balance);
             } else {
-                walletBalanceLabel.setText("Balance unavailable");//123
+                walletBalanceLabel.setText("Balance unavailable");
             }
         });
 
