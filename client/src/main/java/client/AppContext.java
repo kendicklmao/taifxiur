@@ -67,7 +67,7 @@ public class AppContext {
 
         System.out.println("DEBUG CLIENT: Connecting to server...");
         socket = new Socket("localhost", 54321);
-        socket.setTcpNoDelay(true); // Tắt thuật toán Nagle's algorithm để tăng tốc độ gói nhỏ
+        socket.setTcpNoDelay(true);
         out = new PrintWriter(new java.io.OutputStreamWriter(socket.getOutputStream(), java.nio.charset.StandardCharsets.UTF_8), true);
         in = new BufferedReader(new java.io.InputStreamReader(socket.getInputStream(), java.nio.charset.StandardCharsets.UTF_8));
         

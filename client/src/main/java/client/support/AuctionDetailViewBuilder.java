@@ -19,7 +19,6 @@ public class AuctionDetailViewBuilder {
 
     // Tiêu đề, subtitle và nút đóng
     public static HBox createHeaderBox(String titleText, String subtitleText, Runnable onClose) {
-        // Cột văn bản chứa Title và Subtitle (giống cấu trúc bảng bên trái)
         VBox textColumn = new VBox(4);
         Label titleLabel = new Label(titleText);
         titleLabel.getStyleClass().add("dashboard-section-title");
@@ -33,11 +32,9 @@ public class AuctionDetailViewBuilder {
         closeButton.setStyle("-fx-min-width: 32px; -fx-min-height: 32px; -fx-padding: 0;");
         closeButton.setOnAction(e -> onClose.run());
         
-        // Dùng Spacer để đẩy nút X về bên phải tuyệt đối
         javafx.scene.layout.Pane spacer = new javafx.scene.layout.Pane();
         HBox.setHgrow(spacer, javafx.scene.layout.Priority.ALWAYS);
         
-        // Hàng tổng chứa Cột văn bản và Nút đóng
         HBox headerBox = new HBox(textColumn, spacer, closeButton);
         headerBox.setAlignment(javafx.geometry.Pos.TOP_LEFT);
         return headerBox;
@@ -60,7 +57,6 @@ public class AuctionDetailViewBuilder {
         detailsGrid.setVgap(8);
         detailsGrid.getStyleClass().add("details-grid");
 
-        // Cấu hình cột để nhãn bên trái không bị co, nhãn bên phải tự xuống dòng
         javafx.scene.layout.ColumnConstraints col1 = new javafx.scene.layout.ColumnConstraints();
         col1.setMinWidth(100);
         col1.setPrefWidth(100);
@@ -100,7 +96,7 @@ public class AuctionDetailViewBuilder {
         
         Label valueLabel = new Label(value != null ? value : "N/A");
         valueLabel.setWrapText(true);
-        valueLabel.setMaxWidth(Double.MAX_VALUE); // Cho phép giãn nở hết cỡ để wrap text
+        valueLabel.setMaxWidth(Double.MAX_VALUE);
         
         grid.add(titleLabel, 0, row);
         grid.add(valueLabel, 1, row);

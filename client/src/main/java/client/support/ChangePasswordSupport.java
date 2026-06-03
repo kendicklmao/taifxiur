@@ -64,12 +64,12 @@ public final class ChangePasswordSupport {
         errorLabel.getStyleClass().add("error-label");
         errorLabel.setWrapText(true);
         errorLabel.setManaged(false);
-        errorLabel.setPrefWidth(400); // Đặt chiều rộng ưu tiên để ép xuống dòng
-        errorLabel.setMinHeight(javafx.scene.layout.Region.USE_PREF_SIZE); // Đảm bảo không bị cắt chiều cao
+        errorLabel.setPrefWidth(400);
+        errorLabel.setMinHeight(javafx.scene.layout.Region.USE_PREF_SIZE);
 
         VBox content = new VBox(10);
         content.setStyle("-fx-padding: 24;");
-        content.getChildren().addAll(titleLabel, new javafx.scene.layout.Region(), // Khoảng trống nhỏ dưới title
+        content.getChildren().addAll(titleLabel, new javafx.scene.layout.Region(),
                                     currentPasswordLabel, currentPasswordField, newPasswordLabel, newPasswordField,
                                     confirmPasswordLabel, confirmPasswordField, errorLabel);
 
@@ -79,20 +79,19 @@ public final class ChangePasswordSupport {
         changeButton.setPrefHeight(45);
 
         Button cancelButton = new Button("CANCEL");
-        cancelButton.getStyleClass().add("btn-ghost-white"); // Áp dụng style ghost trắng
+        cancelButton.getStyleClass().add("btn-ghost-white");
         cancelButton.setMaxWidth(Double.MAX_VALUE);
-        cancelButton.setPrefHeight(45); // Đảm bảo chiều cao tương đương nút Change
-        // Ép padding đồng nhất để tránh bị lệch do CSS
+        cancelButton.setPrefHeight(45);
+
         changeButton.setStyle("-fx-padding: 12 0 12 0;");
         cancelButton.setStyle("-fx-padding: 12 0 12 0;");
 
         VBox buttonContainer = new VBox(10, changeButton, cancelButton);
         buttonContainer.setStyle("-fx-padding: 16 0 0 0;");
         buttonContainer.setAlignment(javafx.geometry.Pos.CENTER);
-        buttonContainer.setFillWidth(true); // Ép các thành phần con lấp đầy chiều rộng
+        buttonContainer.setFillWidth(true);
         content.getChildren().add(buttonContainer);
 
-        // Giữ lại nút Close để hiển thị được thanh tiêu đề và nút X
         dialog.getDialogPane().getButtonTypes().add(javafx.scene.control.ButtonType.CLOSE);
         Node internalCloseButton = dialog.getDialogPane().lookupButton(javafx.scene.control.ButtonType.CLOSE);
         if (internalCloseButton != null) {
@@ -102,7 +101,7 @@ public final class ChangePasswordSupport {
 
         shared.utils.DialogHelper.applyCustomStyle(dialog);
         dialog.getDialogPane().setContent(content);
-        dialog.getDialogPane().setPrefWidth(450); // Tăng chiều rộng cửa sổ để chữ có không gian
+        dialog.getDialogPane().setPrefWidth(450);
 
         cancelButton.setOnAction(e -> dialog.close());
 

@@ -36,6 +36,7 @@ import client.support.ChangePasswordSupport;
 import client.support.TransactionDialogSupport;
 import shared.enums.Category;
 import shared.enums.ItemStatus;
+import shared.enums.FieldDefinition;
 
 public class SellerHomeController extends BaseHomeController {
 
@@ -100,14 +101,19 @@ public class SellerHomeController extends BaseHomeController {
         LocalDateTime endTime = startTime.plusMinutes(30);
 
         startDatePicker.setValue(startTime.toLocalDate());
-        startHourSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 23, startTime.getHour()));
-        startMinuteSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 59, startTime.getMinute()));
-        startSecondSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 59, startTime.getSecond()));
+        startHourSpinner
+                .setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 23, startTime.getHour()));
+        startMinuteSpinner
+                .setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 59, startTime.getMinute()));
+        startSecondSpinner
+                .setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 59, startTime.getSecond()));
 
         endDatePicker.setValue(endTime.toLocalDate());
         endHourSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 23, endTime.getHour()));
-        endMinuteSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 59, endTime.getMinute()));
-        endSecondSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 59, endTime.getSecond()));
+        endMinuteSpinner
+                .setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 59, endTime.getMinute()));
+        endSecondSpinner
+                .setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 59, endTime.getSecond()));
 
         incrementTypeBox.getItems().addAll("Default (5%)", "Custom Amount");
         incrementTypeBox.setValue("Default (5%)");
@@ -127,10 +133,9 @@ public class SellerHomeController extends BaseHomeController {
         delay.play();
 
         javafx.animation.Timeline autoRefresh = new javafx.animation.Timeline(
-            new javafx.animation.KeyFrame(javafx.util.Duration.seconds(2), e -> {
-                handleRefresh();
-            })
-        );
+                new javafx.animation.KeyFrame(javafx.util.Duration.seconds(2), e -> {
+                    handleRefresh();
+                }));
         autoRefresh.setCycleCount(javafx.animation.Timeline.INDEFINITE);
         autoRefresh.play();
     }
@@ -138,7 +143,7 @@ public class SellerHomeController extends BaseHomeController {
     @Override
     protected void onSocketMessage(Response res) {
         if ("UPDATE_PRICE".equals(res.getStatus()) || "AUCTION_UPDATED".equals(res.getStatus())
-            || "AUCTION_FINISHED".equals(res.getStatus()) || "AUCTION_CREATED".equals(res.getStatus())) {
+                || "AUCTION_FINISHED".equals(res.getStatus()) || "AUCTION_CREATED".equals(res.getStatus())) {
             fetchAllAuctions();
         }
     }
@@ -161,11 +166,11 @@ public class SellerHomeController extends BaseHomeController {
 
     private void showAuctionDetails(Auction auction) {
         this.selectedAuction = auction;
-        
+
         Button terminateButton = new Button("Terminate Auction");
         terminateButton.getStyleClass().add("dashboard-btn-logout");
         terminateButton.setOnAction(e -> handleTerminateAuction(auction));
-        
+
         boolean canTerminate = auction.getSeller().getUsername().equals(ctx.getCurrentUser().getUsername());
         terminateButton.setVisible(canTerminate);
         terminateButton.setManaged(canTerminate);
@@ -174,7 +179,6 @@ public class SellerHomeController extends BaseHomeController {
             this.selectedAuction = null;
         }, terminateButton);
     }
-
 
     @FXML
     private void handleUploadImage() {
@@ -212,28 +216,12 @@ public class SellerHomeController extends BaseHomeController {
             return;
         }
 
-        switch (c) {
-            case ELECTRONICS:
-                addTextField("Brand", "brandField");
-                addStatusChoiceBox("statusField");
-                break;
-            case ARTS:
-                addTextField("Artist", "artistField");
-                addTextField("Year", "yearField");
-                addCheckBox("Original", "originalBox");
-                break;
-            case VEHICLES:
-                addTextField("Brand", "brandField");
-                addTextField("Model Year", "modelField");
-                addTextField("KM Traveled", "kmField");
-                break;
-            case FASHIONS:
-                addTextField("Brand", "brandField");
-                addStatusChoiceBox("statusField");
-                break;
-            case COLLECTIBLES:
-                addTextField("Year", "yearField");
-                break;
+        for (FieldDefinition field : c.getFields()) {
+            switch (field.getType()) {
+                case TEXT -> addTextField(field.getLabel(), field.getId());
+                case STATUS_CHOICE_BOX -> addStatusChoiceBox(field.getId());
+                case CHECKBOX -> addCheckBox(field.getLabel(), field.getId());
+            }
         }
     }
 
@@ -322,7 +310,8 @@ public class SellerHomeController extends BaseHomeController {
             int endMinute = endMinuteSpinner.getValue();
             int endSecond = endSecondSpinner.getValue();
 
-            startTime = startDate.atTime(startHour, startMinute, startSecond).atZone(ZoneId.systemDefault()).toInstant();
+            startTime = startDate.atTime(startHour, startMinute, startSecond).atZone(ZoneId.systemDefault())
+                    .toInstant();
             endTime = endDate.atTime(endHour, endMinute, endSecond).atZone(ZoneId.systemDefault()).toInstant();
 
             if (startTime.isAfter(endTime)) {
@@ -361,7 +350,10 @@ public class SellerHomeController extends BaseHomeController {
 
                     BigDecimal defaultMinIncrement = startingPrice.multiply(new BigDecimal("0.05"));
                     if (inc.compareTo(defaultMinIncrement) < 0) {
-                        alertService.showAlert("Error", "Custom increment must be greater than or equal to default minimum increment: " + defaultMinIncrement.toPlainString(), welcomeLabel);
+                        alertService.showAlert("Error",
+                                "Custom increment must be greater than or equal to default minimum increment: "
+                                        + defaultMinIncrement.toPlainString(),
+                                welcomeLabel);
                         return;
                     }
 
@@ -424,14 +416,20 @@ public class SellerHomeController extends BaseHomeController {
                 LocalDateTime nextEndTime = nextStartTime.plusMinutes(5);
 
                 startDatePicker.setValue(nextStartTime.toLocalDate());
-                startHourSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 23, nextStartTime.getHour()));
-                startMinuteSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 59, nextStartTime.getMinute()));
-                startSecondSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 59, nextStartTime.getSecond()));
+                startHourSpinner.setValueFactory(
+                        new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 23, nextStartTime.getHour()));
+                startMinuteSpinner.setValueFactory(
+                        new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 59, nextStartTime.getMinute()));
+                startSecondSpinner.setValueFactory(
+                        new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 59, nextStartTime.getSecond()));
 
                 endDatePicker.setValue(nextEndTime.toLocalDate());
-                endHourSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 23, nextEndTime.getHour()));
-                endMinuteSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 59, nextEndTime.getMinute()));
-                endSecondSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 59, nextEndTime.getSecond()));
+                endHourSpinner.setValueFactory(
+                        new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 23, nextEndTime.getHour()));
+                endMinuteSpinner.setValueFactory(
+                        new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 59, nextEndTime.getMinute()));
+                endSecondSpinner.setValueFactory(
+                        new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 59, nextEndTime.getSecond()));
 
                 categoryBox.setValue(null);
                 dynamicForm.getChildren().clear();
@@ -472,7 +470,8 @@ public class SellerHomeController extends BaseHomeController {
                 Map<String, String> data = new HashMap<>();
                 data.put("username", ctx.getCurrentUser().getUsername());
                 Response response = ctx.sendRequestAndWait(new Request("GET_SELLER_AUCTIONS", data), 30);
-                Type type = new TypeToken<List<Auction>>(){}.getType();
+                Type type = new TypeToken<List<Auction>>() {
+                }.getType();
                 return gson.fromJson(response.getMessage(), type);
             }
         };
@@ -482,7 +481,8 @@ public class SellerHomeController extends BaseHomeController {
             if (list != null) {
                 updateAuctionGrid(list);
                 if (selectedAuction != null) {
-                    Auction updated = list.stream().filter(a -> a.getId().equals(selectedAuction.getId())).findFirst().orElse(null);
+                    Auction updated = list.stream().filter(a -> a.getId().equals(selectedAuction.getId())).findFirst()
+                            .orElse(null);
                     if (updated != null) {
                         showAuctionDetails(updated);
                     }
