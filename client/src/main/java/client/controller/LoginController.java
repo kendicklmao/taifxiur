@@ -34,6 +34,11 @@ public class LoginController extends UserController {
     @FXML
     Label countdownLabel;
 
+    @FXML
+    private TextField visiblePasswordField;
+
+    private boolean passwordVisible = false;
+
     private INavigator navigator;
 
     public LoginController() {
@@ -112,6 +117,29 @@ public class LoginController extends UserController {
             countdownLabel.setText("");
         });
         timeline.play();
+    }
+
+    @FXML
+    private void togglePasswordVisibility() {
+        if (passwordVisible) {
+            passwordField.setText(visiblePasswordField.getText());
+
+            passwordField.setVisible(true);
+            passwordField.setManaged(true);
+
+            visiblePasswordField.setVisible(false);
+            visiblePasswordField.setManaged(false);
+        } else {
+            visiblePasswordField.setText(passwordField.getText());
+
+            visiblePasswordField.setVisible(true);
+            visiblePasswordField.setManaged(true);
+
+            passwordField.setVisible(false);
+            passwordField.setManaged(false);
+        }
+
+        passwordVisible = !passwordVisible;
     }
 
     private void setLoginControlsDisabled(boolean disabled) {

@@ -45,9 +45,21 @@ public class RegisterController extends UserController {
     private Label formError;
 
     @FXML
+    private TextField visiblePasswordField;
+
+    @FXML
+    private TextField visibleConfirmPasswordField;
+
+
+    @FXML
     public void initialize() {
         roleBox.getItems().addAll(Role.BIDDER, Role.SELLER);
         roleBox.setValue(Role.BIDDER);
+        visiblePasswordField.textProperty()
+                .bindBidirectional(passwordField.textProperty());
+
+        visibleConfirmPasswordField.textProperty()
+                .bindBidirectional(confirmPasswordField.textProperty());
 
         try {
             if (!ctx.isConnected()) {
@@ -408,5 +420,27 @@ public class RegisterController extends UserController {
 
     private void clearErrorStyle(javafx.scene.control.TextField field) {
         field.getStyleClass().removeAll(java.util.Collections.singleton("error-field"));
+    }
+
+    @FXML
+    private void togglePasswordVisibility() {
+        boolean visible = visiblePasswordField.isVisible();
+
+        visiblePasswordField.setVisible(!visible);
+        visiblePasswordField.setManaged(!visible);
+
+        passwordField.setVisible(visible);
+        passwordField.setManaged(visible);
+    }
+
+    @FXML
+    private void toggleConfirmPasswordVisibility() {
+        boolean visible = visibleConfirmPasswordField.isVisible();
+
+        visibleConfirmPasswordField.setVisible(!visible);
+        visibleConfirmPasswordField.setManaged(!visible);
+
+        confirmPasswordField.setVisible(visible);
+        confirmPasswordField.setManaged(visible);
     }
 }

@@ -1176,3 +1176,44 @@
 .combo-box-popup .list-cell:filled:hover {
     -fx-text-fill: #ffffff;
 }
+
+.password-eye-btn {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    -fx-background-radius: 0;
+    -fx-border-radius: 0;
+
+    -fx-padding: 0 12 0 12;
+
+    -fx-text-fill: #5b5b78;
+    -fx-font-size: 12px;
+
+    -fx-cursor: hand;
+}
+
+.password-eye-btn:hover {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    -fx-text-fill: #5b5b78;
+}
+
+.password-eye-btn:pressed {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    -fx-text-fill: #5b5b78;
+}
+
+.password-eye-btn:focused {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    -fx-effect: null;
+}
+
+.dialog-pane .password-eye-btn,
+.dialog-pane .password-eye-btn:hover,
+.dialog-pane .password-eye-btn:pressed,
+.dialog-pane .password-eye-btn:focused {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    -fx-text-fill: #5b5b78;
+}

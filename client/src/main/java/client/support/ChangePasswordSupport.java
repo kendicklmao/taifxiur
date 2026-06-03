@@ -1,12 +1,13 @@
 package client.support;
 
+import client.AppContext;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
+import javafx.geometry.Pos;
 import javafx.scene.Node;
-import javafx.scene.control.Button;
-import javafx.scene.control.Dialog;
-import javafx.scene.control.Label;
-import javafx.scene.control.PasswordField;
+import javafx.scene.control.*;
+import javafx.scene.layout.Region;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.StageStyle;
 import shared.network.Request;
@@ -16,14 +17,13 @@ import shared.utils.Validator;
 import java.util.HashMap;
 import java.util.Map;
 
-import client.AppContext;
-
 public final class ChangePasswordSupport {
 
     private ChangePasswordSupport() {
     }
 
     public static void showDialog(AppContext ctx, Node ownerNode) {
+
         Dialog<Void> dialog = new Dialog<>();
 
         if (ownerNode != null && ownerNode.getScene() != null) {
@@ -31,47 +31,61 @@ public final class ChangePasswordSupport {
         }
 
         dialog.initStyle(StageStyle.UTILITY);
-
         dialog.setTitle("Change Password");
+
         Label titleLabel = new Label("CHANGE PASSWORD");
         titleLabel.getStyleClass().add("login-title-main");
         titleLabel.setMaxWidth(Double.MAX_VALUE);
-        titleLabel.setAlignment(javafx.geometry.Pos.CENTER);
+        titleLabel.setAlignment(Pos.CENTER);
         titleLabel.setTextAlignment(javafx.scene.text.TextAlignment.CENTER);
 
         Label currentPasswordLabel = new Label("CURRENT PASSWORD");
         currentPasswordLabel.getStyleClass().add("form-label-login");
 
-        PasswordField currentPasswordField = new PasswordField();
-        currentPasswordField.setPromptText("Current password");
-        currentPasswordField.getStyleClass().add("login-input");
-
         Label newPasswordLabel = new Label("NEW PASSWORD");
         newPasswordLabel.getStyleClass().add("form-label-login");
-
-        PasswordField newPasswordField = new PasswordField();
-        newPasswordField.setPromptText("New password");
-        newPasswordField.getStyleClass().add("login-input");
 
         Label confirmPasswordLabel = new Label("CONFIRM NEW PASSWORD");
         confirmPasswordLabel.getStyleClass().add("form-label-login");
 
+        PasswordField currentPasswordField = new PasswordField();
+        PasswordField newPasswordField = new PasswordField();
         PasswordField confirmPasswordField = new PasswordField();
-        confirmPasswordField.setPromptText("Confirm new password");
-        confirmPasswordField.getStyleClass().add("login-input");
+
+        StackPane currentPasswordPane =
+                createPasswordField(currentPasswordField, "Current password");
+
+        StackPane newPasswordPane =
+                createPasswordField(newPasswordField, "New password");
+
+        StackPane confirmPasswordPane =
+                createPasswordField(confirmPasswordField, "Confirm new password");
 
         Label errorLabel = new Label();
         errorLabel.getStyleClass().add("error-label");
         errorLabel.setWrapText(true);
         errorLabel.setManaged(false);
         errorLabel.setPrefWidth(400);
-        errorLabel.setMinHeight(javafx.scene.layout.Region.USE_PREF_SIZE);
+        errorLabel.setMinHeight(Region.USE_PREF_SIZE);
 
         VBox content = new VBox(10);
         content.setStyle("-fx-padding: 24;");
-        content.getChildren().addAll(titleLabel, new javafx.scene.layout.Region(),
-                                    currentPasswordLabel, currentPasswordField, newPasswordLabel, newPasswordField,
-                                    confirmPasswordLabel, confirmPasswordField, errorLabel);
+
+        content.getChildren().addAll(
+                titleLabel,
+                new Region(),
+
+                currentPasswordLabel,
+                currentPasswordPane,
+
+                newPasswordLabel,
+                newPasswordPane,
+
+                confirmPasswordLabel,
+                confirmPasswordPane,
+
+                errorLabel
+        );
 
         Button changeButton = new Button("CHANGE PASSWORD");
         changeButton.getStyleClass().add("login-btn-primary");
@@ -83,31 +97,37 @@ public final class ChangePasswordSupport {
         cancelButton.setMaxWidth(Double.MAX_VALUE);
         cancelButton.setPrefHeight(45);
 
-        changeButton.setStyle("-fx-padding: 12 0 12 0;");
-        cancelButton.setStyle("-fx-padding: 12 0 12 0;");
-
         VBox buttonContainer = new VBox(10, changeButton, cancelButton);
-        buttonContainer.setStyle("-fx-padding: 16 0 0 0;");
-        buttonContainer.setAlignment(javafx.geometry.Pos.CENTER);
+        buttonContainer.setAlignment(Pos.CENTER);
         buttonContainer.setFillWidth(true);
+        buttonContainer.setStyle("-fx-padding: 16 0 0 0;");
+
         content.getChildren().add(buttonContainer);
 
-        dialog.getDialogPane().getButtonTypes().add(javafx.scene.control.ButtonType.CLOSE);
-        Node internalCloseButton = dialog.getDialogPane().lookupButton(javafx.scene.control.ButtonType.CLOSE);
+        dialog.getDialogPane().getButtonTypes().add(ButtonType.CLOSE);
+
+        Node internalCloseButton =
+                dialog.getDialogPane().lookupButton(ButtonType.CLOSE);
+
         if (internalCloseButton != null) {
             internalCloseButton.setVisible(false);
             internalCloseButton.setManaged(false);
         }
 
         shared.utils.DialogHelper.applyCustomStyle(dialog);
+
         dialog.getDialogPane().setContent(content);
         dialog.getDialogPane().setPrefWidth(450);
 
         cancelButton.setOnAction(e -> dialog.close());
 
         changeButton.setOnAction(event -> {
-            String validationError = validate(currentPasswordField.getText(), newPasswordField.getText(),
-                                             confirmPasswordField.getText());
+
+            String validationError = validate(
+                    currentPasswordField.getText(),
+                    newPasswordField.getText(),
+                    confirmPasswordField.getText()
+            );
 
             if (validationError != null) {
                 errorLabel.setText(validationError);
@@ -121,25 +141,43 @@ public final class ChangePasswordSupport {
             Task<Response> task = new Task<>() {
                 @Override
                 protected Response call() throws Exception {
+
                     if (!ctx.isConnected()) {
                         ctx.connect();
                     }
 
                     Map<String, String> data = new HashMap<>();
-                    data.put("username", ctx.getCurrentUser().getUsername());
-                    data.put("oldPassword", currentPasswordField.getText());
-                    data.put("newPassword", newPasswordField.getText());
-                    return ctx.sendRequestAndWait(new Request("CHANGE_PASSWORD", data), 10);
+                    data.put("username",
+                            ctx.getCurrentUser().getUsername());
+                    data.put("oldPassword",
+                            currentPasswordField.getText());
+                    data.put("newPassword",
+                            newPasswordField.getText());
+
+                    return ctx.sendRequestAndWait(
+                            new Request("CHANGE_PASSWORD", data),
+                            10
+                    );
                 }
             };
 
             task.setOnSucceeded(e -> {
+
                 Response response = task.getValue();
 
                 if ("SUCCESS".equals(response.getStatus())) {
+
                     dialog.close();
-                    Platform.runLater(() -> ctx.getAlertService().showAlert("Success", response.getMessage(), ownerNode));
+
+                    Platform.runLater(() ->
+                            ctx.getAlertService().showAlert(
+                                    "Success",
+                                    response.getMessage(),
+                                    ownerNode
+                            ));
+
                 } else {
+
                     errorLabel.setText(response.getMessage());
                     errorLabel.setManaged(true);
                     content.setDisable(false);
@@ -158,8 +196,13 @@ public final class ChangePasswordSupport {
         dialog.showAndWait();
     }
 
-    private static String validate(String currentPassword, String newPassword, String confirmPassword) {
-        if (currentPassword == null || currentPassword.trim().isEmpty()) {
+    private static String validate(
+            String currentPassword,
+            String newPassword,
+            String confirmPassword) {
+
+        if (currentPassword == null ||
+                currentPassword.trim().isEmpty()) {
             return "Current password cannot be empty.";
         }
 
@@ -170,15 +213,60 @@ public final class ChangePasswordSupport {
             return "New password must be at least 6 characters and include uppercase, lowercase, number, and special character.";
         }
 
-        if (confirmPass == null || !confirmPass.equals(newPass)) {
+        if (confirmPass == null ||
+                !confirmPass.equals(newPass)) {
             return "Confirm password does not match.";
         }
 
-        if (Validator.normalize(currentPassword).equals(newPass)) {
+        if (Validator.normalize(currentPassword)
+                .equals(newPass)) {
             return "New password must be different from the current password.";
         }
 
         return null;
     }
 
+    private static StackPane createPasswordField(
+            PasswordField passwordField,
+            String promptText) {
+
+        passwordField.setPromptText(promptText);
+        passwordField.getStyleClass()
+                .addAll("login-input", "password-input-with-eye");
+
+        TextField visibleField = new TextField();
+        visibleField.setPromptText(promptText);
+        visibleField.getStyleClass()
+                .addAll("login-input", "password-input-with-eye");
+
+        visibleField.setVisible(false);
+        visibleField.setManaged(false);
+
+        visibleField.textProperty()
+                .bindBidirectional(passwordField.textProperty());
+
+        Button eyeBtn = new Button("👁");
+        eyeBtn.getStyleClass().add("password-eye-btn");
+        eyeBtn.setFocusTraversable(false);
+
+        eyeBtn.setOnAction(e -> {
+            boolean showing = visibleField.isVisible();
+
+            visibleField.setVisible(!showing);
+            visibleField.setManaged(!showing);
+
+            passwordField.setVisible(showing);
+            passwordField.setManaged(showing);
+        });
+
+        StackPane pane = new StackPane(
+                passwordField,
+                visibleField,
+                eyeBtn
+        );
+
+        StackPane.setAlignment(eyeBtn, Pos.CENTER_RIGHT);
+
+        return pane;
+    }
 }

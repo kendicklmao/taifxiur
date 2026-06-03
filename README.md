@@ -8,6 +8,8 @@
 
 ## Video Demo: https://youtu.be/5gwSjSRg0VY
 
+## Báo cáo dự án (PDF): https://docs.google.com/document/d/1W7dFoxWubb9yWKzZOKp73e0laWARCQv7rfMcD8Ckgik/edit?usp=sharing
+
 ## Giới Thiệu
 
 Ứng dụng quản lý đấu giá trực tuyến hiện đại, cho phép người dùng tham gia đấu giá, mua bán hàng hóa, và quản lý tài khoản của mình. Ứng dụng được xây dựng với kiến trúc client - server, sử dụng JavaFX cho giao diện người dùng và PostgreSQL cho lưu trữ dữ liệu.
