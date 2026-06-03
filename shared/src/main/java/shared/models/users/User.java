@@ -13,6 +13,7 @@ public abstract class User {
     private final String username; // Tên tài khoản
     private String email; // Email
     private boolean isBanned;// Bị chặn hay không?
+    private boolean isOnline;
     private final Role role; // Loại tài khoản
     private final String securityQuestion1; // Câu hỏi xác nhận danh tính 1
     private String securityAnswer1; // Câu trả lời xác nhận danh tính 1 (hashed)
@@ -192,5 +193,13 @@ public abstract class User {
         inputPassword = Validator.normalize(inputPassword);
         String hashInput = Hash.formula(inputPassword, this.passwordSalt);
         return this.hashedPassword.equals(hashInput);
+    }
+
+    public boolean isOnline() {
+        return isOnline;
+    }
+
+    public void setOnline(boolean online) {
+        this.isOnline = online;
     }
 }

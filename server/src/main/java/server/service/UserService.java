@@ -292,6 +292,7 @@ public class UserService {
                 String hashedA2 = rs.getString("answer_2");
                 String saltA2 = rs.getString("answer_salt_2");
                 boolean isBanned = rs.getBoolean("is_banned");
+                boolean isOnline = rs.getBoolean("is_online");
 
                 User user = null;
                 if ("BIDDER".equals(role)) {
@@ -305,8 +306,11 @@ public class UserService {
                             q2, hashedA2, saltA2);
                 }
 
-                if (user != null && isBanned) {
-                    user.banUser();
+                if (user != null) {
+                    user.setOnline(isOnline);
+                    if (isBanned) {
+                        user.banUser();
+                    }
                 }
 
                 loadWalletBalance(conn, user);
@@ -569,6 +573,7 @@ public class UserService {
         String hashedA2 = rs.getString("answer_2");
         String saltA2 = rs.getString("answer_salt_2");
         boolean isBanned = rs.getBoolean("is_banned");
+        boolean isOnline = rs.getBoolean("is_online");
 
         User user = null;
         if ("BIDDER".equals(role)) {
@@ -582,8 +587,11 @@ public class UserService {
                     hashedA2, saltA2);
         }
 
-        if (user != null && isBanned) {
-            user.banUser();
+        if (user != null) {
+            user.setOnline(isOnline);
+            if (isBanned) {
+                user.banUser();
+            }
         }
 
         loadWalletBalance(conn, user);

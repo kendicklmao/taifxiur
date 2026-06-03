@@ -146,7 +146,14 @@ public class AdminHomeController extends BaseHomeController {
                 if (empty || item == null) {
                     setText(null);
                 } else {
-                    String status = item.isBanned() ? "BANNED" : "ACTIVE";
+                    String status;
+                    if (item.isBanned()) {
+                        status = "BANNED";
+                    } else if (item.isOnline()) {
+                        status = "ONLINE";
+                    } else {
+                        status = "OFFLINE";
+                    }
                     setText(item.getUsername() + " (" + item.getRole() + ") - " + status);
                 }
             }

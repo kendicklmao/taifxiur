@@ -31,6 +31,7 @@ public class GsonUtils {
             obj.addProperty("email", src.getEmail());
             obj.addProperty("role", src.getRole().toString());
             obj.addProperty("isBanned", src.isBanned());
+            obj.addProperty("isOnline", src.isOnline());
             obj.addProperty("securityQuestion1", src.getSecurityQuestion1());
             obj.addProperty("securityQuestion2", src.getSecurityQuestion2());
             obj.addProperty("securityAnswer1", src.getSecurityQuestion1());
@@ -52,6 +53,7 @@ public class GsonUtils {
             String q2 = obj.get("securityQuestion2").getAsString();
             String a2 = obj.get("securityAnswer2").getAsString();
             boolean isBanned = obj.has("isBanned") && obj.get("isBanned").getAsBoolean();
+            boolean isOnline = obj.has("isOnline") && obj.get("isOnline").getAsBoolean();
 
             User user = switch (role) {
                 case "ADMIN" -> new Admin(id, username, "", email, q1, a1, q2, a2);
@@ -63,6 +65,7 @@ public class GsonUtils {
             if (isBanned) {
                 user.setBanned(true);
             }
+            user.setOnline(isOnline);
 
             return user;
         }
