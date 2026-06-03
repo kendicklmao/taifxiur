@@ -8,7 +8,7 @@
 
 ## Video Demo: https://youtu.be/5gwSjSRg0VY
 
-## Báo cáo dự án (PDF): https://drive.google.com/file/d/1kAx3t-fHDYYuSRzmM1lEXdKvmI9J2uyX/view?usp=sharing
+## Báo cáo dự án (PDF): https://docs.google.com/document/d/1W7dFoxWubb9yWKzZOKp73e0laWARCQv7rfMcD8Ckgik/edit?usp=sharing
 
 ## Giới Thiệu
 
