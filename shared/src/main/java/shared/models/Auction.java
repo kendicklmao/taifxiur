@@ -225,7 +225,7 @@ public class Auction {
 
             maxBid = maxBid.setScale(2, RoundingMode.UP);
 
-            BigDecimal minRequired = (highestBidder != null && highestBidder.equals(bidder))
+            BigDecimal minRequired = (highestBidder != null && highestBidder.getUsername().equals(bidder.getUsername()))
                     ? currentPrice
                     : (highestBidder == null ? startPrice : currentPrice.add(item.getMinIncrement()));
 

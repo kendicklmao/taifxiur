@@ -341,6 +341,9 @@ public class AuctionService {
         if (auction == null) {
             throw new IllegalArgumentException();
         }
+        if (auction.getHighestBidder() != null && bidder.getUsername().equals(auction.getHighestBidder().getUsername())) {
+            throw new IllegalStateException("You are already the highest bidder!");
+        }
 
         // Giới hạn 1 phiên đấu giá cho mỗi bidder
         checkActiveAuctionParticipation(auctionId, bidder.getUsername());
