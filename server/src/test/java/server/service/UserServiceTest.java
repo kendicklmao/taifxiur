@@ -5,14 +5,10 @@ import server.database.DatabaseConfig;
 import server.database.DatabaseInitializer;
 import shared.enums.Role;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 public class UserServiceTest {
 
