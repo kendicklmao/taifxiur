@@ -140,8 +140,6 @@ public class CreateAuctionHandler implements RequestHandler {
             System.out.println(
                     "ERROR CREATE AUCTION: " + e.getMessage());
 
-            e.printStackTrace();
-
             return new Response(
                     "FAIL",
                     "create auction failed: " + e.getMessage());

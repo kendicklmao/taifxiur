@@ -50,9 +50,7 @@ public class WalletServiceTest {
             stmt.setString(2, testBidder);
             stmt.setString(3, testSeller);
             stmt.executeUpdate();
-        } catch (java.sql.SQLException e) {
-            e.printStackTrace();
-        }
+        } catch (java.sql.SQLException e) {}
     }
 
     @AfterAll

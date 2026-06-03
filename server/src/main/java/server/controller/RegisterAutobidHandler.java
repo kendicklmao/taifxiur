@@ -50,7 +50,7 @@ public class RegisterAutobidHandler implements RequestHandler {
                     Response updateResponse = new Response("UPDATE_PRICE", gson.toJson(payload));
                     ClientHandler.broadcast(gson.toJson(updateResponse));
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    System.out.println("Error broadcasting update: " + e.getMessage());
                 }
 
                 return new Response("SUCCESS", "Auto-bid registered successfully");

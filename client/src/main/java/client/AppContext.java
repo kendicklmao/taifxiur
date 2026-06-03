@@ -65,13 +65,13 @@ public class AppContext {
     public void connect() throws Exception {
         disconnect();
 
-        System.out.println("DEBUG CLIENT: Connecting to server...");
+        System.out.println("Connecting to server...");
         socket = new Socket("localhost", 54321);
         socket.setTcpNoDelay(true);
         out = new PrintWriter(new java.io.OutputStreamWriter(socket.getOutputStream(), java.nio.charset.StandardCharsets.UTF_8), true);
         in = new BufferedReader(new java.io.InputStreamReader(socket.getInputStream(), java.nio.charset.StandardCharsets.UTF_8));
         
-        System.out.println("DEBUG CLIENT: Connected. Starting listener thread...");
+        System.out.println("Connected. Starting listener thread...");
         startListenerThread();
     }
 
@@ -82,7 +82,7 @@ public class AppContext {
 
         final BufferedReader currentIn = this.in;
         listenerThread = new Thread(() -> {
-            System.out.println("DEBUG CLIENT: Listener thread started.");
+            System.out.println("Listener thread started.");
             try {
                 String line;
                 while (currentIn != null && (line = currentIn.readLine()) != null) {
@@ -102,10 +102,8 @@ public class AppContext {
                         listener.accept(message);
                     }
                 }
-                System.out.println("DEBUG CLIENT: Listener thread reached end of stream.");
             } catch (Throwable e) {
-                System.err.println("DEBUG CLIENT: Connection lost or error in listener: " + e.getMessage());
-                e.printStackTrace();
+                System.err.println("Error: " + e.getMessage());
                 socket = null;
                 out = null;
                 in = null;

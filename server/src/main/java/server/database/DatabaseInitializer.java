@@ -15,7 +15,6 @@ public class DatabaseInitializer {
             System.out.println("Initializing database schema...");
         } catch (SQLException e) {
             System.err.println("SQL error initializing database: " + e.getMessage());
-            e.printStackTrace();
             throw new RuntimeException("Database initialization failed: " + e.getMessage(), e);
         }
     }

@@ -29,9 +29,7 @@ public class BannedPaymentTest {
             stmt.setString(1, testBidder);
             stmt.setString(2, testSeller);
             stmt.executeUpdate();
-        } catch (java.sql.SQLException e) {
-            e.printStackTrace();
-        }
+        } catch (java.sql.SQLException e) {}
     }
 
     @Test

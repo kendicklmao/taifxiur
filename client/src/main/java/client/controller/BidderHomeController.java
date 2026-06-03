@@ -139,7 +139,6 @@ public class BidderHomeController extends BaseHomeController {
         });
 
         task.setOnFailed(e -> {
-            task.getException().printStackTrace();
             alertService.showAlert("Error", "Cannot load auctions", auctionGrid);
         });
 
@@ -289,7 +288,6 @@ public class BidderHomeController extends BaseHomeController {
             stage.showAndWait();
 
         } catch (IOException e) {
-            e.printStackTrace();
             showAlert("Error", "Could not load the price chart view.");
         }
     }
@@ -473,7 +471,7 @@ public class BidderHomeController extends BaseHomeController {
                 });
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            System.out.println("Error in onSocketMessage: " + e.getMessage());
         }
     }
 }

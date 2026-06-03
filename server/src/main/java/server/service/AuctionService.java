@@ -107,14 +107,12 @@ public class AuctionService {
                     System.out.println("Skipped loading auto-bids for auction " + auctionId + ": " + e.getMessage());
                 } catch (Exception e) {
                     System.err.println("Error loading auction " + auctionId + ": " + e.getMessage());
-                    e.printStackTrace();
                 }
             }
 
             System.out.println("Auction loading complete. Total auctions loaded: " + auctions.size());
         } catch (SQLException e) {
             System.err.println("Error initializing auctions from database: " + e.getMessage());
-            e.printStackTrace();
         }
     }
 
@@ -269,10 +267,7 @@ public class AuctionService {
                  if (bidderUser instanceof Bidder) {
                     try {
                         auction.restoreAutoBid((Bidder) bidderUser, maxBid, timeStamp);
-                    } catch (Exception e) {
-                        System.err.println(
-                                " [RESTORE] Skipped 1 autobid for auction " + auction.getId() + ": " + e.getMessage());
-                    }
+                    } catch (Exception e) {}
                 }
             }
             // Chạy lại AutoBidService một lần duy nhất sau khi đã khôi phục toàn bộ autobids
@@ -327,7 +322,7 @@ public class AuctionService {
 
         auction.startScheduler();
         auctions.put(id, auction);
-        System.out.println(" [MEMORY] Added new auction to map. Current total in memory: " + auctions.size());
+        System.out.println("Added new auction to map. Current total in memory: " + auctions.size());
 
         return auction;
     }
@@ -545,7 +540,6 @@ public class AuctionService {
             }
         } catch (SQLException e) {
             System.err.println("Error updating autobid in database: " + e.getMessage());
-            e.printStackTrace();
         }
     }
 
@@ -711,7 +705,7 @@ public class AuctionService {
                         auction.startScheduler();
 
                         auctions.put(targetAuctionId, auction);
-                        System.out.println("[SYNC] Loaded new auction from DB: " + targetAuctionId);
+                        System.out.println("Loaded new auction from DB: " + targetAuctionId);
                     }
                 }
             }
@@ -881,8 +875,7 @@ public class AuctionService {
                 }
 
                 conn.commit();
-                System.out.println(" [PERMANENT DELETE] Auction " + auctionId
-                        + " and all related data (bids, auto-bids, holds) have been removed.");
+                System.out.println("Auction " + auctionId + " and all related data (bids, auto-bids, holds) have been removed.");
 
                 try {
                     com.google.gson.Gson gson = shared.utils.GsonUtils.createGson();
@@ -1041,7 +1034,6 @@ public class AuctionService {
             }
         } catch (SQLException e) {
             System.err.println("Error storing bid: " + e.getMessage());
-            e.printStackTrace();
         }
     }
 
@@ -1056,8 +1048,7 @@ public class AuctionService {
 
             int rows = pstmt.executeUpdate();
             if (rows > 0) {
-                System.out.println("[DB-SYNC] Updated auction " + auction.getId() + " status to " + auction.getStatus()
-                        + " in database.");
+                System.out.println("Updated auction " + auction.getId() + " status to " + auction.getStatus() + " in database.");
             }
         } catch (SQLException e) {
             System.err.println("Error updating auction status in database: " + e.getMessage());
@@ -1074,18 +1065,15 @@ public class AuctionService {
 
             int rows = pstmt.executeUpdate();
             if (rows > 0) {
-                System.out.println("[DB-SYNC] Updated auction " + auction.getId() + " end_time to " + auction.getEndTime()
-                        + " in database.");
+                System.out.println("Updated auction " + auction.getId() + " end_time to " + auction.getEndTime() + " in database.");
             }
         } catch (SQLException e) {
             System.err.println("Error updating auction end_time in database: " + e.getMessage());
         }
     }
 
-    // Dừng tất cả các phiên đấu giá của một seller cụ thể (thường dùng khi ban
-    // user)
     public void terminateAllAuctionsBySeller(String sellerUsername, String adminUsername) {
-        System.out.println("[AUCTION SERVICE] Terminating all auctions for seller: " + sellerUsername);
+        System.out.println("Terminating all auctions for seller: " + sellerUsername);
         List<String> auctionIdsToTerminate = new ArrayList<>();
 
         for (Auction auction : auctions.values()) {

@@ -550,9 +550,7 @@ public class WalletService {
                 pstmt.executeUpdate();
             }
 
-        } catch (SQLException e) {
-            System.err.println("Error releasing hold: " + e.getMessage());
-        }
+        } catch (SQLException e) {}
     }
 
     public void releaseAllHoldsForAuction(String auctionId) {
@@ -563,9 +561,7 @@ public class WalletService {
                         "UPDATE wallet_holds SET status = 'RELEASED', updated_at = CURRENT_TIMESTAMP WHERE auction_id = ? AND status = 'HELD'")) {
             pstmt.setString(1, auctionId);
             pstmt.executeUpdate();
-        } catch (SQLException e) {
-            System.err.println("Error releasing holds for auction: " + e.getMessage());
-        }
+        } catch (SQLException e) {}
     }
     
     public String finalizePaymentForWinner(String auctionId, String bidderUsername, String sellerUsername,

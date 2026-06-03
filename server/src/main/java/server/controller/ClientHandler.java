@@ -53,7 +53,6 @@ public class ClientHandler implements Runnable {
             }
         } catch (Throwable e) {
             System.err.println("ERROR in ClientHandler (" + socket.getInetAddress() + "): " + e.getMessage());
-            e.printStackTrace();
         } finally {
             activeClients.remove(this);
             if (loggedInUsername != null) {

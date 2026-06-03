@@ -202,7 +202,6 @@ public class SellerHomeController extends BaseHomeController {
                 Image image = new Image(selectedImageFile.toURI().toString());
                 itemImageView.setImage(image);
             } catch (Exception e) {
-                e.printStackTrace();
                 alertService.showAlert("Error", "Failed to process image.", welcomeLabel);
             }
         }
@@ -442,7 +441,6 @@ public class SellerHomeController extends BaseHomeController {
 
         } catch (Exception e) {
             alertService.showAlert("Error", "Invalid data!", welcomeLabel);
-            e.printStackTrace();
         }
     }
 
@@ -491,7 +489,6 @@ public class SellerHomeController extends BaseHomeController {
         });
 
         task.setOnFailed(e -> {
-            task.getException().printStackTrace();
             alertService.showAlert("Error", "Cannot load auctions", auctionGrid);
         });
 

@@ -52,12 +52,11 @@ public class PlaceBidHandler implements RequestHandler {
                         Response updateResponse = new Response("UPDATE_PRICE", gson.toJson(payload));
                         ClientHandler.broadcast(gson.toJson(updateResponse));
                     } catch (Exception e) {
-                        e.printStackTrace();
+                        System.out.println("Error broadcasting update: " + e.getMessage());
                     }
                     return new Response("SUCCESS", "Bid placed successfully");
                 } else {
                     BigDecimal balance = this.walletService.getWalletBalance(pUsername);
-                    System.out.println("PLACE_BID debug -> user=" + pUsername + " requested=" + pAmount + " balance=" + balance);
                     StringBuilder msg = new StringBuilder();
                     if (balance == null) {
                         msg.append("Could not determine balance. ");
@@ -71,8 +70,7 @@ public class PlaceBidHandler implements RequestHandler {
                             msg.append("CurrentPrice: ").append(auction.getCurrentPrice()).append(", MinIncrement: ").append(auction.getItem().getMinIncrement()).append('.');
                         }
 
-                    } catch (Exception ignored) {
-                    }
+                    } catch (Exception ignored) {}
 
                     if (balance == null || balance.compareTo(amount) < 0) {
                         return new Response("FAIL", "Not enough balance to place bid.");

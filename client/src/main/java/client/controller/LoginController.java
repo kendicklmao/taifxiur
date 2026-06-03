@@ -100,7 +100,6 @@ public class LoginController extends UserController {
 
         } catch (Exception e) {
             alertService.showAlert("Error", "Cannot connect to Server!", usernameField);
-            e.printStackTrace();
         }
     }
 

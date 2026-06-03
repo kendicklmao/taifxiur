@@ -128,7 +128,6 @@ public class ForgotPasswordController extends UserController {
             resetPasswordButton.setDefaultButton(true);
         } catch (Exception e) {
             showAlert("Connection error", "Cannot connect to server.");
-            e.printStackTrace();
         }
     }
 
@@ -197,7 +196,6 @@ public class ForgotPasswordController extends UserController {
 
         } catch (Exception e) {
             showAlert("Connection error", "Cannot connect to server.");
-            e.printStackTrace();
         }
     }
 

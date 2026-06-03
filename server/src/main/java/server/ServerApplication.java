@@ -56,7 +56,6 @@ public class ServerApplication {
             
         } catch (Exception e) {
             System.err.println("Failed to initialize database: " + e.getMessage());
-            e.printStackTrace();
             System.exit(1);
         }
 

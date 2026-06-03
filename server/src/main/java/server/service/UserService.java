@@ -43,19 +43,15 @@ public class UserService {
     // Đăng ký người dùng mới trong cơ sở dữ liệu
     public boolean register(String username, String password, String email, String q1, String a1, String q2, String a2,
             Role role) {
-        System.out.println("DEBUG REGISTER: Attempting to register user: " + username);
         if (!Validator.isValidUsername(username)) {
-            System.out.println("DEBUG REGISTER: Invalid username format: " + username);
             return false;
         }
 
         if (!Validator.isValidPassword(password)) {
-            System.out.println("DEBUG REGISTER: Invalid password format");
             return false;
         }
 
         if (!Validator.isValidEmail(email)) {
-            System.out.println("DEBUG REGISTER: Invalid email format: " + email);
             return false;
         }
 
@@ -67,17 +63,14 @@ public class UserService {
         a1 = Validator.normalizeAndLowercase(a1);
         a2 = Validator.normalizeAndLowercase(a2);
 
-        System.out.println("DEBUG REGISTER: After normalization - username: " + username + ", email: " + email);
 
         // Kiểm tra xem tên người dùng đã tồn tại chưa
         if (exists(username)) {
-            System.out.println("DEBUG REGISTER: Username already exists: " + username);
             return false;
         }
 
         // Kiểm tra xem email đã tồn tại chưa
         if (emailExists(email)) {
-            System.out.println("DEBUG REGISTER: Email already exists: " + email);
             return false;
         }
 
@@ -110,7 +103,6 @@ public class UserService {
 
             int affectedRows = pstmt.executeUpdate();
             if (affectedRows > 0) {
-                System.out.println("DEBUG REGISTER: User registered successfully!");
                 ResultSet generatedKeys = pstmt.getGeneratedKeys();
                 if (generatedKeys.next()) {
                     ensureWalletExists(conn, generatedKeys.getInt(1));
@@ -120,14 +112,7 @@ public class UserService {
             }
 
         } catch (SQLException e) {
-            System.out.println("DEBUG REGISTER: SQL Exception - " + e.getMessage());
-            if (e.getMessage().contains("duplicate key")) {
-                System.out.println("Duplicate key error - username or email already exists!");
-            } else {
-                System.err.println("Error registering user: " + e.getMessage());
-                e.printStackTrace();
-            }
-
+            System.out.println("Error register: " + e.getMessage());
             return false;
         }
 
@@ -136,16 +121,13 @@ public class UserService {
 
     // Đăng nhập người dùng và xác thực
     public synchronized User login(String username, String password) {
-        System.out.println("DEBUG LOGIN: Start for user " + username);
         if (username == null || password == null) {
-            System.out.println("DEBUG LOGIN: Null username or password");
             return null;
         }
 
         username = Validator.normalizeAndLowercase(username);
         password = Validator.normalize(password);
 
-        System.out.println("DEBUG LOGIN: Normalized user: " + username);
         Instant now = Instant.now();
         if (lockUntil.containsKey(username)) {
             Instant unlockTime = lockUntil.get(username);
@@ -157,17 +139,15 @@ public class UserService {
             }
         }
 
-        System.out.println("DEBUG LOGIN: Getting connection and preparing statement...");
         try (Connection conn = DatabaseConfig.getDataSource().getConnection();
                 PreparedStatement pstmt = conn.prepareStatement(
                         "SELECT id, password, password_salt, role, is_banned, is_online FROM users WHERE username = ?")) {
 
             pstmt.setString(1, username);
-            System.out.println("DEBUG LOGIN: Executing query...");
             ResultSet rs = pstmt.executeQuery();
 
             if (!rs.next()) {
-                System.out.println("DEBUG LOGIN: User not found in DB: " + username);
+                System.out.println("Error login: User not found in DB: " + username);
                 return null;
             }
 
@@ -178,8 +158,6 @@ public class UserService {
                         "User is already logged in from another device");
             }
 
-            System.out.println("DEBUG LOGIN: User found in DB. Verifying password...");
-
             String storedHash = rs.getString("password");
             String storedSalt = rs.getString("password_salt");
             String roleStr = rs.getString("role");
@@ -187,7 +165,6 @@ public class UserService {
 
             String inputHash = shared.utils.Hash.formula(password, storedSalt); // Kiểm tra mật khẩu bằng cách băm thử với Salt đã lưu
             if (storedHash.equals(inputHash)) {
-                System.out.println("DEBUG LOGIN: Password correct for " + username);
                 try (PreparedStatement updateStmt =
                              conn.prepareStatement(
                                      "UPDATE users SET is_online = TRUE WHERE username = ?")) {
@@ -197,7 +174,6 @@ public class UserService {
                 }
                 // Kiểm tra xem user đã đăng nhập chưa (tránh đăng nhập 2 lần)
                 if (loggedIn.putIfAbsent(username, true) != null) {
-                    System.out.println("DEBUG LOGIN: User already logged in!");
                     throw new UserAlreadyLoggedInException(
                             "User " + username + " is already logged in from another device");
                 }
@@ -211,9 +187,7 @@ public class UserService {
                     logAdminLogin(userId, "SUCCESS");
                 }
 
-                System.out.println("DEBUG LOGIN: Fetching user details...");
                 User result = getUserFromDatabase(username);
-                System.out.println("DEBUG LOGIN: Login successful for " + username);
                 return result;
             } else {
                 int attempts = failedAttempts.getOrDefault(username, 0) + 1;
@@ -237,7 +211,7 @@ public class UserService {
             }
 
         } catch (SQLException e) {
-            System.err.println("Error during login: " + e.getMessage());
+            System.err.println("Error login: " + e.getMessage());
             return null;
         }
     }

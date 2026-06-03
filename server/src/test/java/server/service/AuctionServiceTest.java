@@ -109,11 +109,8 @@ public class AuctionServiceTest {
                 conn.commit();
             } catch (java.sql.SQLException e) {
                 conn.rollback();
-                e.printStackTrace();
             }
-        } catch (java.sql.SQLException e) {
-            e.printStackTrace();
-        }
+        } catch (java.sql.SQLException e) {}
     }
 
     @Test

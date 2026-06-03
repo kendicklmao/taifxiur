@@ -105,9 +105,7 @@ public class ClientHandlerTest {
                 stmt.setString(1, username);
                 stmt.executeUpdate();
             }
-        } catch (java.sql.SQLException e) {
-            e.printStackTrace();
-        }
+        } catch (java.sql.SQLException e) {}
     }
 
     @Test
