@@ -63,22 +63,56 @@
                                            styleClass="register-input"/>
                                 <Label fx:id="emailError" styleClass="error-label"/>
                             </VBox>
-
                             <HBox spacing="14">
+
                                 <VBox spacing="6" HBox.hgrow="ALWAYS">
                                     <Label text="PASSWORD" styleClass="form-label-register"/>
-                                    <PasswordField fx:id="passwordField"
+
+                                    <StackPane>
+                                        <PasswordField fx:id="passwordField"
+                                                       promptText="Upper, lower, number, symbol"
+                                                       styleClass="register-input password-input-with-eye"/>
+
+                                        <TextField fx:id="visiblePasswordField"
+                                                   visible="false"
+                                                   managed="false"
                                                    promptText="Upper, lower, number, symbol"
-                                                   styleClass="register-input"/>
+                                                   styleClass="register-input password-input-with-eye"/>
+
+                                        <Button fx:id="togglePasswordBtn"
+                                                text="👁"
+                                                onAction="#togglePasswordVisibility"
+                                                styleClass="password-eye-btn"
+                                                StackPane.alignment="CENTER_RIGHT"/>
+                                    </StackPane>
+
                                     <Label fx:id="passwordError" styleClass="error-label"/>
                                 </VBox>
+
                                 <VBox spacing="6" HBox.hgrow="ALWAYS">
                                     <Label text="CONFIRM PASSWORD" styleClass="form-label-register"/>
-                                    <PasswordField fx:id="confirmPasswordField"
+
+                                    <StackPane>
+                                        <PasswordField fx:id="confirmPasswordField"
+                                                       promptText="Re-enter password"
+                                                       styleClass="register-input password-input-with-eye"/>
+
+                                        <TextField fx:id="visibleConfirmPasswordField"
+                                                   visible="false"
+                                                   managed="false"
                                                    promptText="Re-enter password"
-                                                   styleClass="register-input"/>
+                                                   styleClass="register-input password-input-with-eye"/>
+
+                                        <Button fx:id="toggleConfirmPasswordBtn"
+                                                text="👁"
+                                                onAction="#toggleConfirmPasswordVisibility"
+                                                styleClass="password-eye-btn"
+                                                StackPane.alignment="CENTER_RIGHT"/>
+                                    </StackPane>
+
                                     <Label fx:id="confirmPasswordError" styleClass="error-label"/>
                                 </VBox>
+
                             </HBox>
                         </VBox>
 

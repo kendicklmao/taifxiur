@@ -56,9 +56,24 @@
 
                             <VBox spacing="8">
                                 <Label text="PASSWORD" styleClass="form-label-login"/>
-                                <PasswordField fx:id="passwordField"
+
+                                <StackPane>
+                                    <PasswordField fx:id="passwordField"
+                                                   promptText="Enter your password"
+                                                   styleClass="login-input"/>
+
+                                    <TextField fx:id="visiblePasswordField"
                                                promptText="Enter your password"
-                                               styleClass="login-input"/>
+                                               styleClass="login-input"
+                                               visible="false"
+                                               managed="false"/>
+
+                                    <Button fx:id="togglePasswordBtn"
+                                            text="👁"
+                                            onAction="#togglePasswordVisibility"
+                                            styleClass="password-eye-btn"
+                                            StackPane.alignment="CENTER_RIGHT"/>
+                                </StackPane>
                             </VBox>
 
                             <HBox alignment="CENTER_RIGHT">

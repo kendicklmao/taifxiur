@@ -45,6 +45,11 @@ public class ForgotPasswordController extends UserController {
     private PasswordField newPasswordField;
     @FXML
     private PasswordField confirmPasswordField;
+    @FXML
+    private TextField visibleNewPasswordField;
+
+    @FXML
+    private TextField visibleConfirmPasswordField;
 
     private String loadedUsername;
     private String loadedEmail;
@@ -58,6 +63,11 @@ public class ForgotPasswordController extends UserController {
         switchAccountButton.setVisible(false);
         switchAccountButton.setManaged(false);
         loadQuestionsButton.setDefaultButton(true);
+        visibleNewPasswordField.textProperty()
+                .bindBidirectional(newPasswordField.textProperty());
+
+        visibleConfirmPasswordField.textProperty()
+                .bindBidirectional(confirmPasswordField.textProperty());
     }
 
     @FXML
@@ -244,6 +254,28 @@ public class ForgotPasswordController extends UserController {
         clearInvalid(answer2Field);
         clearInvalid(newPasswordField);
         clearInvalid(confirmPasswordField);
+    }
+
+    @FXML
+    private void toggleNewPasswordVisibility() {
+        boolean visible = visibleNewPasswordField.isVisible();
+
+        visibleNewPasswordField.setVisible(!visible);
+        visibleNewPasswordField.setManaged(!visible);
+
+        newPasswordField.setVisible(visible);
+        newPasswordField.setManaged(visible);
+    }
+
+    @FXML
+    private void toggleConfirmPasswordVisibility() {
+        boolean visible = visibleConfirmPasswordField.isVisible();
+
+        visibleConfirmPasswordField.setVisible(!visible);
+        visibleConfirmPasswordField.setManaged(!visible);
+
+        confirmPasswordField.setVisible(visible);
+        confirmPasswordField.setManaged(visible);
     }
 
     private void clearInvalid(Control control) {
